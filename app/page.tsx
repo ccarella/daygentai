@@ -1,6 +1,16 @@
 import { EmailLogin } from '@/components/auth/email-login'
+import { redirect } from 'next/navigation'
 
-export default function Home() {
+export default async function Home(props: {
+  searchParams: Promise<{ code?: string }>
+}) {
+  const searchParams = await props.searchParams
+  
+  // If there's an auth code in the URL, redirect to the callback route
+  if (searchParams.code) {
+    redirect(`/auth/callback?code=${searchParams.code}`)
+  }
+  
   return (
     <div className="min-h-screen flex items-center justify-center p-8">
       <div className="max-w-2xl w-full text-center space-y-8">
