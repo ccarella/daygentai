@@ -7,7 +7,7 @@ import Link from 'next/link'
 
 interface UserProfile {
   name: string
-  avatar_url: string
+  avatar_url: string | null
 }
 
 interface HeaderProps {
