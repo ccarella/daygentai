@@ -102,24 +102,9 @@ export async function middleware(request: NextRequest) {
       }
     }
     
-    // If authenticated user is on home page, redirect based on their status
+    // If authenticated user is on home page, redirect to workspace loading page
     if (pathname === '/') {
-      if (!profile) {
-        return NextResponse.redirect(new URL('/CreateUser', request.url))
-      }
-      if (!workspace) {
-        return NextResponse.redirect(new URL('/CreateWorkspace', request.url))
-      }
-      // If they have both profile and workspace, redirect to their workspace
-      const { data: workspaceWithSlug } = await supabase
-        .from('workspaces')
-        .select('slug')
-        .eq('owner_id', user.id)
-        .single()
-      
-      if (workspaceWithSlug?.slug) {
-        return NextResponse.redirect(new URL(`/${workspaceWithSlug.slug}`, request.url))
-      }
+      return NextResponse.redirect(new URL('/workspace', request.url))
     }
   }
 

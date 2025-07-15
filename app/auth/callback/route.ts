@@ -11,37 +11,12 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
-      // Get the authenticated user
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (user) {
-        // Check if user has a profile
-        const { data: profile } = await supabase
-          .from('users')
-          .select('id')
-          .eq('id', user.id)
-          .single()
-        
-        if (profile) {
-          // Check if user has a workspace
-          const { data: workspace } = await supabase
-            .from('workspaces')
-            .select('slug')
-            .eq('owner_id', user.id)
-            .single()
-          
-          if (workspace) {
-            // User has both profile and workspace, redirect to workspace
-            return NextResponse.redirect(`${origin}/${workspace.slug}`)
-          } else {
-            // User has profile but no workspace
-            return NextResponse.redirect(`${origin}/CreateWorkspace`)
-          }
-        }
-      }
+      // Successfully authenticated, redirect to workspace loading page
+      // which will handle the routing based on user's profile/workspace status
+      return NextResponse.redirect(`${origin}/workspace`)
     }
   }
 
-  // Default: redirect to create user (for new users)
-  return NextResponse.redirect(`${origin}/CreateUser`)
+  // Authentication failed or no code, redirect to home
+  return NextResponse.redirect(`${origin}/`)
 }
