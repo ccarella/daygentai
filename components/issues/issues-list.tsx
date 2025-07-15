@@ -20,6 +20,10 @@ interface Issue {
 interface IssuesListProps {
   workspaceId: string
   workspaceSlug: string
+  onIssueClick?: (issueId: string) => void
+  statusFilter?: string
+  priorityFilter?: string
+  typeFilter?: string
 }
 
 const typeIcons = {
@@ -44,7 +48,14 @@ const priorityLabels = {
   low: 'Low'
 }
 
-export function IssuesList({ workspaceId, workspaceSlug }: IssuesListProps) {
+export function IssuesList({ 
+  workspaceId, 
+  workspaceSlug, 
+  onIssueClick,
+  statusFilter = 'exclude_done',
+  priorityFilter = 'all',
+  typeFilter = 'all'
+}: IssuesListProps) {
   const router = useRouter()
   const [issues, setIssues] = useState<Issue[]>([])
   const [loading, setLoading] = useState(true)
@@ -53,11 +64,30 @@ export function IssuesList({ workspaceId, workspaceSlug }: IssuesListProps) {
     const fetchIssues = async () => {
       const supabase = createClient()
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('issues')
         .select('*')
         .eq('workspace_id', workspaceId)
         .order('created_at', { ascending: false })
+
+      // Apply status filter
+      if (statusFilter === 'exclude_done') {
+        query = query.neq('status', 'done')
+      } else if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter)
+      }
+
+      // Apply priority filter
+      if (priorityFilter !== 'all') {
+        query = query.eq('priority', priorityFilter)
+      }
+
+      // Apply type filter
+      if (typeFilter !== 'all') {
+        query = query.eq('type', typeFilter)
+      }
+
+      const { data, error } = await query
 
       if (error) {
         console.error('Error fetching issues:', error)
@@ -69,7 +99,7 @@ export function IssuesList({ workspaceId, workspaceSlug }: IssuesListProps) {
     }
 
     fetchIssues()
-  }, [workspaceId])
+  }, [workspaceId, statusFilter, priorityFilter, typeFilter])
 
   const truncateDescription = (description: string | null, maxLength: number = 100) => {
     if (!description) return ''
@@ -122,7 +152,13 @@ export function IssuesList({ workspaceId, workspaceSlug }: IssuesListProps) {
           <div
             key={issue.id}
             className="border-b border-gray-200 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
-            onClick={() => router.push(`/${workspaceSlug}/issue/${issue.id}`)}
+            onClick={() => {
+              if (onIssueClick) {
+                onIssueClick(issue.id)
+              } else {
+                router.push(`/${workspaceSlug}/issue/${issue.id}`)
+              }
+            }}
           >
             <div className="flex items-start space-x-3">
               {/* Type Icon */}
