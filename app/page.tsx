@@ -1,10 +1,8 @@
 import { EmailLogin } from '@/components/auth/email-login'
-import { AuthRedirect } from '@/components/auth/auth-redirect'
 
 export default function Home() {
   return (
     <div className="min-h-screen flex items-center justify-center p-8">
-      <AuthRedirect />
       <div className="max-w-2xl w-full text-center space-y-8">
         <div className="space-y-4">
           <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
