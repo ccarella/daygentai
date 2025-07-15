@@ -3,12 +3,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
-  console.log('[Middleware] Processing request for:', pathname)
-  
-  // Log if this is an auth callback
-  if (pathname === '/auth/callback') {
-    console.log('[Middleware] Auth callback detected, params:', request.nextUrl.searchParams.toString())
-  }
   
   let supabaseResponse = NextResponse.next({
     request,
@@ -105,6 +99,26 @@ export async function middleware(request: NextRequest) {
       }
       if (!workspace) {
         return NextResponse.redirect(new URL('/CreateWorkspace', request.url))
+      }
+    }
+    
+    // If authenticated user is on home page, redirect based on their status
+    if (pathname === '/') {
+      if (!profile) {
+        return NextResponse.redirect(new URL('/CreateUser', request.url))
+      }
+      if (!workspace) {
+        return NextResponse.redirect(new URL('/CreateWorkspace', request.url))
+      }
+      // If they have both profile and workspace, redirect to their workspace
+      const { data: workspaceWithSlug } = await supabase
+        .from('workspaces')
+        .select('slug')
+        .eq('owner_id', user.id)
+        .single()
+      
+      if (workspaceWithSlug?.slug) {
+        return NextResponse.redirect(new URL(`/${workspaceWithSlug.slug}`, request.url))
       }
     }
   }
