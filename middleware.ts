@@ -2,6 +2,14 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  console.log('[Middleware] Processing request for:', pathname)
+  
+  // Log if this is an auth callback
+  if (pathname === '/auth/callback') {
+    console.log('[Middleware] Auth callback detected, params:', request.nextUrl.searchParams.toString())
+  }
+  
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -31,8 +39,6 @@ export async function middleware(request: NextRequest) {
 
   // Refresh session if expired
   const { data: { user } } = await supabase.auth.getUser()
-  
-  const pathname = request.nextUrl.pathname
 
   // Protected routes that require authentication
   const protectedRoutes = ['/success', '/CreateUser', '/CreateWorkspace']
