@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
 import { WorkspaceLayout } from '@/components/layout/workspace-layout'
-import { WorkspaceContent } from '@/components/workspace/workspace-content'
+import { WorkspaceContent, WorkspaceContentRef } from '@/components/workspace/workspace-content'
 
 export default function IssueDetailsPage({ 
   params 
@@ -13,6 +13,7 @@ export default function IssueDetailsPage({
   params: Promise<{ slug: string; issueId: string }> 
 }) {
   const router = useRouter()
+  const contentRef = useRef<WorkspaceContentRef>(null)
   const [workspace, setWorkspace] = useState<{
     id: string
     name: string
@@ -66,12 +67,20 @@ export default function IssueDetailsPage({
     )
   }
 
+  const handleNavigateToIssues = () => {
+    contentRef.current?.navigateToIssuesList()
+  }
+
   if (!workspace) return null
 
   return (
     <AuthenticatedLayout>
-      <WorkspaceLayout workspace={workspace}>
+      <WorkspaceLayout 
+        workspace={workspace}
+        onNavigateToIssues={handleNavigateToIssues}
+      >
         <WorkspaceContent 
+          ref={contentRef}
           workspace={workspace} 
           initialView="issue" 
           initialIssueId={issueId}

@@ -10,6 +10,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 interface Issue {
   id: string
@@ -52,10 +59,19 @@ const priorityLabels = {
   low: 'Low'
 }
 
+const statusOptions = [
+  { value: 'shaping', label: 'Shaping', color: 'text-gray-600' },
+  { value: 'backlog', label: 'Backlog', color: 'text-blue-600' },
+  { value: 'in_progress', label: 'In Progress', color: 'text-yellow-600' },
+  { value: 'review', label: 'Review', color: 'text-purple-600' },
+  { value: 'done', label: 'Done', color: 'text-green-600' },
+]
+
 export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) {
   const [issue, setIssue] = useState<Issue | null>(null)
   const [loading, setLoading] = useState(true)
   const [creatorName, setCreatorName] = useState<string>('')
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
 
   useEffect(() => {
     const fetchIssue = async () => {
@@ -109,6 +125,24 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
     if (!error) {
       onDeleted()
     }
+  }
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!issue || isUpdatingStatus) return
+    
+    setIsUpdatingStatus(true)
+    const supabase = createClient()
+    
+    const { error } = await supabase
+      .from('issues')
+      .update({ status: newStatus })
+      .eq('id', issue.id)
+
+    if (!error) {
+      setIssue({ ...issue, status: newStatus as Issue['status'] })
+    }
+    
+    setIsUpdatingStatus(false)
   }
 
   if (loading) {
@@ -174,9 +208,29 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
             <span className="text-gray-500">
               Created by {creatorName} {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
             </span>
-            <span className="text-gray-500 capitalize">
-              Status: {issue.status.replace('_', ' ')}
-            </span>
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-500 text-sm">Status:</span>
+              <Select
+                value={issue.status}
+                onValueChange={handleStatusChange}
+                disabled={isUpdatingStatus}
+              >
+                <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-gray-100 focus:ring-0 focus:ring-offset-0">
+                  <SelectValue>
+                    <span className={`text-sm font-medium ${statusOptions.find(s => s.value === issue.status)?.color || 'text-gray-600'}`}>
+                      {statusOptions.find(s => s.value === issue.status)?.label || issue.status}
+                    </span>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      <span className={status.color}>{status.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Description */}

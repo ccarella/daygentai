@@ -1,14 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
 import { WorkspaceLayout } from '@/components/layout/workspace-layout'
-import { WorkspaceContent } from '@/components/workspace/workspace-content'
+import { WorkspaceContent, WorkspaceContentRef } from '@/components/workspace/workspace-content'
 
 export default function WorkspacePage({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter()
+  const contentRef = useRef<WorkspaceContentRef>(null)
   const [workspace, setWorkspace] = useState<{
     id: string
     name: string
@@ -55,6 +56,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ slug: stri
     setRefreshKey(prev => prev + 1)
   }
 
+  const handleNavigateToIssues = () => {
+    contentRef.current?.navigateToIssuesList()
+  }
+
   if (loading) {
     return (
       <AuthenticatedLayout>
@@ -69,8 +74,16 @@ export default function WorkspacePage({ params }: { params: Promise<{ slug: stri
 
   return (
     <AuthenticatedLayout>
-      <WorkspaceLayout workspace={workspace} onIssueCreated={handleIssueCreated}>
-        <WorkspaceContent key={refreshKey} workspace={workspace} />
+      <WorkspaceLayout 
+        workspace={workspace} 
+        onIssueCreated={handleIssueCreated}
+        onNavigateToIssues={handleNavigateToIssues}
+      >
+        <WorkspaceContent 
+          ref={contentRef}
+          key={refreshKey} 
+          workspace={workspace} 
+        />
       </WorkspaceLayout>
     </AuthenticatedLayout>
   )
