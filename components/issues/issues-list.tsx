@@ -20,6 +20,7 @@ interface Issue {
 interface IssuesListProps {
   workspaceId: string
   workspaceSlug: string
+  onIssueClick?: (issueId: string) => void
 }
 
 const typeIcons = {
@@ -44,7 +45,7 @@ const priorityLabels = {
   low: 'Low'
 }
 
-export function IssuesList({ workspaceId, workspaceSlug }: IssuesListProps) {
+export function IssuesList({ workspaceId, workspaceSlug, onIssueClick }: IssuesListProps) {
   const router = useRouter()
   const [issues, setIssues] = useState<Issue[]>([])
   const [loading, setLoading] = useState(true)
@@ -122,7 +123,13 @@ export function IssuesList({ workspaceId, workspaceSlug }: IssuesListProps) {
           <div
             key={issue.id}
             className="border-b border-gray-200 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
-            onClick={() => router.push(`/${workspaceSlug}/issue/${issue.id}`)}
+            onClick={() => {
+              if (onIssueClick) {
+                onIssueClick(issue.id)
+              } else {
+                router.push(`/${workspaceSlug}/issue/${issue.id}`)
+              }
+            }}
           >
             <div className="flex items-start space-x-3">
               {/* Type Icon */}
