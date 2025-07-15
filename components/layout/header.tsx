@@ -21,6 +21,21 @@ export function Header({ initialProfile }: HeaderProps) {
   const router = useRouter()
   const supabase = createClient()
 
+  const fetchUserProfile = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('name, avatar_url')
+        .eq('id', user.id)
+        .single()
+      
+      if (profile) {
+        setUserProfile(profile)
+      }
+    }
+  }, [supabase])
+
   useEffect(() => {
     if (!initialProfile) {
       fetchUserProfile()
@@ -39,21 +54,6 @@ export function Header({ initialProfile }: HeaderProps) {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [])
-
-  const fetchUserProfile = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const { data: profile } = await supabase
-        .from('users')
-        .select('name, avatar_url')
-        .eq('id', user.id)
-        .single()
-      
-      if (profile) {
-        setUserProfile(profile)
-      }
-    }
-  }, [supabase])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()

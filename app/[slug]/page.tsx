@@ -3,8 +3,9 @@ import { redirect } from 'next/navigation'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
 import Link from 'next/link'
 
-export default async function WorkspacePage({ params }: { params: { slug: string } }) {
+export default async function WorkspacePage({ params }: { params: Promise<{ slug: string }> }) {
   const supabase = await createClient()
+  const resolvedParams = await params
   
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -16,7 +17,7 @@ export default async function WorkspacePage({ params }: { params: { slug: string
   const { data: workspace } = await supabase
     .from('workspaces')
     .select('*')
-    .eq('slug', params.slug)
+    .eq('slug', resolvedParams.slug)
     .eq('owner_id', user.id)
     .single()
 

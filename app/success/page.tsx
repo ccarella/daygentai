@@ -5,10 +5,11 @@ import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
 export default async function SuccessPage({
   searchParams,
 }: {
-  searchParams: { debug?: string }
+  searchParams: Promise<{ debug?: string }>
 }) {
   const supabase = await createClient()
-  const isDebugMode = searchParams.debug === 'true'
+  const resolvedSearchParams = await searchParams
+  const isDebugMode = resolvedSearchParams.debug === 'true'
   
   const { data: { user } } = await supabase.auth.getUser()
   
