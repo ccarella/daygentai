@@ -9,6 +9,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run build` - Build production application
 - `npm start` - Start production server
 - `npm run lint` - Run ESLint checks
+- `npm run type-check` - Run TypeScript type checking
+
+**Git Hooks (automated):**
+- Pre-commit: Runs ESLint on staged files and type checking
+- Pre-push: Runs full type check and build to ensure CI will pass
 
 ## Architecture Overview
 
@@ -62,3 +67,13 @@ This is a Next.js 15 application with App Router that implements a multi-tenant 
 - All workspace routes are dynamic and protected
 - The middleware handles all authentication and routing logic
 - Components use the new-york style from shadcn/ui
+
+### TypeScript Configuration
+The project uses strict TypeScript settings for production-level type safety:
+- All strict mode checks enabled
+- No unused locals or parameters allowed
+- All code paths must return values
+- No switch statement fallthrough
+- Array/object access requires undefined checks
+- Override keyword required for inheritance
+- Environment variables accessed with bracket notation
