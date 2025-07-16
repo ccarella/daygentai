@@ -70,7 +70,7 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
   return (
     <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
       <div className="w-full px-4 md:px-6 lg:px-8">
-        <div className="flex items-center h-16">
+        <div className="flex items-center h-16 relative isolate">
           {/* Left Section - Logo */}
           <div className="flex items-center flex-1">
             {onMenuToggle && (
@@ -92,7 +92,7 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
           </div>
           
           {/* Center Section - Search Bar */}
-          <div className="flex-1 flex justify-center px-4">
+          <div className="flex-1 flex justify-center px-4 min-w-0">
             <div className="w-full max-w-[600px] hidden md:block">
               <div className="relative">
                 <input

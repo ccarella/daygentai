@@ -120,6 +120,12 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Prevent layout shift when scrollbar appears/disappears */
+  html {
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+  }
 }
 
 /* Custom scrollbar styles */
