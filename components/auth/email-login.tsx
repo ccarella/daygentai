@@ -41,7 +41,7 @@ export function EmailLogin() {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <form onSubmit={handleLogin} className="space-y-4">
+      <form onSubmit={handleLogin} className="space-y-4 md:space-y-5">
         <div>
           <label htmlFor="email" className="block text-sm font-medium mb-2">
             Email address
@@ -53,7 +53,10 @@ export function EmailLogin() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             required
-            className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            autoComplete="email"
+            autoCapitalize="off"
+            autoCorrect="off"
+            className="w-full px-3 py-2 md:px-4 md:py-2.5 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             disabled={loading}
           />
         </div>
@@ -61,14 +64,14 @@ export function EmailLogin() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full px-4 py-2 md:px-5 md:py-2.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? 'Sending...' : 'Send login link'}
         </button>
 
         {message && (
           <div
-            className={`p-3 rounded-md text-sm ${
+            className={`p-2 md:p-3 rounded-md text-sm ${
               message.type === 'success' 
                 ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' 
                 : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'

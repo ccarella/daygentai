@@ -12,7 +12,7 @@ export default async function Home(props: {
   }
   
   return (
-    <div className="min-h-screen flex items-center justify-center p-8">
+    <div className="min-h-screen flex items-center justify-center p-4 md:p-6 lg:p-8">
       <div className="max-w-2xl w-full text-center space-y-8">
         <div className="space-y-4">
           <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
