@@ -87,6 +87,15 @@ export function WorkspaceLayout({
 
       {/* Navigation - scrollable on mobile */}
       <nav className="flex-1 p-1.5 md:p-2 overflow-y-auto">
+        {/* Create Issue button - mobile only */}
+        <button
+          onClick={() => setCreateIssueOpen(true)}
+          className="md:hidden w-full flex items-center space-x-2 px-3 min-h-[44px] rounded-lg transition-colors hover:bg-gray-100 text-gray-700 mb-1"
+        >
+          <Plus className="w-5 h-5" />
+          <span>Create Issue</span>
+        </button>
+        
         {onNavigateToInbox ? (
           <button
             onClick={onNavigateToInbox}
@@ -148,16 +157,6 @@ export function WorkspaceLayout({
         )}
       </nav>
 
-      {/* Mobile sticky footer with create issue */}
-      <div className="md:hidden border-t border-gray-200 bg-white">
-        <button 
-          className="w-full min-h-[44px] p-3 bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center"
-          onClick={() => setCreateIssueOpen(true)}
-        >
-          <Plus className="w-5 h-5" />
-          <span className="ml-2">Create Issue</span>
-        </button>
-      </div>
     </div>
     )
   }
@@ -166,7 +165,7 @@ export function WorkspaceLayout({
     <>
       <div className="flex h-screen bg-gray-50">
         {/* Desktop Sidebar */}
-        <div className={`hidden lg:flex bg-white border-r border-gray-200 flex-col relative transition-all duration-300 group ${
+        <div className={`hidden lg:flex bg-white border-r border-gray-200 flex-col relative transition-all duration-300 ${
           isSidebarCollapsed ? 'w-16' : 'w-[280px]'
         }`}>
           {!isSidebarCollapsed && <SidebarContent />}
@@ -174,7 +173,7 @@ export function WorkspaceLayout({
           {/* Collapse Toggle Button */}
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="absolute -right-3 top-8 bg-white border border-gray-200 rounded-full p-1 hover:bg-gray-50 shadow-sm z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            className="absolute -right-3 top-8 bg-white border border-gray-200 rounded-full p-1 hover:bg-gray-50 shadow-sm z-10"
             aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isSidebarCollapsed ? (
@@ -250,9 +249,9 @@ export function WorkspaceLayout({
         )}
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-hidden">
           <div className="w-full max-w-[1200px] mx-auto flex flex-col flex-1 p-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 overflow-hidden">
               {children}
             </div>
           </div>
