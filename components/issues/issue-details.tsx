@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { MoreHorizontal, Trash2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { useIssueCache } from '@/contexts/issue-cache-context'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,6 +69,7 @@ const statusOptions = [
 ]
 
 export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) {
+  const { getIssue } = useIssueCache()
   const [issue, setIssue] = useState<Issue | null>(null)
   const [loading, setLoading] = useState(true)
   const [creatorName, setCreatorName] = useState<string>('')
@@ -75,6 +77,16 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
 
   useEffect(() => {
     const fetchIssue = async () => {
+      // Check cache first
+      const cachedIssue = getIssue(issueId)
+      if (cachedIssue) {
+        setIssue(cachedIssue)
+        setCreatorName(cachedIssue.creator?.name || '')
+        setLoading(false)
+        return
+      }
+
+      // If not in cache, fetch from database
       setLoading(true)
       const supabase = createClient()
 
@@ -107,7 +119,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
     }
 
     fetchIssue()
-  }, [issueId, onBack])
+  }, [issueId, onBack, getIssue])
 
   const handleDelete = async () => {
     if (!issue) return

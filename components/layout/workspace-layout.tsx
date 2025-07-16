@@ -17,6 +17,7 @@ interface WorkspaceLayoutProps {
   children: React.ReactNode
   onIssueCreated?: () => void
   onNavigateToIssues?: () => void
+  onNavigateToInbox?: () => void
   isMobileMenuOpen?: boolean
   setIsMobileMenuOpen?: (open: boolean) => void
 }
@@ -26,6 +27,7 @@ export function WorkspaceLayout({
   children, 
   onIssueCreated, 
   onNavigateToIssues,
+  onNavigateToInbox,
   isMobileMenuOpen: propIsMobileMenuOpen,
   setIsMobileMenuOpen: propSetIsMobileMenuOpen
 }: WorkspaceLayoutProps) {
@@ -66,7 +68,7 @@ export function WorkspaceLayout({
 
   const SidebarContent = () => {
     return (
-    <>
+    <div className="flex flex-col h-full">
       {/* Workspace Header */}
       <div className="p-3 md:p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
@@ -74,37 +76,46 @@ export function WorkspaceLayout({
             <div className="text-2xl">{workspace.avatar_url || '🏢'}</div>
             <span className="font-semibold text-gray-900">{workspace.name}</span>
           </Link>
-          <div className="flex items-center space-x-2">
-            <button className="min-h-[40px] min-w-[40px] p-2 md:p-1 hover:bg-gray-100 rounded flex items-center justify-center">
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
-            <button 
-              className="min-h-[40px] min-w-[40px] p-2 md:p-1 hover:bg-gray-100 rounded flex items-center justify-center"
-              onClick={() => setCreateIssueOpen(true)}
-            >
-              <Plus className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
+          <button 
+            className="hidden md:flex min-h-[40px] min-w-[40px] p-2 md:p-1 hover:bg-gray-100 rounded items-center justify-center"
+            onClick={() => setCreateIssueOpen(true)}
+          >
+            <Plus className="w-5 h-5 text-gray-600" />
+          </button>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-1.5 md:p-2">
-        <Link
-          href={`/${workspace.slug}/inbox`}
-          className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors ${
-            pathname === `/${workspace.slug}/inbox` 
-              ? 'bg-gray-100 text-gray-900' 
-              : 'hover:bg-gray-100 text-gray-700'
-          }`}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-          </svg>
-          <span>Inbox</span>
-        </Link>
+      {/* Navigation - scrollable on mobile */}
+      <nav className="flex-1 p-1.5 md:p-2 overflow-y-auto">
+        {onNavigateToInbox ? (
+          <button
+            onClick={onNavigateToInbox}
+            className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors ${
+              pathname === `/${workspace.slug}/inbox` 
+                ? 'bg-gray-100 text-gray-900' 
+                : 'hover:bg-gray-100 text-gray-700'
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <span>Inbox</span>
+          </button>
+        ) : (
+          <Link
+            href={`/${workspace.slug}/inbox`}
+            className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors ${
+              pathname === `/${workspace.slug}/inbox` 
+                ? 'bg-gray-100 text-gray-900' 
+                : 'hover:bg-gray-100 text-gray-700'
+            }`}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <span>Inbox</span>
+          </Link>
+        )}
         
         {onNavigateToIssues ? (
           <button
@@ -136,7 +147,18 @@ export function WorkspaceLayout({
           </Link>
         )}
       </nav>
-    </>
+
+      {/* Mobile sticky footer with create issue */}
+      <div className="md:hidden border-t border-gray-200 bg-white">
+        <button 
+          className="w-full min-h-[44px] p-3 bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center"
+          onClick={() => setCreateIssueOpen(true)}
+        >
+          <Plus className="w-5 h-5" />
+          <span className="ml-2">Create Issue</span>
+        </button>
+      </div>
+    </div>
     )
   }
 
@@ -174,18 +196,33 @@ export function WorkspaceLayout({
               >
                 <Plus className="w-5 h-5 text-gray-600" />
               </button>
-              <Link
-                href={`/${workspace.slug}/inbox`}
-                className={`p-2 rounded mb-2 transition-colors ${
-                  pathname === `/${workspace.slug}/inbox` 
-                    ? 'bg-gray-100' 
-                    : 'hover:bg-gray-100'
-                }`}
-              >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                </svg>
-              </Link>
+              {onNavigateToInbox ? (
+                <button
+                  onClick={onNavigateToInbox}
+                  className={`p-2 rounded mb-2 transition-colors ${
+                    pathname === `/${workspace.slug}/inbox` 
+                      ? 'bg-gray-100' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                </button>
+              ) : (
+                <Link
+                  href={`/${workspace.slug}/inbox`}
+                  className={`p-2 rounded mb-2 transition-colors ${
+                    pathname === `/${workspace.slug}/inbox` 
+                      ? 'bg-gray-100' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                </Link>
+              )}
               <Link
                 href={`/${workspace.slug}`}
                 className={`p-2 rounded transition-colors ${
@@ -206,7 +243,7 @@ export function WorkspaceLayout({
         {isMobileMenuOpen && (
           <div className="lg:hidden fixed inset-0 z-40 flex">
             <div className="fixed inset-0 bg-gray-600 bg-opacity-75" aria-hidden="true" />
-            <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white mobile-menu">
+            <div className="relative flex max-w-xs w-full bg-white mobile-menu">
               <SidebarContent />
             </div>
           </div>

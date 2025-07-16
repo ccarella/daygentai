@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { WorkspaceWithMobileNav } from '@/components/layout/workspace-with-mobile-nav'
 import { WorkspaceContent, WorkspaceContentRef } from '@/components/workspace/workspace-content'
+import { IssueCacheProvider } from '@/contexts/issue-cache-context'
 
 export default function WorkspacePage({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter()
@@ -59,6 +60,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ slug: stri
     contentRef.current?.navigateToIssuesList()
   }
 
+  const handleNavigateToInbox = () => {
+    contentRef.current?.navigateToInbox()
+  }
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -70,16 +75,19 @@ export default function WorkspacePage({ params }: { params: Promise<{ slug: stri
   if (!workspace) return null
 
   return (
-    <WorkspaceWithMobileNav 
-      workspace={workspace} 
-      onIssueCreated={handleIssueCreated}
-      onNavigateToIssues={handleNavigateToIssues}
-    >
-      <WorkspaceContent 
-        ref={contentRef}
-        key={refreshKey} 
+    <IssueCacheProvider>
+      <WorkspaceWithMobileNav 
         workspace={workspace} 
-      />
-    </WorkspaceWithMobileNav>
+        onIssueCreated={handleIssueCreated}
+        onNavigateToIssues={handleNavigateToIssues}
+        onNavigateToInbox={handleNavigateToInbox}
+      >
+        <WorkspaceContent 
+          ref={contentRef}
+          key={refreshKey} 
+          workspace={workspace} 
+        />
+      </WorkspaceWithMobileNav>
+    </IssueCacheProvider>
   )
 }

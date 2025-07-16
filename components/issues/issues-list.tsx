@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from 'date-fns'
 import { useRouter } from 'next/navigation'
+import { useIssueCache } from '@/contexts/issue-cache-context'
 
 interface Issue {
   id: string
@@ -57,6 +58,7 @@ export function IssuesList({
   typeFilter = 'all'
 }: IssuesListProps) {
   const router = useRouter()
+  const { preloadIssues } = useIssueCache()
   const [issues, setIssues] = useState<Issue[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -93,13 +95,20 @@ export function IssuesList({
         console.error('Error fetching issues:', error)
       } else {
         setIssues(data || [])
+        
+        // Preload all issues in the background after a short delay
+        if (data && data.length > 0) {
+          setTimeout(() => {
+            preloadIssues(data.map(issue => issue.id))
+          }, 500)
+        }
       }
       
       setLoading(false)
     }
 
     fetchIssues()
-  }, [workspaceId, statusFilter, priorityFilter, typeFilter])
+  }, [workspaceId, statusFilter, priorityFilter, typeFilter, preloadIssues])
 
   const truncateDescription = (description: string | null, maxLength: number = 100) => {
     if (!description) return ''
