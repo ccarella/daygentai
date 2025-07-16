@@ -16,9 +16,10 @@ interface WorkspaceWithMobileNavProps {
   children: React.ReactNode
   onIssueCreated?: () => void
   onNavigateToIssues?: () => void
+  onNavigateToInbox?: () => void
 }
 
-export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, onNavigateToIssues }: WorkspaceWithMobileNavProps) {
+export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, onNavigateToIssues, onNavigateToInbox }: WorkspaceWithMobileNavProps) {
   const [profile, setProfile] = useState<{ name: string; avatar_url: string | null } | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -64,6 +65,7 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
           workspace={workspace} 
           {...(onIssueCreated && { onIssueCreated })}
           {...(onNavigateToIssues && { onNavigateToIssues })}
+          {...(onNavigateToInbox && { onNavigateToInbox })}
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
         >

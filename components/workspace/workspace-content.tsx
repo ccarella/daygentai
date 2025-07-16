@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useImperativeHandle, forwardRef } from 'react'
+import { usePathname } from 'next/navigation'
 import { IssuesList } from '@/components/issues/issues-list'
 import { IssueDetails } from '@/components/issues/issue-details'
+import { Inbox } from '@/components/inbox/inbox'
 import {
   Select,
   SelectContent,
@@ -19,12 +21,13 @@ interface WorkspaceContentProps {
     avatar_url: string | null
     owner_id: string
   }
-  initialView?: 'list' | 'issue'
+  initialView?: 'list' | 'issue' | 'inbox'
   initialIssueId?: string
 }
 
 export interface WorkspaceContentRef {
   navigateToIssuesList: () => void
+  navigateToInbox: () => void
 }
 
 const statusOptions = [
@@ -56,8 +59,24 @@ const typeOptions = [
 
 export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContentProps>(
   function WorkspaceContent({ workspace, initialView = 'list', initialIssueId }, ref) {
-  const [currentView, setCurrentView] = useState<'list' | 'issue'>(initialView)
-  const [currentIssueId, setCurrentIssueId] = useState<string | null>(initialIssueId || null)
+  const pathname = usePathname()
+  
+  // Extract issue ID from URL if present
+  const getIssueIdFromPath = () => {
+    const match = pathname.match(/\/issue\/([a-zA-Z0-9-]+)/)
+    return match ? match[1] : null
+  }
+  
+  // Determine initial view based on URL if not provided
+  const getInitialView = () => {
+    if (initialView !== 'list') return initialView
+    if (pathname.includes('/inbox')) return 'inbox'
+    if (pathname.includes('/issue/')) return 'issue'
+    return 'list'
+  }
+  
+  const [currentView, setCurrentView] = useState<'list' | 'issue' | 'inbox'>(getInitialView())
+  const [currentIssueId, setCurrentIssueId] = useState<string | null>(initialIssueId || getIssueIdFromPath() || null)
   const [refreshKey, setRefreshKey] = useState(0)
   
   // Filter states - default excludes done status
@@ -79,9 +98,17 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     window.history.pushState({}, '', `/${workspace.slug}`)
   }
 
+  const handleNavigateToInbox = () => {
+    setCurrentView('inbox')
+    setCurrentIssueId(null)
+    // Update URL without page refresh
+    window.history.pushState({}, '', `/${workspace.slug}/inbox`)
+  }
+
   // Expose method to parent component
   useImperativeHandle(ref, () => ({
-    navigateToIssuesList: handleBackToList
+    navigateToIssuesList: handleBackToList,
+    navigateToInbox: handleNavigateToInbox
   }))
 
   const handleIssueDeleted = () => {
@@ -154,6 +181,8 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
           priorityFilter={priorityFilter}
           typeFilter={typeFilter}
         />
+      ) : currentView === 'inbox' ? (
+        <Inbox />
       ) : currentIssueId ? (
         <IssueDetails
           issueId={currentIssueId}
