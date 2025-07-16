@@ -5,14 +5,15 @@ import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { useIssueCache } from '@/contexts/issue-cache-context'
+import { stripMarkdown } from '@/lib/markdown-utils'
 
 interface Issue {
   id: string
   title: string
   description: string | null
-  type: 'bug' | 'feature' | 'task' | 'epic' | 'spike'
+  type: 'feature' | 'bug' | 'chore' | 'design' | 'non-technical'
   priority: 'critical' | 'high' | 'medium' | 'low'
-  status: 'shaping' | 'backlog' | 'in_progress' | 'review' | 'done'
+  status: 'todo' | 'in_progress' | 'in_review' | 'done'
   created_at: string
   created_by: string
   assignee_id: string | null
@@ -28,11 +29,11 @@ interface IssuesListProps {
 }
 
 const typeIcons = {
-  bug: '🐛',
   feature: '✨',
-  task: '📋',
-  epic: '🎯',
-  spike: '🔍'
+  bug: '🐛',
+  chore: '🔧',
+  design: '🎨',
+  'non-technical': '📝'
 }
 
 const priorityColors = {
@@ -241,8 +242,9 @@ export function IssuesList({
 
   const truncateDescription = (description: string | null, maxLength: number = 100) => {
     if (!description) return ''
-    if (description.length <= maxLength) return description
-    return description.substring(0, maxLength).trim() + '...'
+    const plainText = stripMarkdown(description)
+    if (plainText.length <= maxLength) return plainText
+    return plainText.substring(0, maxLength).trim() + '...'
   }
 
   if (initialLoading) {
