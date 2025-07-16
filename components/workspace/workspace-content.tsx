@@ -3,6 +3,7 @@
 import { useState, useImperativeHandle, forwardRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { IssuesList } from '@/components/issues/issues-list'
+import { KanbanBoard } from '@/components/issues/kanban-board'
 import { IssueDetails } from '@/components/issues/issue-details'
 import { Inbox } from '@/components/inbox/inbox'
 import {
@@ -12,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { LayoutGrid, List } from 'lucide-react'
 
 interface WorkspaceContentProps {
   workspace: {
@@ -77,6 +79,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   const [currentView, setCurrentView] = useState<'list' | 'issue' | 'inbox'>(getInitialView())
   const [currentIssueId, setCurrentIssueId] = useState<string | null>(initialIssueId || getIssueIdFromPath() || null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [issuesViewMode, setIssuesViewMode] = useState<'list' | 'kanban'>('list')
   
   // Filter states - default excludes done status
   const [statusFilter, setStatusFilter] = useState<string>('exclude_done')
@@ -122,6 +125,24 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
       {currentView === 'list' && (
         <div className="border-b border-gray-200 bg-white overflow-hidden relative">
           <div className="px-3 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center gap-2 sm:gap-3 relative z-0">
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 border rounded-md p-1">
+              <button
+                onClick={() => setIssuesViewMode('list')}
+                className={`p-1 rounded ${issuesViewMode === 'list' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                title="List view"
+              >
+                <List className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setIssuesViewMode('kanban')}
+                className={`p-1 rounded ${issuesViewMode === 'kanban' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                title="Kanban view"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+            </div>
+            
             <span className="text-sm text-gray-500 flex-shrink-0">Filter by:</span>
             
             {/* Status Filter */}
@@ -171,15 +192,26 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
 
       {/* Dynamic Content */}
       {currentView === 'list' ? (
-        <IssuesList 
-          key={refreshKey}
-          workspaceId={workspace.id} 
-          workspaceSlug={workspace.slug}
-          onIssueClick={handleIssueClick}
-          statusFilter={statusFilter}
-          priorityFilter={priorityFilter}
-          typeFilter={typeFilter}
-        />
+        issuesViewMode === 'list' ? (
+          <IssuesList 
+            key={refreshKey}
+            workspaceId={workspace.id} 
+            workspaceSlug={workspace.slug}
+            onIssueClick={handleIssueClick}
+            statusFilter={statusFilter}
+            priorityFilter={priorityFilter}
+            typeFilter={typeFilter}
+          />
+        ) : (
+          <KanbanBoard
+            key={refreshKey}
+            workspaceId={workspace.id}
+            onIssueClick={handleIssueClick}
+            statusFilter={statusFilter}
+            priorityFilter={priorityFilter}
+            typeFilter={typeFilter}
+          />
+        )
       ) : currentView === 'inbox' ? (
         <Inbox />
       ) : currentIssueId ? (
