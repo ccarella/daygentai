@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, Search } from 'lucide-react'
 
 interface UserProfile {
   name: string
@@ -69,9 +69,10 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center">
+      <div className="w-full px-4 md:px-6 lg:px-8">
+        <div className="flex items-center h-16">
+          {/* Left Section - Logo */}
+          <div className="flex items-center flex-1">
             {onMenuToggle && (
               <button
                 onClick={onMenuToggle}
@@ -90,7 +91,28 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
             </Link>
           </div>
           
-          <div className="relative" ref={dropdownRef}>
+          {/* Center Section - Search Bar */}
+          <div className="flex-1 flex justify-center px-4">
+            <div className="w-full max-w-[600px] hidden md:block">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search issues..."
+                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors"
+                />
+                <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Right Section - Mobile Search & Avatar */}
+          <div className="flex items-center flex-1 justify-end gap-2">
+            {/* Mobile Search Button */}
+            <button className="p-2 rounded-md hover:bg-gray-100 md:hidden">
+              <Search className="w-5 h-5 text-gray-600" />
+            </button>
+            
+            <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="flex items-center justify-center w-11 h-11 md:w-10 md:h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-xl"
@@ -120,6 +142,7 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
                 </button>
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>
