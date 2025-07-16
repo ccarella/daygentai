@@ -44,6 +44,7 @@ export async function middleware(request: NextRequest) {
     !pathname.startsWith('/CreateUser') && 
     !pathname.startsWith('/CreateWorkspace') && 
     !pathname.startsWith('/success') &&
+    !pathname.startsWith('/checkemail') &&
     !pathname.startsWith('/_next') &&
     !pathname.includes('.')
 

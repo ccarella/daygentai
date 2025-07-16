@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 export function EmailLogin() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const supabase = createClient()
+  const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,11 +26,8 @@ export function EmailLogin() {
 
       if (error) throw error
 
-      setMessage({
-        type: 'success',
-        text: 'Check your email for the login link!'
-      })
-      setEmail('')
+      // Redirect to the check email page with the email as a parameter
+      router.push(`/checkemail?email=${encodeURIComponent(email)}`)
     } catch (error) {
       setMessage({
         type: 'error',
