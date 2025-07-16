@@ -35,10 +35,10 @@ const typeIcons = {
 }
 
 const priorityColors = {
-  critical: 'text-red-600 bg-red-50',
-  high: 'text-orange-600 bg-orange-50',
-  medium: 'text-yellow-600 bg-yellow-50',
-  low: 'text-green-600 bg-green-50'
+  critical: 'text-red-700 bg-red-50 border border-red-200',
+  high: 'text-orange-700 bg-orange-50 border border-orange-200',
+  medium: 'text-yellow-700 bg-yellow-50 border border-yellow-200',
+  low: 'text-green-700 bg-green-50 border border-green-200'
 }
 
 const priorityLabels = {
@@ -138,68 +138,70 @@ export function IssuesList({
   }
 
   return (
-    <div className="flex-1 overflow-auto">
-      <div className="px-4">
+    <div className="flex-1 overflow-auto bg-white">
+      <div className="">
         {/* Header with count */}
-        <div className="py-3 border-b border-gray-200">
-          <h2 className="text-sm font-medium text-gray-700">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h2 className="text-sm font-medium text-gray-600">
             {issues.length} {issues.length === 1 ? 'issue' : 'issues'}
           </h2>
         </div>
         
         {/* Issues List */}
-        {issues.map((issue) => (
-          <div
-            key={issue.id}
-            className="border-b border-gray-200 py-4 md:py-4 min-h-[60px] hover:bg-gray-50 cursor-pointer transition-colors -mx-4 px-4"
-            onClick={() => {
-              if (onIssueClick) {
-                onIssueClick(issue.id)
-              } else {
-                router.push(`/${workspaceSlug}/issue/${issue.id}`)
-              }
-            }}
-          >
-            <div className="flex items-start space-x-3">
-              {/* Type Icon */}
-              <div className="flex-shrink-0 text-2xl">
-                {typeIcons[issue.type]}
-              </div>
-              
-              {/* Issue Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2">
-                  <h3 className="text-sm font-medium text-gray-900 truncate">
-                    {issue.title}
-                  </h3>
+        <div className="divide-y divide-gray-100">
+          {issues.map((issue) => (
+            <div
+              key={issue.id}
+              className="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
+              onClick={() => {
+                if (onIssueClick) {
+                  onIssueClick(issue.id)
+                } else {
+                  router.push(`/${workspaceSlug}/issue/${issue.id}`)
+                }
+              }}
+            >
+              <div className="flex items-start gap-4">
+                {/* Type Icon */}
+                <div className="flex-shrink-0 mt-0.5">
+                  <span className="text-xl">{typeIcons[issue.type]}</span>
                 </div>
                 
-                {issue.description && (
-                  <p className="mt-1 text-sm text-gray-500">
-                    {truncateDescription(issue.description)}
-                  </p>
-                )}
-                
-                <div className="mt-2 flex items-center space-x-4 text-xs">
-                  {/* Priority */}
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded ${priorityColors[issue.priority]}`}>
-                    {priorityLabels[issue.priority]}
-                  </span>
+                {/* Issue Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-sm font-medium text-gray-900">
+                      {issue.title}
+                    </h3>
+                  </div>
                   
-                  {/* Created Date */}
-                  <span className="text-gray-500">
-                    {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
-                  </span>
+                  {issue.description && (
+                    <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                      {truncateDescription(issue.description, 150)}
+                    </p>
+                  )}
                   
-                  {/* Status */}
-                  <span className="text-gray-500 capitalize">
-                    {issue.status.replace('_', ' ')}
-                  </span>
+                  <div className="mt-2 flex items-center gap-4 text-xs">
+                    {/* Priority */}
+                    <span className={`inline-flex items-center px-2 py-1 rounded-md font-medium ${priorityColors[issue.priority]}`}>
+                      {priorityLabels[issue.priority]}
+                    </span>
+                    
+                    {/* Status */}
+                    <span className="text-gray-500 capitalize">
+                      {issue.status.replace('_', ' ')}
+                    </span>
+                    
+                    {/* Created Date */}
+                    <span className="text-gray-400">
+                      {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { CreateIssueModal } from '@/components/issues/create-issue-modal'
 
 interface WorkspaceLayoutProps {
@@ -31,6 +31,7 @@ export function WorkspaceLayout({
 }: WorkspaceLayoutProps) {
   const [createIssueOpen, setCreateIssueOpen] = useState(false)
   const [localIsMobileMenuOpen, setLocalIsMobileMenuOpen] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const pathname = usePathname()
   
   // Use prop values if provided, otherwise use local state
@@ -141,10 +142,64 @@ export function WorkspaceLayout({
 
   return (
     <>
-      <div className="flex h-screen bg-white">
+      <div className="flex h-screen bg-gray-50">
         {/* Desktop Sidebar */}
-        <div className="hidden lg:flex w-64 border-r border-gray-200 flex-col">
-          <SidebarContent />
+        <div className={`hidden lg:flex bg-white border-r border-gray-200 flex-col relative transition-all duration-300 ${
+          isSidebarCollapsed ? 'w-16' : 'w-[280px]'
+        }`}>
+          {!isSidebarCollapsed && <SidebarContent />}
+          
+          {/* Collapse Toggle Button */}
+          <button
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="absolute -right-3 top-8 bg-white border border-gray-200 rounded-full p-1 hover:bg-gray-50 shadow-sm z-10"
+            aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isSidebarCollapsed ? (
+              <ChevronRight className="w-4 h-4 text-gray-600" />
+            ) : (
+              <ChevronLeft className="w-4 h-4 text-gray-600" />
+            )}
+          </button>
+          
+          {/* Collapsed State Icons */}
+          {isSidebarCollapsed && (
+            <div className="flex flex-col items-center py-4">
+              <Link href={`/${workspace.slug}`} className="p-2 hover:bg-gray-100 rounded mb-4">
+                <div className="text-2xl">{workspace.avatar_url || '🏢'}</div>
+              </Link>
+              <button 
+                className="p-2 hover:bg-gray-100 rounded mb-2"
+                onClick={() => setCreateIssueOpen(true)}
+              >
+                <Plus className="w-5 h-5 text-gray-600" />
+              </button>
+              <Link
+                href={`/${workspace.slug}/inbox`}
+                className={`p-2 rounded mb-2 transition-colors ${
+                  pathname === `/${workspace.slug}/inbox` 
+                    ? 'bg-gray-100' 
+                    : 'hover:bg-gray-100'
+                }`}
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+              </Link>
+              <Link
+                href={`/${workspace.slug}`}
+                className={`p-2 rounded transition-colors ${
+                  pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
+                    ? 'bg-gray-100' 
+                    : 'hover:bg-gray-100'
+                }`}
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Mobile Sidebar Overlay */}
@@ -158,8 +213,12 @@ export function WorkspaceLayout({
         )}
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {children}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="w-full max-w-[1200px] mx-auto flex flex-col flex-1 p-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 overflow-hidden">
+              {children}
+            </div>
+          </div>
         </div>
       </div>
 
