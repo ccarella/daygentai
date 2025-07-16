@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from 'date-fns'
 import { useRouter } from 'next/navigation'
@@ -49,6 +49,8 @@ const priorityLabels = {
   low: 'Low'
 }
 
+const ISSUES_PER_PAGE = 50
+
 export function IssuesList({ 
   workspaceId, 
   workspaceSlug, 
@@ -60,55 +62,146 @@ export function IssuesList({
   const router = useRouter()
   const { preloadIssues } = useIssueCache()
   const [issues, setIssues] = useState<Issue[]>([])
-  const [loading, setLoading] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [page, setPage] = useState(0)
+  const [totalCount, setTotalCount] = useState(0)
+  const isLoadingRef = useRef(false)
 
-  useEffect(() => {
-    const fetchIssues = async () => {
-      const supabase = createClient()
-      
-      let query = supabase
-        .from('issues')
-        .select('*')
-        .eq('workspace_id', workspaceId)
-        .order('created_at', { ascending: false })
+  const fetchIssues = useCallback(async (pageNum: number, append = false) => {
+    if (isLoadingRef.current) return { issues: [], hasMore: false, totalCount: 0 }
+    
+    isLoadingRef.current = true
+    const supabase = createClient()
+    
+    // First, get the total count with filters applied
+    let countQuery = supabase
+      .from('issues')
+      .select('*', { count: 'exact', head: true })
+      .eq('workspace_id', workspaceId)
 
-      // Apply status filter
-      if (statusFilter === 'exclude_done') {
-        query = query.neq('status', 'done')
-      } else if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter)
-      }
-
-      // Apply priority filter
-      if (priorityFilter !== 'all') {
-        query = query.eq('priority', priorityFilter)
-      }
-
-      // Apply type filter
-      if (typeFilter !== 'all') {
-        query = query.eq('type', typeFilter)
-      }
-
-      const { data, error } = await query
-
-      if (error) {
-        console.error('Error fetching issues:', error)
-      } else {
-        setIssues(data || [])
-        
-        // Preload all issues in the background after a short delay
-        if (data && data.length > 0) {
-          setTimeout(() => {
-            preloadIssues(data.map(issue => issue.id))
-          }, 500)
-        }
-      }
-      
-      setLoading(false)
+    // Apply filters for count query
+    if (statusFilter === 'exclude_done') {
+      countQuery = countQuery.neq('status', 'done')
+    } else if (statusFilter !== 'all') {
+      countQuery = countQuery.eq('status', statusFilter)
     }
 
-    fetchIssues()
+    if (priorityFilter !== 'all') {
+      countQuery = countQuery.eq('priority', priorityFilter)
+    }
+
+    if (typeFilter !== 'all') {
+      countQuery = countQuery.eq('type', typeFilter)
+    }
+
+    const { count: totalFilteredCount } = await countQuery
+
+    // Now fetch the actual data
+    let query = supabase
+      .from('issues')
+      .select('*')
+      .eq('workspace_id', workspaceId)
+
+    // Apply filters
+    if (statusFilter === 'exclude_done') {
+      query = query.neq('status', 'done')
+    } else if (statusFilter !== 'all') {
+      query = query.eq('status', statusFilter)
+    }
+
+    if (priorityFilter !== 'all') {
+      query = query.eq('priority', priorityFilter)
+    }
+
+    if (typeFilter !== 'all') {
+      query = query.eq('type', typeFilter)
+    }
+
+    // Apply ordering
+    query = query.order('created_at', { ascending: false })
+
+    // Apply range for pagination
+    const start = pageNum * ISSUES_PER_PAGE
+    const end = start + ISSUES_PER_PAGE - 1
+    query = query.range(start, end)
+
+    const { data, error } = await query
+
+    isLoadingRef.current = false
+
+    if (error) {
+      console.error('Error fetching issues:', error)
+      return { issues: [], hasMore: false, totalCount: 0 }
+    }
+
+    const newIssues = data || []
+    const totalCount = totalFilteredCount || 0
+    const hasMorePages = (pageNum + 1) * ISSUES_PER_PAGE < totalCount
+    
+
+    // Only preload if we have issues and not appending
+    if (newIssues.length > 0 && !append) {
+      // Preload with a delay to avoid overwhelming the API
+      setTimeout(() => {
+        const issuesToPreload = newIssues.slice(0, 5).map(issue => issue.id)
+        if (issuesToPreload.length > 0) {
+          preloadIssues(issuesToPreload)
+        }
+      }, 1000)
+    }
+
+    return { issues: newIssues, hasMore: hasMorePages, totalCount }
   }, [workspaceId, statusFilter, priorityFilter, typeFilter, preloadIssues])
+
+  // Initial load when component mounts or filters change
+  useEffect(() => {
+    let cancelled = false
+
+    const loadInitialData = async () => {
+      // Only show loading state on first mount, not on filter changes
+      if (issues.length === 0) {
+        setInitialLoading(true)
+      }
+      
+      const { issues: newIssues, hasMore: moreAvailable, totalCount: total } = await fetchIssues(0)
+      
+      if (!cancelled) {
+        setIssues(newIssues)
+        setHasMore(moreAvailable)
+        setTotalCount(total)
+        setPage(0)
+        setInitialLoading(false)
+      }
+    }
+
+    loadInitialData()
+
+    return () => {
+      cancelled = true
+      isLoadingRef.current = false
+    }
+  }, [workspaceId, statusFilter, priorityFilter, typeFilter]) // Removed fetchIssues dependency
+
+  // Load more issues handler
+  const handleLoadMore = async () => {
+    if (loadingMore || !hasMore || isLoadingRef.current) return
+
+    setLoadingMore(true)
+    const nextPage = page + 1
+    
+    const { issues: newIssues, hasMore: moreAvailable, totalCount: total } = await fetchIssues(nextPage, true)
+    
+    if (newIssues.length > 0) {
+      setIssues(prev => [...prev, ...newIssues])
+      setPage(nextPage)
+      setHasMore(moreAvailable)
+      setTotalCount(total)
+    }
+    
+    setLoadingMore(false)
+  }
 
   const truncateDescription = (description: string | null, maxLength: number = 100) => {
     if (!description) return ''
@@ -116,7 +209,7 @@ export function IssuesList({
     return description.substring(0, maxLength).trim() + '...'
   }
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-gray-500">Loading issues...</div>
@@ -124,7 +217,7 @@ export function IssuesList({
     )
   }
 
-  if (issues.length === 0) {
+  if (issues.length === 0 && !initialLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
@@ -140,7 +233,12 @@ export function IssuesList({
               </div>
             </div>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No issues in this workspace yet</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No issues found</h3>
+          <p className="text-sm text-gray-500">
+            {statusFilter !== 'all' || priorityFilter !== 'all' || typeFilter !== 'all' 
+              ? 'Try adjusting your filters' 
+              : 'Create your first issue to get started'}
+          </p>
         </div>
       </div>
     )
@@ -152,13 +250,17 @@ export function IssuesList({
         {/* Header with count */}
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="text-sm font-medium text-gray-600">
-            {issues.length} {issues.length === 1 ? 'issue' : 'issues'}
+            {totalCount > 0 && issues.length < totalCount ? (
+              <>Showing {issues.length} of {totalCount} {totalCount === 1 ? 'issue' : 'issues'}</>
+            ) : (
+              <>{issues.length} {issues.length === 1 ? 'issue' : 'issues'}</>
+            )}
           </h2>
         </div>
         
         {/* Issues List */}
         <div className="divide-y divide-gray-100">
-          {issues.map((issue) => (
+          {issues.map((issue, index) => (
             <div
               key={issue.id}
               className="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
@@ -180,7 +282,7 @@ export function IssuesList({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3">
                     <h3 className="text-sm font-medium text-gray-900">
-                      {issue.title}
+                      {index + 1}. {issue.title}
                     </h3>
                   </div>
                   
@@ -211,6 +313,30 @@ export function IssuesList({
             </div>
           ))}
         </div>
+        
+        {/* Load more button */}
+        {hasMore && !initialLoading && (
+          <div className="px-6 py-8 flex justify-center">
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className={`px-6 py-2 rounded-lg font-medium transition-all ${
+                loadingMore
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+              }`}
+            >
+              {loadingMore ? 'Loading...' : 'Load more'}
+            </button>
+          </div>
+        )}
+        
+        {/* End of list message */}
+        {!hasMore && issues.length > 0 && (
+          <div className="px-6 py-8 text-center text-sm text-gray-500">
+            All issues loaded
+          </div>
+        )}
       </div>
     </div>
   )
