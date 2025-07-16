@@ -1,12 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export function EmailLogin() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const router = useRouter()
   const supabase = createClient()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -24,11 +26,8 @@ export function EmailLogin() {
 
       if (error) throw error
 
-      setMessage({
-        type: 'success',
-        text: 'Check your email for the login link!'
-      })
-      setEmail('')
+      // Redirect to check email page with email as query parameter
+      router.push(`/checkemail?email=${encodeURIComponent(email)}`)
     } catch (error) {
       setMessage({
         type: 'error',
