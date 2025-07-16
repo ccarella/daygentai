@@ -120,13 +120,13 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     <>
       {/* Filters - Only show for issues list view */}
       {currentView === 'list' && (
-        <div className="border-b border-gray-200 bg-white">
-          <div className="px-6 py-4 flex items-center space-x-3">
-            <span className="text-sm text-gray-500">Filter by:</span>
+        <div className="border-b border-gray-200 bg-white overflow-hidden relative">
+          <div className="px-3 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center gap-2 sm:gap-3 relative z-0">
+            <span className="text-sm text-gray-500 flex-shrink-0">Filter by:</span>
             
             {/* Status Filter */}
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px] h-8 text-sm">
+              <SelectTrigger className="w-full sm:w-[180px] h-8 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -140,7 +140,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
             
             {/* Priority Filter */}
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-[140px] h-8 text-sm">
+              <SelectTrigger className="w-full sm:w-[140px] h-8 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -154,7 +154,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
             
             {/* Type Filter */}
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[140px] h-8 text-sm">
+              <SelectTrigger className="w-full sm:w-[140px] h-8 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
