@@ -68,6 +68,8 @@ export function IssuesList({
   const [page, setPage] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
   const isLoadingRef = useRef(false)
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const preloadedIssuesRef = useRef<Set<string>>(new Set())
 
   const fetchIssues = useCallback(async (pageNum: number, append = false) => {
     if (isLoadingRef.current) return { issues: [], hasMore: false, totalCount: 0 }
@@ -143,13 +145,15 @@ export function IssuesList({
 
     // Only preload if we have issues and not appending
     if (newIssues.length > 0 && !append) {
-      // Preload with a delay to avoid overwhelming the API
+      // Preload visible issues based on viewport
+      // Assuming approximately 10 issues fit in a typical viewport
       setTimeout(() => {
-        const issuesToPreload = newIssues.slice(0, 5).map(issue => issue.id)
+        const visibleCount = Math.min(10, newIssues.length)
+        const issuesToPreload = newIssues.slice(0, visibleCount).map(issue => issue.id)
         if (issuesToPreload.length > 0) {
           preloadIssues(issuesToPreload)
         }
-      }, 1000)
+      }, 500)
     }
 
     return { issues: newIssues, hasMore: hasMorePages, totalCount }
@@ -183,6 +187,38 @@ export function IssuesList({
       isLoadingRef.current = false
     }
   }, [workspaceId, statusFilter, priorityFilter, typeFilter]) // Removed fetchIssues dependency
+
+  // Setup IntersectionObserver for viewport-based preloading
+  useEffect(() => {
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+    }
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const issueId = entry.target.getAttribute('data-issue-id')
+            if (issueId && !preloadedIssuesRef.current.has(issueId)) {
+              preloadedIssuesRef.current.add(issueId)
+              preloadIssues([issueId])
+            }
+          }
+        })
+      },
+      {
+        root: null,
+        rootMargin: '100px', // Start preloading 100px before the item comes into view
+        threshold: 0
+      }
+    )
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+      }
+    }
+  }, [preloadIssues])
 
   // Load more issues handler
   const handleLoadMore = async () => {
@@ -260,9 +296,15 @@ export function IssuesList({
         
         {/* Issues List */}
         <div className="divide-y divide-gray-100">
-          {issues.map((issue, index) => (
+          {issues.map((issue) => (
             <div
               key={issue.id}
+              data-issue-id={issue.id}
+              ref={(el) => {
+                if (el && observerRef.current) {
+                  observerRef.current.observe(el)
+                }
+              }}
               className="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
               onClick={() => {
                 if (onIssueClick) {
@@ -282,7 +324,7 @@ export function IssuesList({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3">
                     <h3 className="text-sm font-medium text-gray-900">
-                      {index + 1}. {issue.title}
+                      {issue.title}
                     </h3>
                   </div>
                   
