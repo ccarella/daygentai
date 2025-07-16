@@ -97,12 +97,12 @@ export function CreateIssueModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>New issue</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 md:space-y-5 py-3 md:py-4">
           <div className="space-y-2">
             <Label htmlFor="title">Issue title</Label>
             <Input
@@ -125,7 +125,7 @@ export function CreateIssueModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
             <div className="space-y-2">
               <Label htmlFor="type">Issue Type</Label>
               <Select value={type} onValueChange={(value) => setType(value as typeof type)}>
@@ -158,7 +158,7 @@ export function CreateIssueModal({
             </div>
           </div>
 
-          <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
+          <div className="flex items-center justify-between space-x-2 rounded-lg border p-3 md:p-4">
             <div className="space-y-0.5">
               <Label htmlFor="create-prompt" className="text-base">
                 Create a prompt
@@ -176,7 +176,7 @@ export function CreateIssueModal({
           </div>
 
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+            <div className="text-sm text-red-600 bg-red-50 p-2 md:p-3 rounded-md">
               {error}
             </div>
           )}

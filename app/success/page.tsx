@@ -46,8 +46,8 @@ export default async function SuccessPage({
 
   return (
     <AuthenticatedLayout>
-      <div className="min-h-screen flex items-center justify-center p-8 bg-gray-50">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="min-h-screen flex items-center justify-center p-4 md:p-6 lg:p-8 bg-gray-50">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-4 md:p-6 lg:p-8">
           <div className="text-center space-y-6">
             <h1 className="text-3xl font-bold text-gray-800">
               Welcome!
@@ -68,7 +68,7 @@ export default async function SuccessPage({
               </div>
             </div>
 
-            <div className="pt-6 border-t border-gray-200">
+            <div className="pt-4 md:pt-6 border-t border-gray-200">
               <h2 className="text-lg font-semibold text-gray-800 mb-4">Your Workspace</h2>
               
               <div className="flex items-center space-x-3 mb-4">
@@ -87,7 +87,7 @@ export default async function SuccessPage({
               </div>
             </div>
 
-            <div className="pt-6 space-y-4">
+            <div className="pt-4 md:pt-6 space-y-4">
               <p className="text-sm text-gray-600">
                 You have successfully set up your profile and workspace.
               </p>

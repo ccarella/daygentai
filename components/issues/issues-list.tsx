@@ -151,7 +151,7 @@ export function IssuesList({
         {issues.map((issue) => (
           <div
             key={issue.id}
-            className="border-b border-gray-200 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
+            className="border-b border-gray-200 py-4 md:py-4 min-h-[60px] hover:bg-gray-50 cursor-pointer transition-colors -mx-4 px-4"
             onClick={() => {
               if (onIssueClick) {
                 onIssueClick(issue.id)

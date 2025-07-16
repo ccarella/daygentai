@@ -3,8 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
-import { WorkspaceLayout } from '@/components/layout/workspace-layout'
+import { WorkspaceWithMobileNav } from '@/components/layout/workspace-with-mobile-nav'
 import { WorkspaceContent, WorkspaceContentRef } from '@/components/workspace/workspace-content'
 
 export default function IssueDetailsPage({ 
@@ -59,11 +58,9 @@ export default function IssueDetailsPage({
 
   if (loading) {
     return (
-      <AuthenticatedLayout>
-        <div className="flex h-screen items-center justify-center">
-          <div className="text-gray-500">Loading...</div>
-        </div>
-      </AuthenticatedLayout>
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
+      </div>
     )
   }
 
@@ -74,18 +71,16 @@ export default function IssueDetailsPage({
   if (!workspace) return null
 
   return (
-    <AuthenticatedLayout>
-      <WorkspaceLayout 
-        workspace={workspace}
-        onNavigateToIssues={handleNavigateToIssues}
-      >
-        <WorkspaceContent 
-          ref={contentRef}
-          workspace={workspace} 
-          initialView="issue" 
-          initialIssueId={issueId}
-        />
-      </WorkspaceLayout>
-    </AuthenticatedLayout>
+    <WorkspaceWithMobileNav 
+      workspace={workspace}
+      onNavigateToIssues={handleNavigateToIssues}
+    >
+      <WorkspaceContent 
+        ref={contentRef}
+        workspace={workspace} 
+        initialView="issue" 
+        initialIssueId={issueId}
+      />
+    </WorkspaceWithMobileNav>
   )
 }

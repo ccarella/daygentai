@@ -3,8 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
-import { WorkspaceLayout } from '@/components/layout/workspace-layout'
+import { WorkspaceWithMobileNav } from '@/components/layout/workspace-with-mobile-nav'
 import { WorkspaceContent, WorkspaceContentRef } from '@/components/workspace/workspace-content'
 
 export default function WorkspacePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -62,29 +61,25 @@ export default function WorkspacePage({ params }: { params: Promise<{ slug: stri
 
   if (loading) {
     return (
-      <AuthenticatedLayout>
-        <div className="flex h-screen items-center justify-center">
-          <div className="text-gray-500">Loading...</div>
-        </div>
-      </AuthenticatedLayout>
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
+      </div>
     )
   }
 
   if (!workspace) return null
 
   return (
-    <AuthenticatedLayout>
-      <WorkspaceLayout 
+    <WorkspaceWithMobileNav 
+      workspace={workspace} 
+      onIssueCreated={handleIssueCreated}
+      onNavigateToIssues={handleNavigateToIssues}
+    >
+      <WorkspaceContent 
+        ref={contentRef}
+        key={refreshKey} 
         workspace={workspace} 
-        onIssueCreated={handleIssueCreated}
-        onNavigateToIssues={handleNavigateToIssues}
-      >
-        <WorkspaceContent 
-          ref={contentRef}
-          key={refreshKey} 
-          workspace={workspace} 
-        />
-      </WorkspaceLayout>
-    </AuthenticatedLayout>
+      />
+    </WorkspaceWithMobileNav>
   )
 }
