@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { MoreHorizontal, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Trash2, Edit3 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { useIssueCache } from '@/contexts/issue-cache-context'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,14 +20,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { MarkdownEditor } from '@/components/ui/markdown-editor'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 interface Issue {
   id: string
   title: string
   description: string | null
-  type: 'bug' | 'feature' | 'task' | 'epic' | 'spike'
+  type: 'feature' | 'bug' | 'chore' | 'design' | 'non-technical'
   priority: 'critical' | 'high' | 'medium' | 'low'
-  status: 'shaping' | 'backlog' | 'in_progress' | 'review' | 'done'
+  status: 'todo' | 'in_progress' | 'in_review' | 'done'
   created_at: string
   created_by: string
   assignee_id: string | null
@@ -39,11 +44,11 @@ interface IssueDetailsProps {
 }
 
 const typeIcons = {
-  bug: '🐛',
   feature: '✨',
-  task: '📋',
-  epic: '🎯',
-  spike: '🔍'
+  bug: '🐛',
+  chore: '🔧',
+  design: '🎨',
+  'non-technical': '📝'
 }
 
 const priorityColors = {
@@ -61,10 +66,9 @@ const priorityLabels = {
 }
 
 const statusOptions = [
-  { value: 'shaping', label: 'Shaping', color: 'text-gray-600' },
-  { value: 'backlog', label: 'Backlog', color: 'text-blue-600' },
+  { value: 'todo', label: 'Todo', color: 'text-gray-600' },
   { value: 'in_progress', label: 'In Progress', color: 'text-yellow-600' },
-  { value: 'review', label: 'Review', color: 'text-purple-600' },
+  { value: 'in_review', label: 'In Review', color: 'text-purple-600' },
   { value: 'done', label: 'Done', color: 'text-green-600' },
 ]
 
@@ -74,6 +78,10 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
   const [loading, setLoading] = useState(true)
   const [creatorName, setCreatorName] = useState<string>('')
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     const fetchIssue = async () => {
@@ -103,6 +111,8 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
       }
 
       setIssue(issue)
+      setEditTitle(issue.title)
+      setEditDescription(issue.description || '')
 
       // Fetch creator name
       const { data: creator } = await supabase
@@ -157,6 +167,45 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
     setIsUpdatingStatus(false)
   }
 
+  const handleEdit = () => {
+    if (!issue) return
+    setEditTitle(issue.title)
+    setEditDescription(issue.description || '')
+    setIsEditing(true)
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setEditTitle(issue?.title || '')
+    setEditDescription(issue?.description || '')
+  }
+
+  const handleSaveEdit = async () => {
+    if (!issue || isSaving) return
+    
+    setIsSaving(true)
+    const supabase = createClient()
+    
+    const { error } = await supabase
+      .from('issues')
+      .update({ 
+        title: editTitle.trim(),
+        description: editDescription.trim()
+      })
+      .eq('id', issue.id)
+
+    if (!error) {
+      setIssue({ 
+        ...issue, 
+        title: editTitle.trim(),
+        description: editDescription.trim()
+      })
+      setIsEditing(false)
+    }
+    
+    setIsSaving(false)
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -189,27 +238,42 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
         <div className="space-y-6">
           {/* Title and Actions */}
           <div className="flex items-start justify-between">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 flex-1">
               <span className="text-2xl">{typeIcons[issue.type]}</span>
-              <h1 className="text-2xl font-semibold text-gray-900">{issue.title}</h1>
+              {isEditing ? (
+                <Input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="text-2xl font-semibold"
+                  placeholder="Issue title"
+                />
+              ) : (
+                <h1 className="text-2xl font-semibold text-gray-900">{issue.title}</h1>
+              )}
             </div>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <MoreHorizontal className="w-5 h-5 text-gray-500" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem 
-                  onClick={handleDelete}
-                  className="text-red-600 focus:text-red-600"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete issue
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {!isEditing && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <MoreHorizontal className="w-5 h-5 text-gray-500" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleEdit}>
+                    <Edit3 className="w-4 h-4 mr-2" />
+                    Edit issue
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={handleDelete}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete issue
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
           {/* Metadata */}
@@ -246,13 +310,32 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
           </div>
 
           {/* Description */}
-          <div className="prose max-w-none">
-            {issue.description ? (
-              <div className="text-gray-700 whitespace-pre-wrap">{issue.description}</div>
-            ) : (
-              <p className="text-gray-500 italic">No description provided</p>
-            )}
-          </div>
+          {isEditing ? (
+            <div className="space-y-4">
+              <MarkdownEditor
+                value={editDescription}
+                onChange={setEditDescription}
+                placeholder="Add description... (markdown supported)"
+                rows={10}
+              />
+              <div className="flex gap-2">
+                <Button onClick={handleSaveEdit} disabled={isSaving || !editTitle.trim()}>
+                  {isSaving ? 'Saving...' : 'Save changes'}
+                </Button>
+                <Button variant="outline" onClick={handleCancelEdit} disabled={isSaving}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : issue.description ? (
+            <div className="prose prose-sm max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {issue.description}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No description provided</p>
+          )}
 
           {/* Divider */}
           <div className="border-t border-gray-200 my-8"></div>

@@ -166,7 +166,7 @@ export function WorkspaceLayout({
     <>
       <div className="flex h-screen bg-gray-50">
         {/* Desktop Sidebar */}
-        <div className={`hidden lg:flex bg-white border-r border-gray-200 flex-col relative transition-all duration-300 ${
+        <div className={`hidden lg:flex bg-white border-r border-gray-200 flex-col relative transition-all duration-300 group ${
           isSidebarCollapsed ? 'w-16' : 'w-[280px]'
         }`}>
           {!isSidebarCollapsed && <SidebarContent />}
@@ -174,7 +174,7 @@ export function WorkspaceLayout({
           {/* Collapse Toggle Button */}
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="absolute -right-3 top-8 bg-white border border-gray-200 rounded-full p-1 hover:bg-gray-50 shadow-sm z-10"
+            className="absolute -right-3 top-8 bg-white border border-gray-200 rounded-full p-1 hover:bg-gray-50 shadow-sm z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
             aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isSidebarCollapsed ? (

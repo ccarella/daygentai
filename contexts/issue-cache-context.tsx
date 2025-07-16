@@ -7,9 +7,9 @@ interface Issue {
   id: string
   title: string
   description: string | null
-  type: 'bug' | 'feature' | 'task' | 'epic' | 'spike'
+  type: 'feature' | 'bug' | 'chore' | 'design' | 'non-technical'
   priority: 'critical' | 'high' | 'medium' | 'low'
-  status: 'shaping' | 'backlog' | 'in_progress' | 'review' | 'done'
+  status: 'todo' | 'in_progress' | 'in_review' | 'done'
   created_at: string
   created_by: string
   assignee_id: string | null

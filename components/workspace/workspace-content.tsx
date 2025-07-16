@@ -33,10 +33,9 @@ export interface WorkspaceContentRef {
 const statusOptions = [
   { value: 'all', label: 'All' },
   { value: 'exclude_done', label: 'Active' },
-  { value: 'shaping', label: 'Shaping' },
-  { value: 'backlog', label: 'Backlog' },
+  { value: 'todo', label: 'Todo' },
   { value: 'in_progress', label: 'In Progress' },
-  { value: 'review', label: 'Review' },
+  { value: 'in_review', label: 'In Review' },
   { value: 'done', label: 'Done' },
 ]
 
