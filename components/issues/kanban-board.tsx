@@ -78,12 +78,7 @@ export function KanbanBoard({
 
     let query = supabase
       .from('issues')
-      .select(`
-        *,
-        creator:users!created_by (
-          full_name
-        )
-      `, { count: 'exact' })
+      .select('*', { count: 'exact' })
       .eq('workspace_id', workspaceId)
       .order('created_at', { ascending: false })
       .range(from, to)
@@ -101,14 +96,20 @@ export function KanbanBoard({
     }
 
     if (typeFilter !== 'all') {
-      query = query.eq('type', typeFilter)
+      // Only apply type filter if it's a valid type
+      const validTypes = ['feature', 'bug', 'chore', 'design', 'non-technical']
+      if (validTypes.includes(typeFilter)) {
+        query = query.eq('type', typeFilter)
+      }
     }
 
     const { data, error, count } = await query
 
     if (error) {
-      console.error('Error fetching issues:', error)
+      console.error('Error fetching issues:', error.message || error)
+      console.error('Full error details:', JSON.stringify(error, null, 2))
       loadingMoreRef.current = false
+      setLoading(false)
       return
     }
 
@@ -234,7 +235,7 @@ export function KanbanBoard({
                     >
                       <div className="flex items-start justify-between mb-2">
                         <span className="text-lg" title={issue.type}>
-                          {typeIcons[issue.type]}
+                          {typeIcons[issue.type] || '📌'}
                         </span>
                         <span className={`text-xs px-2 py-1 rounded-full border ${priorityColors[issue.priority]}`}>
                           {issue.priority}
@@ -251,8 +252,7 @@ export function KanbanBoard({
                         </p>
                       )}
                       
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>{issue.creator?.full_name || 'Unknown'}</span>
+                      <div className="flex items-center justify-end text-xs text-gray-500">
                         <span>{formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}</span>
                       </div>
                     </div>
