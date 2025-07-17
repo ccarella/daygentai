@@ -38,9 +38,17 @@ export function EmailLogin() {
     }
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (e.key === 'Enter' && e.shiftKey && !loading && email) {
+      e.preventDefault()
+      const formEvent = new Event('submit', { bubbles: true, cancelable: true }) as unknown as React.FormEvent
+      handleLogin(formEvent)
+    }
+  }
+
   return (
     <div className="w-full max-w-md mx-auto">
-      <form onSubmit={handleLogin} className="space-y-4 md:space-y-5">
+      <form onSubmit={handleLogin} onKeyDown={handleKeyDown} className="space-y-4 md:space-y-5">
         <div>
           <label htmlFor="email" className="block text-sm font-medium mb-2">
             Email address

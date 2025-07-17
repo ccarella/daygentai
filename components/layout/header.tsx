@@ -70,7 +70,7 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
   return (
     <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
       <div className="w-full px-4 md:px-6 lg:px-8">
-        <div className="flex items-center h-16 relative isolate">
+        <div className="flex items-center h-11 relative isolate">
           {/* Left Section - Logo */}
           <div className="flex items-center flex-1">
             {onMenuToggle && (

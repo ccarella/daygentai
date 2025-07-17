@@ -60,7 +60,7 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
           isMobileMenuOpen={isMobileMenuOpen}
         />
       )}
-      <div className="pt-14 md:pt-16">
+      <div className="pt-11">
         <WorkspaceLayout 
           workspace={workspace} 
           {...(onIssueCreated && { onIssueCreated })}

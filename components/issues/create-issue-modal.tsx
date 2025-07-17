@@ -95,9 +95,19 @@ export function CreateIssueModal({
     }
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && e.shiftKey && !isSubmitting && title.trim()) {
+      e.preventDefault()
+      handleSubmit()
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh]">
+      <DialogContent 
+        className="sm:max-w-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh]"
+        onKeyDown={handleKeyDown}
+      >
         <DialogHeader className="shrink-0">
           <DialogTitle>New issue</DialogTitle>
         </DialogHeader>

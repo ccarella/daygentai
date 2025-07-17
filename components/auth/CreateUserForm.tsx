@@ -51,8 +51,15 @@ export default function CreateUserForm() {
 
   const isValidName = name.length >= 3
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && e.shiftKey && isValidName && !isLoading) {
+      e.preventDefault()
+      handleSave()
+    }
+  }
+
   return (
-    <div className="bg-white p-4 md:p-6 lg:p-8 rounded-lg shadow-lg max-w-md w-full">
+    <div className="bg-white p-4 md:p-6 lg:p-8 rounded-lg shadow-lg max-w-md w-full" onKeyDown={handleKeyDown}>
       <h1 className="text-2xl font-bold text-center mb-8">Complete Your Profile</h1>
       
       <div className="mb-4 md:mb-6">

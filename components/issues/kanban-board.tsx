@@ -181,7 +181,7 @@ export function KanbanBoard({
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col mt-3">
       {hasMore && (
         <div className="flex items-center justify-end mb-4 text-sm">
           <button
