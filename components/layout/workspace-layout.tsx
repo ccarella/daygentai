@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react'
 import { CreateIssueModal } from '@/components/issues/create-issue-modal'
+import { useCommandPalette } from '@/hooks/use-command-palette'
 
 interface WorkspaceLayoutProps {
   workspace: {
@@ -35,6 +36,7 @@ export function WorkspaceLayout({
   const [localIsMobileMenuOpen, setLocalIsMobileMenuOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const pathname = usePathname()
+  const { openWithMode } = useCommandPalette()
   
   // Use prop values if provided, otherwise use local state
   const isMobileMenuOpen = propIsMobileMenuOpen !== undefined ? propIsMobileMenuOpen : localIsMobileMenuOpen
@@ -158,6 +160,16 @@ export function WorkspaceLayout({
         )}
       </nav>
 
+      {/* Info Icon at Bottom */}
+      <div className="p-2 border-t border-gray-200">
+        <button
+          onClick={() => openWithMode('help')}
+          className="w-full flex items-center justify-center p-2 rounded-lg transition-colors hover:bg-gray-100"
+          title="Help & Keyboard shortcuts"
+        >
+          <HelpCircle className="w-5 h-5 text-gray-500" />
+        </button>
+      </div>
     </div>
     )
   }
@@ -235,6 +247,13 @@ export function WorkspaceLayout({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </Link>
+              <button
+                onClick={() => openWithMode('help')}
+                className="p-2 rounded hover:bg-gray-100 mt-auto"
+                title="Help & Keyboard shortcuts"
+              >
+                <HelpCircle className="w-5 h-5 text-gray-500" />
+              </button>
             </div>
           )}
         </div>

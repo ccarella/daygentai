@@ -28,12 +28,20 @@ interface IssuesListProps {
   typeFilter?: string
 }
 
-const typeIcons = {
-  feature: '✨',
-  bug: '🐛',
-  chore: '🔧',
-  design: '🎨',
-  'non-technical': '📝'
+const typeColors = {
+  feature: 'text-purple-700 bg-purple-50 border border-purple-200',
+  bug: 'text-red-700 bg-red-50 border border-red-200',
+  chore: 'text-blue-700 bg-blue-50 border border-blue-200',
+  design: 'text-pink-700 bg-pink-50 border border-pink-200',
+  'non-technical': 'text-gray-700 bg-gray-50 border border-gray-200'
+}
+
+const typeLabels = {
+  feature: 'Feature',
+  bug: 'Bug',
+  chore: 'Chore',
+  design: 'Design',
+  'non-technical': 'Non-technical'
 }
 
 const priorityColors = {
@@ -316,42 +324,40 @@ export function IssuesList({
                 }
               }}
             >
-              <div className="flex items-start gap-4">
-                {/* Type Icon */}
-                <div className="flex-shrink-0 mt-0.5">
-                  <span className="text-xl">{typeIcons[issue.type]}</span>
+              {/* Issue Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-sm font-medium text-gray-900">
+                    {issue.title}
+                  </h3>
                 </div>
                 
-                {/* Issue Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-sm font-medium text-gray-900">
-                      {issue.title}
-                    </h3>
-                  </div>
+                {issue.description && (
+                  <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                    {truncateDescription(issue.description, 150)}
+                  </p>
+                )}
+                
+                <div className="mt-2 flex items-center gap-2 text-xs">
+                  {/* Type */}
+                  <span className={`inline-flex items-center px-2 py-1 rounded-md font-medium ${typeColors[issue.type]}`}>
+                    {typeLabels[issue.type]}
+                  </span>
                   
-                  {issue.description && (
-                    <p className="mt-1 text-sm text-gray-600 line-clamp-2">
-                      {truncateDescription(issue.description, 150)}
-                    </p>
-                  )}
+                  {/* Priority */}
+                  <span className={`inline-flex items-center px-2 py-1 rounded-md font-medium ${priorityColors[issue.priority]}`}>
+                    {priorityLabels[issue.priority]}
+                  </span>
                   
-                  <div className="mt-2 flex items-center gap-4 text-xs">
-                    {/* Priority */}
-                    <span className={`inline-flex items-center px-2 py-1 rounded-md font-medium ${priorityColors[issue.priority]}`}>
-                      {priorityLabels[issue.priority]}
-                    </span>
-                    
-                    {/* Status */}
-                    <span className="text-gray-500 capitalize">
-                      {issue.status.replace('_', ' ')}
-                    </span>
-                    
-                    {/* Created Date */}
-                    <span className="text-gray-400">
-                      {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
-                    </span>
-                  </div>
+                  {/* Status */}
+                  <span className="text-gray-500 capitalize ml-2">
+                    {issue.status.replace('_', ' ')}
+                  </span>
+                  
+                  {/* Created Date */}
+                  <span className="text-gray-400 ml-2">
+                    {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
+                  </span>
                 </div>
               </div>
             </div>
