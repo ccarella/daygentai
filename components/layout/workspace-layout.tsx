@@ -4,7 +4,15 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Plus, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react'
-import { CreateIssueModal } from '@/components/issues/create-issue-modal'
+import dynamic from 'next/dynamic'
+
+const CreateIssueModal = dynamic(
+  () => import('@/components/issues/create-issue-modal').then(mod => ({ default: mod.CreateIssueModal })),
+  { 
+    ssr: false,
+    loading: () => null
+  }
+)
 import { useCommandPalette } from '@/hooks/use-command-palette'
 
 interface WorkspaceLayoutProps {
@@ -277,12 +285,14 @@ export function WorkspaceLayout({
       </div>
 
 
-      <CreateIssueModal
-        open={createIssueOpen}
-        onOpenChange={setCreateIssueOpen}
-        workspaceId={workspace.id}
-        onIssueCreated={handleIssueCreated}
-      />
+      {createIssueOpen && (
+        <CreateIssueModal
+          open={createIssueOpen}
+          onOpenChange={setCreateIssueOpen}
+          workspaceId={workspace.id}
+          onIssueCreated={handleIssueCreated}
+        />
+      )}
     </>
   )
 }

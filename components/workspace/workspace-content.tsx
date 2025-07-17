@@ -3,8 +3,22 @@
 import { useState, useImperativeHandle, forwardRef, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { IssuesList } from '@/components/issues/issues-list'
-import { KanbanBoard } from '@/components/issues/kanban-board'
-import { IssueDetails } from '@/components/issues/issue-details'
+import dynamic from 'next/dynamic'
+
+const KanbanBoard = dynamic(
+  () => import('@/components/issues/kanban-board').then(mod => ({ default: mod.KanbanBoard })),
+  { 
+    ssr: false,
+    loading: () => <div className="flex h-full items-center justify-center"><div className="text-gray-500">Loading Kanban view...</div></div>
+  }
+)
+const IssueDetails = dynamic(
+  () => import('@/components/issues/issue-details').then(mod => ({ default: mod.IssueDetails })),
+  { 
+    ssr: false,
+    loading: () => <div className="flex h-full items-center justify-center"><div className="text-gray-500">Loading issue...</div></div>
+  }
+)
 import { Inbox } from '@/components/inbox/inbox'
 import {
   Select,
