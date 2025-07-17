@@ -72,12 +72,21 @@ const statusOptions = [
   { value: 'done', label: 'Done', color: 'text-green-600' },
 ]
 
+const typeOptions = [
+  { value: 'feature', label: 'Feature', icon: '✨' },
+  { value: 'bug', label: 'Bug', icon: '🐛' },
+  { value: 'chore', label: 'Chore', icon: '🔧' },
+  { value: 'design', label: 'Design', icon: '🎨' },
+  { value: 'non-technical', label: 'Non-technical', icon: '📝' },
+]
+
 export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) {
   const { getIssue } = useIssueCache()
   const [issue, setIssue] = useState<Issue | null>(null)
   const [loading, setLoading] = useState(true)
   const [creatorName, setCreatorName] = useState<string>('')
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+  const [isUpdatingType, setIsUpdatingType] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editTitle, setEditTitle] = useState('')
   const [editDescription, setEditDescription] = useState('')
@@ -165,6 +174,24 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
     }
     
     setIsUpdatingStatus(false)
+  }
+
+  const handleTypeChange = async (newType: string) => {
+    if (!issue || isUpdatingType) return
+    
+    setIsUpdatingType(true)
+    const supabase = createClient()
+    
+    const { error } = await supabase
+      .from('issues')
+      .update({ type: newType })
+      .eq('id', issue.id)
+
+    if (!error) {
+      setIssue({ ...issue, type: newType as Issue['type'] })
+    }
+    
+    setIsUpdatingType(false)
   }
 
   const handleEdit = () => {
@@ -302,6 +329,33 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
                   {statusOptions.map((status) => (
                     <SelectItem key={status.value} value={status.value}>
                       <span className={status.color}>{status.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-500 text-sm">Type:</span>
+              <Select
+                value={issue.type}
+                onValueChange={handleTypeChange}
+                disabled={isUpdatingType}
+              >
+                <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-gray-100 focus:ring-0 focus:ring-offset-0">
+                  <SelectValue>
+                    <span className="text-sm font-medium flex items-center gap-1">
+                      <span>{typeOptions.find(t => t.value === issue.type)?.icon || '📌'}</span>
+                      <span>{typeOptions.find(t => t.value === issue.type)?.label || issue.type}</span>
+                    </span>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {typeOptions.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      <span className="flex items-center gap-2">
+                        <span>{type.icon}</span>
+                        <span>{type.label}</span>
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
