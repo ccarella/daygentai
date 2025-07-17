@@ -166,7 +166,7 @@ export function WorkspaceLayout({
       <div className="flex h-screen bg-gray-50">
         {/* Desktop Sidebar */}
         <div className={`hidden lg:flex bg-white border-r border-gray-200 flex-col relative transition-all duration-300 ${
-          isSidebarCollapsed ? 'w-16' : 'w-[280px]'
+          isSidebarCollapsed ? 'w-16' : 'w-[224px]'
         }`}>
           {!isSidebarCollapsed && <SidebarContent />}
           
