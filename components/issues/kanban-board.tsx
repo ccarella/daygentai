@@ -63,7 +63,6 @@ export function KanbanBoard({
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
-  const [totalCount, setTotalCount] = useState(0)
   const supabase = createClient()
   const { preloadIssues } = useIssueCache()
   const loadingMoreRef = useRef(false)
@@ -78,7 +77,7 @@ export function KanbanBoard({
 
     let query = supabase
       .from('issues')
-      .select('*', { count: 'exact' })
+      .select('*')
       .eq('workspace_id', workspaceId)
       .order('created_at', { ascending: false })
       .range(from, to)
@@ -103,7 +102,7 @@ export function KanbanBoard({
       }
     }
 
-    const { data, error, count } = await query
+    const { data, error } = await query
 
     if (error) {
       console.error('Error fetching issues:', error.message || error)
@@ -124,10 +123,6 @@ export function KanbanBoard({
     setHasMore(newIssues.length === pageSize)
     setLoading(false)
     loadingMoreRef.current = false
-    
-    if (count !== null) {
-      setTotalCount(count)
-    }
 
     // Preload all issues for better performance
     if (newIssues.length > 0) {
@@ -187,9 +182,8 @@ export function KanbanBoard({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4 text-sm text-gray-600">
-        <span>Showing {issues.length} of {totalCount} issues</span>
-        {hasMore && (
+      {hasMore && (
+        <div className="flex items-center justify-end mb-4 text-sm">
           <button
             onClick={loadMore}
             className="text-blue-600 hover:text-blue-800"
@@ -197,8 +191,8 @@ export function KanbanBoard({
           >
             {loadingMoreRef.current ? 'Loading...' : 'Load more'}
           </button>
-        )}
-      </div>
+        </div>
+      )}
       
       <div className="flex gap-4 h-full overflow-x-auto pb-4 px-4">
         {columns.map(column => {
