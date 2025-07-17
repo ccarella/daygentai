@@ -30,6 +30,8 @@ interface WorkspaceContentProps {
 export interface WorkspaceContentRef {
   navigateToIssuesList: () => void
   navigateToInbox: () => void
+  toggleViewMode: () => void
+  getCurrentViewMode: () => 'list' | 'kanban'
 }
 
 const statusOptions = [
@@ -107,10 +109,17 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     window.history.pushState({}, '', `/${workspace.slug}/inbox`)
   }
 
+  // Handler to toggle between list and kanban views
+  const handleToggleViewMode = () => {
+    setIssuesViewMode(prev => prev === 'list' ? 'kanban' : 'list')
+  }
+
   // Expose method to parent component
   useImperativeHandle(ref, () => ({
     navigateToIssuesList: handleBackToList,
-    navigateToInbox: handleNavigateToInbox
+    navigateToInbox: handleNavigateToInbox,
+    toggleViewMode: handleToggleViewMode,
+    getCurrentViewMode: () => issuesViewMode
   }))
 
   const handleIssueDeleted = () => {

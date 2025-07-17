@@ -76,10 +76,16 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
     }
   }
 
+  // Handler to toggle view mode
+  const handleToggleViewMode = () => {
+    contentRef.current?.toggleViewMode()
+  }
+
   // Use global shortcuts - must be called before any returns
   useGlobalShortcuts({
     workspaceSlug: workspace?.slug || '',
     onCreateIssue: handleCreateIssue,
+    onToggleViewMode: handleToggleViewMode,
   })
 
   if (loading) {
@@ -111,6 +117,7 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
       <CommandPalette 
         workspaceSlug={workspace.slug} 
         onCreateIssue={handleCreateIssue}
+        onToggleViewMode={handleToggleViewMode}
       />
     </>
   )

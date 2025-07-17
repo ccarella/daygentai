@@ -8,9 +8,10 @@ interface GlobalShortcutsProps {
   workspaceSlug: string
   onCreateIssue?: () => void
   onShowHelp?: () => void
+  onToggleViewMode?: () => void
 }
 
-export function useGlobalShortcuts({ workspaceSlug, onCreateIssue, onShowHelp }: GlobalShortcutsProps) {
+export function useGlobalShortcuts({ workspaceSlug, onCreateIssue, onShowHelp, onToggleViewMode }: GlobalShortcutsProps) {
   const router = useRouter()
   const { setIsOpen: setCommandPaletteOpen } = useCommandPalette()
   const [keySequence, setKeySequence] = React.useState<string[]>([])
@@ -32,6 +33,13 @@ export function useGlobalShortcuts({ workspaceSlug, onCreateIssue, onShowHelp }:
       // Handle Cmd/Ctrl + K (already handled by command palette hook, but prevent default)
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault()
+        return
+      }
+
+      // Handle Cmd/Ctrl + B for toggling view mode
+      if ((e.metaKey || e.ctrlKey) && e.key === "b") {
+        e.preventDefault()
+        onToggleViewMode?.()
         return
       }
 
@@ -109,7 +117,7 @@ export function useGlobalShortcuts({ workspaceSlug, onCreateIssue, onShowHelp }:
       window.removeEventListener("keydown", handleKeyDown)
       clearTimeout(sequenceTimeoutRef.current)
     }
-  }, [workspaceSlug, router, onCreateIssue, onShowHelp, setCommandPaletteOpen, keySequence])
+  }, [workspaceSlug, router, onCreateIssue, onShowHelp, onToggleViewMode, setCommandPaletteOpen, keySequence])
 
   return { keySequence }
 }

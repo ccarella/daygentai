@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { Search, FileText, Inbox, Plus, Filter, Clock } from "lucide-react"
+import { Search, FileText, Inbox, Plus, Filter, Clock, LayoutGrid } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -27,9 +27,10 @@ interface Command {
 interface CommandPaletteProps {
   workspaceSlug: string
   onCreateIssue?: () => void
+  onToggleViewMode?: () => void
 }
 
-export function CommandPalette({ workspaceSlug, onCreateIssue }: CommandPaletteProps) {
+export function CommandPalette({ workspaceSlug, onCreateIssue, onToggleViewMode }: CommandPaletteProps) {
   const router = useRouter()
   const { isOpen, setIsOpen } = useCommandPalette()
   const [search, setSearch] = React.useState("")
@@ -68,6 +69,18 @@ export function CommandPalette({ workspaceSlug, onCreateIssue }: CommandPaletteP
       group: "Create"
     },
     {
+      id: "toggle-view",
+      title: "Toggle List/Kanban View",
+      icon: <LayoutGrid className="w-4 h-4" />,
+      shortcut: "⌘B",
+      action: () => {
+        setIsOpen(false)
+        onToggleViewMode?.()
+      },
+      keywords: ["view", "switch", "kanban", "list", "board", "toggle"],
+      group: "View"
+    },
+    {
       id: "filter-status",
       title: "Filter by Status",
       icon: <Filter className="w-4 h-4" />,
@@ -89,7 +102,7 @@ export function CommandPalette({ workspaceSlug, onCreateIssue }: CommandPaletteP
       keywords: ["history", "viewed", "last"],
       group: "Quick Access"
     }
-  ], [workspaceSlug, router, setIsOpen, onCreateIssue])
+  ], [workspaceSlug, router, setIsOpen, onCreateIssue, onToggleViewMode])
 
   const filteredCommands = React.useMemo(() => {
     if (!search) return commands
