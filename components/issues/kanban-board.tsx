@@ -10,11 +10,12 @@ interface Issue {
   id: string
   title: string
   description: string | null
-  type: 'bug' | 'feature' | 'improvement' | 'task'
+  type: 'feature' | 'bug' | 'chore' | 'design' | 'non-technical'
   priority: 'critical' | 'high' | 'medium' | 'low'
   status: 'todo' | 'in_progress' | 'in_review' | 'done'
   created_at: string
-  creator_id: string
+  created_by: string
+  assignee_id: string | null
   workspace_id: string
   creator?: {
     full_name: string | null
@@ -39,8 +40,9 @@ const columns = [
 const typeIcons = {
   bug: '🐛',
   feature: '✨',
-  improvement: '💡',
-  task: '📋'
+  chore: '🔧',
+  design: '🎨',
+  'non-technical': '📝'
 }
 
 const priorityColors = {
@@ -78,7 +80,7 @@ export function KanbanBoard({
       .from('issues')
       .select(`
         *,
-        creator:users!creator_id (
+        creator:users!created_by (
           full_name
         )
       `, { count: 'exact' })
