@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { LayoutGrid, List } from 'lucide-react'
+import { LayoutGrid, List, Filter } from 'lucide-react'
 import { SearchBar } from '@/components/workspace/search-bar'
 
 interface WorkspaceContentProps {
@@ -92,6 +92,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false)
+  const [isFiltersVisible, setIsFiltersVisible] = useState<boolean>(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   
   // TODO: Pass searchQuery to IssuesList and KanbanBoard components when search functionality is implemented
@@ -194,74 +195,154 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
       {/* Filters - Only show for issues list view */}
       {currentView === 'list' && (
         <div className="border-b border-gray-200 bg-white overflow-hidden relative">
-          <div className="px-3 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center gap-2 sm:gap-3 relative z-0">
-            {/* Search hint when search is hidden */}
-            {!isSearchVisible && (
-              <div className="text-sm text-gray-500 mr-auto">
-                Press <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 border border-gray-200 rounded">/</kbd> to search
+          {/* Mobile and Desktop Filter Header */}
+          <div className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-3">
+            {/* Left side - Search hint and desktop filters */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+              {/* Search hint when search is hidden */}
+              {!isSearchVisible && (
+                <div className="text-sm text-gray-500 hidden sm:block">
+                  Press <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 border border-gray-200 rounded">/</kbd> to search
+                </div>
+              )}
+              
+              {/* Desktop filters - always visible on sm+ screens */}
+              <div className="hidden sm:flex items-center gap-3 flex-1 min-w-0">
+                <span className="text-sm text-gray-500 flex-shrink-0">Filter by:</span>
+                
+                {/* Status Filter */}
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[180px] h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {/* Priority Filter */}
+                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                  <SelectTrigger className="w-[140px] h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {priorityOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {/* Type Filter */}
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-[140px] h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {typeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 border rounded-md p-1">
-              <button
-                onClick={() => setIssuesViewMode('list')}
-                className={`p-1 rounded ${issuesViewMode === 'list' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
-                title="List view"
-              >
-                <List className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setIssuesViewMode('kanban')}
-                className={`p-1 rounded ${issuesViewMode === 'kanban' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
-                title="Kanban view"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
             </div>
             
-            <span className="text-sm text-gray-500 flex-shrink-0">Filter by:</span>
-            
-            {/* Status Filter */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px] h-8 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            {/* Priority Filter */}
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-full sm:w-[140px] h-8 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {priorityOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            {/* Type Filter */}
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-full sm:w-[140px] h-8 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {typeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Right side - Mobile filter toggle and view mode toggle */}
+            <div className="flex items-center gap-2">
+              {/* Mobile filter toggle - only visible on small screens */}
+              <button
+                onClick={() => setIsFiltersVisible(!isFiltersVisible)}
+                className="sm:hidden p-2 rounded-md hover:bg-gray-100 transition-colors"
+                title="Toggle filters"
+              >
+                <Filter className="h-4 w-4" />
+              </button>
+              
+              {/* View Mode Toggle */}
+              <div className="flex items-center gap-1 border rounded-md p-1">
+                <button
+                  onClick={() => setIssuesViewMode('list')}
+                  className={`p-1 rounded ${issuesViewMode === 'list' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                  title="List view"
+                >
+                  <List className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setIssuesViewMode('kanban')}
+                  className={`p-1 rounded ${issuesViewMode === 'kanban' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                  title="Kanban view"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          {/* Mobile filters - only visible when toggled on small screens */}
+          <div className={`sm:hidden border-t border-gray-200 transition-all duration-200 ease-in-out overflow-hidden ${
+            isFiltersVisible ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          }`}>
+            <div className="px-3 py-4 space-y-3">
+              <div className="text-sm text-gray-500 font-medium">Filter by:</div>
+              
+              {/* Status Filter */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Status</label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Priority Filter */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Priority</label>
+                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                  <SelectTrigger className="w-full h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {priorityOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Type Filter */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Type</label>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-full h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {typeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </div>
       )}
