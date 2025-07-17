@@ -20,9 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { MarkdownEditor } from '@/components/ui/markdown-editor'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { EditIssueModal } from './edit-issue-modal'
+import { PromptDisplay } from './prompt-display'
 
 interface Issue {
   id: string
@@ -35,6 +34,7 @@ interface Issue {
   created_by: string
   assignee_id: string | null
   workspace_id: string
+  generated_prompt?: string | null
 }
 
 interface IssueDetailsProps {
@@ -87,10 +87,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
   const [creatorName, setCreatorName] = useState<string>('')
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   const [isUpdatingType, setIsUpdatingType] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [editTitle, setEditTitle] = useState('')
-  const [editDescription, setEditDescription] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   useEffect(() => {
     const fetchIssue = async () => {
@@ -120,8 +117,6 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
       }
 
       setIssue(issue)
-      setEditTitle(issue.title)
-      setEditDescription(issue.description || '')
 
       // Fetch creator name
       const { data: creator } = await supabase
@@ -195,42 +190,21 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
   }
 
   const handleEdit = () => {
-    if (!issue) return
-    setEditTitle(issue.title)
-    setEditDescription(issue.description || '')
-    setIsEditing(true)
+    setIsEditModalOpen(true)
   }
 
-  const handleCancelEdit = () => {
-    setIsEditing(false)
-    setEditTitle(issue?.title || '')
-    setEditDescription(issue?.description || '')
-  }
-
-  const handleSaveEdit = async () => {
-    if (!issue || isSaving) return
-    
-    setIsSaving(true)
+  const handleIssueUpdated = async () => {
+    // Refresh the issue data after update
     const supabase = createClient()
-    
-    const { error } = await supabase
+    const { data: updatedIssue } = await supabase
       .from('issues')
-      .update({ 
-        title: editTitle.trim(),
-        description: editDescription.trim()
-      })
-      .eq('id', issue.id)
-
-    if (!error) {
-      setIssue({ 
-        ...issue, 
-        title: editTitle.trim(),
-        description: editDescription.trim()
-      })
-      setIsEditing(false)
-    }
+      .select('*')
+      .eq('id', issueId)
+      .single()
     
-    setIsSaving(false)
+    if (updatedIssue) {
+      setIssue(updatedIssue)
+    }
   }
 
   if (loading) {
@@ -267,20 +241,10 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-3 flex-1">
               <span className="text-2xl">{typeIcons[issue.type]}</span>
-              {isEditing ? (
-                <Input
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  className="text-2xl font-semibold"
-                  placeholder="Issue title"
-                />
-              ) : (
-                <h1 className="text-2xl font-semibold text-gray-900">{issue.title}</h1>
-              )}
+              <h1 className="text-2xl font-semibold text-gray-900">{issue.title}</h1>
             </div>
             
-            {!isEditing && (
-              <DropdownMenu>
+            <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                     <MoreHorizontal className="w-5 h-5 text-gray-500" />
@@ -300,7 +264,6 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )}
           </div>
 
           {/* Metadata */}
@@ -363,25 +326,13 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
             </div>
           </div>
 
+          {/* AI Generated Prompt */}
+          {issue.generated_prompt && (
+            <PromptDisplay prompt={issue.generated_prompt} className="mt-6" />
+          )}
+
           {/* Description */}
-          {isEditing ? (
-            <div className="space-y-4">
-              <MarkdownEditor
-                value={editDescription}
-                onChange={setEditDescription}
-                placeholder="Add description... (markdown supported)"
-                rows={10}
-              />
-              <div className="flex gap-2">
-                <Button onClick={handleSaveEdit} disabled={isSaving || !editTitle.trim()}>
-                  {isSaving ? 'Saving...' : 'Save changes'}
-                </Button>
-                <Button variant="outline" onClick={handleCancelEdit} disabled={isSaving}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          ) : issue.description ? (
+          {issue.description ? (
             <div className="prose prose-sm max-w-none">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {issue.description}
@@ -404,6 +355,14 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
           </div>
         </div>
       </div>
+      
+      {/* Edit Issue Modal */}
+      <EditIssueModal 
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        issue={issue}
+        onIssueUpdated={handleIssueUpdated}
+      />
     </div>
   )
 }
