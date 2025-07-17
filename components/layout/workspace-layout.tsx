@@ -79,6 +79,7 @@ export function WorkspaceLayout({
           <button 
             className="hidden md:flex min-h-[40px] min-w-[40px] p-2 md:p-1 hover:bg-gray-100 rounded items-center justify-center"
             onClick={() => setCreateIssueOpen(true)}
+            data-create-issue-button
           >
             <Plus className="w-5 h-5 text-gray-600" />
           </button>

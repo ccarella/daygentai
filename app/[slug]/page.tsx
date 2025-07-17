@@ -6,8 +6,11 @@ import { useRouter } from 'next/navigation'
 import { WorkspaceWithMobileNav } from '@/components/layout/workspace-with-mobile-nav'
 import { WorkspaceContent, WorkspaceContentRef } from '@/components/workspace/workspace-content'
 import { IssueCacheProvider } from '@/contexts/issue-cache-context'
+import { CommandPaletteProvider } from '@/hooks/use-command-palette'
+import { CommandPalette } from '@/components/command-palette/command-palette'
+import { useGlobalShortcuts } from '@/hooks/use-global-shortcuts'
 
-export default function WorkspacePage({ params }: { params: Promise<{ slug: string }> }) {
+function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter()
   const contentRef = useRef<WorkspaceContentRef>(null)
   const [workspace, setWorkspace] = useState<{
@@ -64,6 +67,21 @@ export default function WorkspacePage({ params }: { params: Promise<{ slug: stri
     contentRef.current?.navigateToInbox()
   }
 
+  // Handler to trigger create issue modal
+  const handleCreateIssue = () => {
+    // Find and click the create issue button in the sidebar
+    const createButton = document.querySelector('[data-create-issue-button]') as HTMLButtonElement
+    if (createButton) {
+      createButton.click()
+    }
+  }
+
+  // Use global shortcuts - must be called before any returns
+  useGlobalShortcuts({
+    workspaceSlug: workspace?.slug || '',
+    onCreateIssue: handleCreateIssue,
+  })
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -75,19 +93,33 @@ export default function WorkspacePage({ params }: { params: Promise<{ slug: stri
   if (!workspace) return null
 
   return (
-    <IssueCacheProvider>
-      <WorkspaceWithMobileNav 
-        workspace={workspace} 
-        onIssueCreated={handleIssueCreated}
-        onNavigateToIssues={handleNavigateToIssues}
-        onNavigateToInbox={handleNavigateToInbox}
-      >
-        <WorkspaceContent 
-          ref={contentRef}
-          key={refreshKey} 
+    <>
+      <IssueCacheProvider>
+        <WorkspaceWithMobileNav 
           workspace={workspace} 
-        />
-      </WorkspaceWithMobileNav>
-    </IssueCacheProvider>
+          onIssueCreated={handleIssueCreated}
+          onNavigateToIssues={handleNavigateToIssues}
+          onNavigateToInbox={handleNavigateToInbox}
+        >
+          <WorkspaceContent 
+            ref={contentRef}
+            key={refreshKey} 
+            workspace={workspace} 
+          />
+        </WorkspaceWithMobileNav>
+      </IssueCacheProvider>
+      <CommandPalette 
+        workspaceSlug={workspace.slug} 
+        onCreateIssue={handleCreateIssue}
+      />
+    </>
+  )
+}
+
+export default function WorkspacePage({ params }: { params: Promise<{ slug: string }> }) {
+  return (
+    <CommandPaletteProvider>
+      <WorkspacePageContent params={params} />
+    </CommandPaletteProvider>
   )
 }
