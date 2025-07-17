@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useImperativeHandle, forwardRef } from 'react'
+import { useState, useImperativeHandle, forwardRef, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { IssuesList } from '@/components/issues/issues-list'
+import { KanbanBoard } from '@/components/issues/kanban-board'
 import { IssueDetails } from '@/components/issues/issue-details'
 import { Inbox } from '@/components/inbox/inbox'
 import {
@@ -12,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { LayoutGrid, List } from 'lucide-react'
+import { SearchBar } from '@/components/workspace/search-bar'
 
 interface WorkspaceContentProps {
   workspace: {
@@ -28,6 +31,10 @@ interface WorkspaceContentProps {
 export interface WorkspaceContentRef {
   navigateToIssuesList: () => void
   navigateToInbox: () => void
+  toggleViewMode: () => void
+  getCurrentViewMode: () => 'list' | 'kanban'
+  toggleSearch: () => void
+  isSearchVisible: () => boolean
 }
 
 const statusOptions = [
@@ -77,11 +84,51 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   const [currentView, setCurrentView] = useState<'list' | 'issue' | 'inbox'>(getInitialView())
   const [currentIssueId, setCurrentIssueId] = useState<string | null>(initialIssueId || getIssueIdFromPath() || null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [issuesViewMode, setIssuesViewMode] = useState<'list' | 'kanban'>('list')
   
   // Filter states - default excludes done status
   const [statusFilter, setStatusFilter] = useState<string>('exclude_done')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState<string>('')
+  const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  
+  // TODO: Pass searchQuery to IssuesList and KanbanBoard components when search functionality is implemented
+  console.log('Search query:', searchQuery) // Temporary to avoid unused variable warning
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Toggle search visibility when "/" is pressed
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Don't trigger if user is typing in an input/textarea
+        const target = e.target as HTMLElement
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+          return
+        }
+        
+        e.preventDefault()
+        setIsSearchVisible(prev => !prev)
+      }
+      
+      // Close search on Escape
+      if (e.key === 'Escape' && isSearchVisible) {
+        setIsSearchVisible(false)
+        setSearchQuery('')
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isSearchVisible])
+
+  // Auto-focus search input when it becomes visible
+  useEffect(() => {
+    if (isSearchVisible && searchInputRef.current) {
+      searchInputRef.current.focus()
+    }
+  }, [isSearchVisible])
 
   const handleIssueClick = (issueId: string) => {
     setCurrentIssueId(issueId)
@@ -104,10 +151,19 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     window.history.pushState({}, '', `/${workspace.slug}/inbox`)
   }
 
+  // Handler to toggle between list and kanban views
+  const handleToggleViewMode = () => {
+    setIssuesViewMode(prev => prev === 'list' ? 'kanban' : 'list')
+  }
+
   // Expose method to parent component
   useImperativeHandle(ref, () => ({
     navigateToIssuesList: handleBackToList,
-    navigateToInbox: handleNavigateToInbox
+    navigateToInbox: handleNavigateToInbox,
+    toggleViewMode: handleToggleViewMode,
+    getCurrentViewMode: () => issuesViewMode,
+    toggleSearch: () => setIsSearchVisible(prev => !prev),
+    isSearchVisible: () => isSearchVisible
   }))
 
   const handleIssueDeleted = () => {
@@ -118,10 +174,51 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
 
   return (
     <>
+      {/* Search Bar - Only show for issues list view and when visible */}
+      <div className={`bg-white border-b border-gray-200 transition-all duration-200 ease-in-out overflow-hidden ${
+        currentView === 'list' && isSearchVisible ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
+      }`}>
+        <div className="px-3 sm:px-6 py-6 sm:py-8">
+          <SearchBar 
+            ref={searchInputRef}
+            onSearch={setSearchQuery}
+            placeholder="Search issues..."
+            onEscape={() => {
+              setIsSearchVisible(false)
+              setSearchQuery('')
+            }}
+          />
+        </div>
+      </div>
+      
       {/* Filters - Only show for issues list view */}
       {currentView === 'list' && (
         <div className="border-b border-gray-200 bg-white overflow-hidden relative">
           <div className="px-3 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center gap-2 sm:gap-3 relative z-0">
+            {/* Search hint when search is hidden */}
+            {!isSearchVisible && (
+              <div className="text-sm text-gray-500 mr-auto">
+                Press <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 border border-gray-200 rounded">/</kbd> to search
+              </div>
+            )}
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 border rounded-md p-1">
+              <button
+                onClick={() => setIssuesViewMode('list')}
+                className={`p-1 rounded ${issuesViewMode === 'list' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                title="List view"
+              >
+                <List className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setIssuesViewMode('kanban')}
+                className={`p-1 rounded ${issuesViewMode === 'kanban' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                title="Kanban view"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+            </div>
+            
             <span className="text-sm text-gray-500 flex-shrink-0">Filter by:</span>
             
             {/* Status Filter */}
@@ -171,15 +268,26 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
 
       {/* Dynamic Content */}
       {currentView === 'list' ? (
-        <IssuesList 
-          key={refreshKey}
-          workspaceId={workspace.id} 
-          workspaceSlug={workspace.slug}
-          onIssueClick={handleIssueClick}
-          statusFilter={statusFilter}
-          priorityFilter={priorityFilter}
-          typeFilter={typeFilter}
-        />
+        issuesViewMode === 'list' ? (
+          <IssuesList 
+            key={refreshKey}
+            workspaceId={workspace.id} 
+            workspaceSlug={workspace.slug}
+            onIssueClick={handleIssueClick}
+            statusFilter={statusFilter}
+            priorityFilter={priorityFilter}
+            typeFilter={typeFilter}
+          />
+        ) : (
+          <KanbanBoard
+            key={refreshKey}
+            workspaceId={workspace.id}
+            onIssueClick={handleIssueClick}
+            statusFilter={statusFilter}
+            priorityFilter={priorityFilter}
+            typeFilter={typeFilter}
+          />
+        )
       ) : currentView === 'inbox' ? (
         <Inbox />
       ) : currentIssueId ? (

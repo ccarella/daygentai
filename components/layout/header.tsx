@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Menu, X, Search } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 
 interface UserProfile {
   name: string
@@ -91,27 +91,11 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
             </Link>
           </div>
           
-          {/* Center Section - Search Bar */}
-          <div className="flex-1 flex justify-center px-4 min-w-0">
-            <div className="w-full max-w-[600px] hidden md:block">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search issues..."
-                  className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors"
-                />
-                <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
-              </div>
-            </div>
-          </div>
+          {/* Center Section - Spacer for balanced layout */}
+          <div className="flex-1 hidden md:block"></div>
           
-          {/* Right Section - Mobile Search & Avatar */}
+          {/* Right Section - Avatar */}
           <div className="flex items-center flex-1 justify-end gap-2">
-            {/* Mobile Search Button */}
-            <button className="p-2 rounded-md hover:bg-gray-100 md:hidden">
-              <Search className="w-5 h-5 text-gray-600" />
-            </button>
-            
             <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}

@@ -79,6 +79,7 @@ export function WorkspaceLayout({
           <button 
             className="hidden md:flex min-h-[40px] min-w-[40px] p-2 md:p-1 hover:bg-gray-100 rounded items-center justify-center"
             onClick={() => setCreateIssueOpen(true)}
+            data-create-issue-button
           >
             <Plus className="w-5 h-5 text-gray-600" />
           </button>
@@ -166,7 +167,7 @@ export function WorkspaceLayout({
       <div className="flex h-screen bg-gray-50">
         {/* Desktop Sidebar */}
         <div className={`hidden lg:flex bg-white border-r border-gray-200 flex-col relative transition-all duration-300 ${
-          isSidebarCollapsed ? 'w-16' : 'w-[280px]'
+          isSidebarCollapsed ? 'w-16' : 'w-[224px]'
         }`}>
           {!isSidebarCollapsed && <SidebarContent />}
           
@@ -250,7 +251,7 @@ export function WorkspaceLayout({
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="w-full max-w-[1200px] mx-auto flex flex-col flex-1 p-6">
+          <div className="w-full flex flex-col flex-1 p-6">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 overflow-hidden">
               {children}
             </div>
