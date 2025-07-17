@@ -50,20 +50,15 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
     try {
       const supabase = createClient()
 
-      // Fetch issue with creator information using left join
+      // Fetch issue
       const { data: issue, error } = await supabase
         .from('issues')
-        .select('*, creator:users!issues_created_by_fkey(name)')
+        .select('*')
         .eq('id', issueId)
         .single()
 
       if (!error && issue) {
-        const issueWithCreator: IssueWithCreator = {
-          ...issue,
-          creator: issue.creator
-        }
-        
-        setCache(prev => new Map(prev).set(issueId, issueWithCreator))
+        setCache(prev => new Map(prev).set(issueId, issue as IssueWithCreator))
       }
     } catch (error) {
       console.error('Error preloading issue:', error)
@@ -94,21 +89,17 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
     try {
       const supabase = createClient()
 
-      // Batch fetch all issues with creator information using left join
+      // Batch fetch all issues
       const { data: issues, error } = await supabase
         .from('issues')
-        .select('*, creator:users!issues_created_by_fkey(name)')
+        .select('*')
         .in('id', issuesToLoad)
 
       if (!error && issues) {
         setCache(prev => {
           const newCache = new Map(prev)
           issues.forEach(issue => {
-            const issueWithCreator: IssueWithCreator = {
-              ...issue,
-              creator: issue.creator
-            }
-            newCache.set(issue.id, issueWithCreator)
+            newCache.set(issue.id, issue as IssueWithCreator)
           })
           return newCache
         })

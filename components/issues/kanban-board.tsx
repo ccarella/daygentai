@@ -134,13 +134,14 @@ export function KanbanBoard({
       const issueIds = newIssues.map(issue => issue.id)
       preloadIssues(issueIds)
     }
-  }, [workspaceId, statusFilter, priorityFilter, typeFilter, supabase, preloadIssues])
+  }, [workspaceId, statusFilter, priorityFilter, typeFilter, preloadIssues])
 
   useEffect(() => {
     setLoading(true)
     setPage(0)
     fetchIssues(0)
-  }, [statusFilter, priorityFilter, typeFilter, fetchIssues])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, priorityFilter, typeFilter, workspaceId])
 
   const loadMore = () => {
     const nextPage = page + 1
