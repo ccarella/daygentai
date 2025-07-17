@@ -200,7 +200,7 @@ export function KanbanBoard({
         )}
       </div>
       
-      <div className="flex gap-4 h-full overflow-x-auto pb-4">
+      <div className="flex gap-4 h-full overflow-x-auto pb-4 px-4">
         {columns.map(column => {
           const columnIssues = getIssuesByStatus(column.id)
           
