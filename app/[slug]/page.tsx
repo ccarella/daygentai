@@ -81,6 +81,11 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
     contentRef.current?.toggleViewMode()
   }
 
+  // Handler to toggle search
+  const handleToggleSearch = () => {
+    contentRef.current?.toggleSearch()
+  }
+
   // Use global shortcuts - must be called before any returns
   useGlobalShortcuts({
     workspaceSlug: workspace?.slug || '',
@@ -118,6 +123,7 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
         workspaceSlug={workspace.slug} 
         onCreateIssue={handleCreateIssue}
         onToggleViewMode={handleToggleViewMode}
+        onToggleSearch={handleToggleSearch}
       />
     </>
   )

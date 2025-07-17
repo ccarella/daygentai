@@ -28,7 +28,7 @@ export function KeyboardShortcutsModal({ open, onOpenChange }: KeyboardShortcuts
       title: "General",
       shortcuts: [
         { keys: ["⌘", "K"], description: "Open command palette" },
-        { keys: ["/"], description: "Open command palette (alternative)" },
+        { keys: ["/"], description: "Toggle search bar" },
         { keys: ["Esc"], description: "Close dialogs and cancel actions" },
       ]
     },

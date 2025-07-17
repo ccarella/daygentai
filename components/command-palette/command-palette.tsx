@@ -28,9 +28,10 @@ interface CommandPaletteProps {
   workspaceSlug: string
   onCreateIssue?: () => void
   onToggleViewMode?: () => void
+  onToggleSearch?: () => void
 }
 
-export function CommandPalette({ workspaceSlug, onCreateIssue, onToggleViewMode }: CommandPaletteProps) {
+export function CommandPalette({ workspaceSlug, onCreateIssue, onToggleViewMode, onToggleSearch }: CommandPaletteProps) {
   const router = useRouter()
   const { isOpen, setIsOpen } = useCommandPalette()
   const [search, setSearch] = React.useState("")
@@ -81,6 +82,18 @@ export function CommandPalette({ workspaceSlug, onCreateIssue, onToggleViewMode 
       group: "View"
     },
     {
+      id: "toggle-search",
+      title: "Toggle Search Bar",
+      icon: <Search className="w-4 h-4" />,
+      shortcut: "/",
+      action: () => {
+        setIsOpen(false)
+        onToggleSearch?.()
+      },
+      keywords: ["search", "find", "filter", "query", "toggle", "show", "hide"],
+      group: "View"
+    },
+    {
       id: "filter-status",
       title: "Filter by Status",
       icon: <Filter className="w-4 h-4" />,
@@ -102,7 +115,7 @@ export function CommandPalette({ workspaceSlug, onCreateIssue, onToggleViewMode 
       keywords: ["history", "viewed", "last"],
       group: "Quick Access"
     }
-  ], [workspaceSlug, router, setIsOpen, onCreateIssue, onToggleViewMode])
+  ], [workspaceSlug, router, setIsOpen, onCreateIssue, onToggleViewMode, onToggleSearch])
 
   const filteredCommands = React.useMemo(() => {
     if (!search) return commands

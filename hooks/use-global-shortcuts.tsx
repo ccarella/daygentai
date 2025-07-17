@@ -43,12 +43,13 @@ export function useGlobalShortcuts({ workspaceSlug, onCreateIssue, onShowHelp, o
         return
       }
 
-      // Handle forward slash for search
-      if (e.key === "/") {
-        e.preventDefault()
-        setCommandPaletteOpen(true)
-        return
-      }
+      // Forward slash is now handled by search bar in workspace-content.tsx
+      // Commented out to allow search bar toggle functionality
+      // if (e.key === "/") {
+      //   e.preventDefault()
+      //   setCommandPaletteOpen(true)
+      //   return
+      // }
 
       // Handle question mark for help
       if (e.key === "?" && e.shiftKey) {
