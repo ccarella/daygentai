@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   Dialog,
@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Loader2 } from 'lucide-react'
+import { generateIssuePrompt } from '@/lib/llm/prompt-generator'
 
 interface CreateIssueModalProps {
   open: boolean
@@ -43,6 +44,62 @@ export function CreateIssueModal({
   const [createPrompt, setCreatePrompt] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [hasApiKey, setHasApiKey] = useState(false)
+  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false)
+  
+  // Debug logging
+  console.log('CreateIssueModal rendered:', { open, workspaceId, hasApiKey })
+  
+  // Check if workspace has API key when modal opens
+  useEffect(() => {
+    const checkApiKey = async () => {
+      if (!open || !workspaceId) {
+        return
+      }
+      
+      try {
+        const supabase = createClient()
+        
+        // First ensure we have a valid session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        if (sessionError || !session) {
+          console.error('No valid session:', sessionError)
+          return
+        }
+        
+        // Now fetch workspace with api_key
+        const { data: workspace, error } = await supabase
+          .from('workspaces')
+          .select('id, name, api_key, api_provider')
+          .eq('id', workspaceId)
+          .single()
+        
+        if (error) {
+          console.error('Error fetching workspace:', error)
+          // If we get a 404, the workspace might not exist
+          if (error.code === 'PGRST116') {
+            console.error('Workspace not found with ID:', workspaceId)
+          }
+          return
+        }
+        
+        // Check if api_key exists and is not empty
+        const hasKey = !!(workspace?.api_key && workspace.api_key.length > 0)
+        console.log('API Key check:', { 
+          workspaceId, 
+          hasApiKey: hasKey,
+          provider: workspace?.api_provider 
+        })
+        
+        setHasApiKey(hasKey)
+        setCreatePrompt(hasKey) // Set default state based on API key presence
+      } catch (error) {
+        console.error('Error checking API key:', error)
+      }
+    }
+    
+    checkApiKey()
+  }, [open, workspaceId])
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -62,6 +119,44 @@ export function CreateIssueModal({
         return
       }
 
+      let generatedPrompt = null
+      
+      // Generate prompt if toggle is on and workspace has API key
+      if (createPrompt && hasApiKey) {
+        setIsGeneratingPrompt(true)
+        try {
+          // Fetch workspace data including API key and agents content
+          const { data: workspace } = await supabase
+            .from('workspaces')
+            .select('api_key, api_provider, agents_content')
+            .eq('id', workspaceId)
+            .single()
+          
+          if (workspace?.api_key) {
+            const { prompt, error: promptError } = await generateIssuePrompt({
+              title: title.trim(),
+              description: description.trim(),
+              agentsContent: workspace.agents_content,
+              apiKey: workspace.api_key,
+              provider: workspace.api_provider || 'openai'
+            })
+            
+            if (promptError) {
+              console.error('Error generating prompt:', promptError)
+              // Continue without prompt - don't block issue creation
+            } else {
+              generatedPrompt = prompt
+            }
+          }
+        } catch (error) {
+          console.error('Error generating prompt:', error)
+          // Continue without prompt
+        } finally {
+          setIsGeneratingPrompt(false)
+        }
+      }
+      
+      // Create the issue with or without generated prompt
       const { error: insertError } = await supabase
         .from('issues')
         .insert({
@@ -72,6 +167,7 @@ export function CreateIssueModal({
           status: 'todo',
           workspace_id: workspaceId,
           created_by: user.id,
+          generated_prompt: generatedPrompt,
         })
 
       if (insertError) {
@@ -174,14 +270,24 @@ export function CreateIssueModal({
                   Create a prompt
                 </Label>
                 <div className="text-sm text-gray-500">
-                  Generate an AI prompt for this issue (coming soon)
+                  {hasApiKey 
+                    ? 'Generate an AI prompt for development agents' 
+                    : workspaceId 
+                      ? 'API key required in workspace settings' 
+                      : 'No workspace ID provided'}
+                  {/* Debug info */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="text-xs text-gray-400 mt-1">
+                      Debug: workspaceId={workspaceId ? workspaceId.substring(0, 8) + '...' : 'none'}
+                    </div>
+                  )}
                 </div>
               </div>
               <Switch
                 id="create-prompt"
                 checked={createPrompt}
                 onCheckedChange={setCreatePrompt}
-                disabled
+                disabled={!hasApiKey}
               />
             </div>
 
@@ -206,7 +312,7 @@ export function CreateIssueModal({
             disabled={isSubmitting || !title.trim()}
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create issue
+            {isGeneratingPrompt ? 'Generating prompt...' : 'Create issue'}
           </Button>
         </DialogFooter>
       </DialogContent>
