@@ -156,7 +156,17 @@ export function CommandPalette({ workspaceSlug, onCreateIssue, onToggleViewMode,
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen || mode === 'help') return
+      if (!isOpen) return
+
+      // Handle Escape key for both command and help modes
+      if (e.key === "Escape") {
+        e.preventDefault()
+        setIsOpen(false)
+        return
+      }
+
+      // Skip other keyboard navigation in help mode
+      if (mode === 'help') return
 
       switch (e.key) {
         case "ArrowDown":
