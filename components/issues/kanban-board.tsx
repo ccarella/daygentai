@@ -37,12 +37,20 @@ const columns = [
   { id: 'done', title: 'Done', color: 'bg-green-50' }
 ]
 
-const typeIcons = {
-  bug: '🐛',
-  feature: '✨',
-  chore: '🔧',
-  design: '🎨',
-  'non-technical': '📝'
+const typeColors = {
+  feature: 'text-purple-700 bg-purple-50 border border-purple-200',
+  bug: 'text-red-700 bg-red-50 border border-red-200',
+  chore: 'text-blue-700 bg-blue-50 border border-blue-200',
+  design: 'text-pink-700 bg-pink-50 border border-pink-200',
+  'non-technical': 'text-gray-700 bg-gray-50 border border-gray-200'
+}
+
+const typeLabels = {
+  feature: 'Feature',
+  bug: 'Bug',
+  chore: 'Chore',
+  design: 'Design',
+  'non-technical': 'Non-technical'
 }
 
 const priorityColors = {
@@ -228,18 +236,18 @@ export function KanbanBoard({
                       onClick={() => onIssueClick(issue.id)}
                       className="bg-white p-3 rounded-lg border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <span className="text-lg" title={issue.type}>
-                          {typeIcons[issue.type] || '📌'}
+                      <h4 className="font-medium text-gray-900 mb-2 line-clamp-2">
+                        {issue.title}
+                      </h4>
+                      
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`text-xs px-2 py-1 rounded-md font-medium ${typeColors[issue.type]}`}>
+                          {typeLabels[issue.type]}
                         </span>
                         <span className={`text-xs px-2 py-1 rounded-full border ${priorityColors[issue.priority]}`}>
                           {issue.priority}
                         </span>
                       </div>
-                      
-                      <h4 className="font-medium text-gray-900 mb-1 line-clamp-2">
-                        {issue.title}
-                      </h4>
                       
                       {issue.description && (
                         <p className="text-sm text-gray-600 line-clamp-2 mb-2">
