@@ -1,6 +1,5 @@
 import { vi } from 'vitest'
 import { createMockUser } from '../fixtures/users'
-import { createMockWorkspace } from '../fixtures/workspaces'
 
 export const createMockSupabaseClient = (overrides: any = {}) => {
   const mockAuth = {

@@ -8,7 +8,7 @@ export const mockUser: User = {
   user_metadata: {},
   aud: 'authenticated',
   confirmation_sent_at: '2024-01-01T00:00:00.000Z',
-  recovery_sent_at: null,
+  recovery_sent_at: undefined as any,
   email_confirmed_at: '2024-01-01T00:01:00.000Z',
   last_sign_in_at: '2024-01-01T00:02:00.000Z',
   role: 'authenticated',
