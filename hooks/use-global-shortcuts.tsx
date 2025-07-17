@@ -99,17 +99,19 @@ export function useGlobalShortcuts({ workspaceSlug, onCreateIssue, onShowHelp, o
         return
       }
 
-      // Single key shortcuts
-      switch (key) {
-        case "c":
-          e.preventDefault()
-          onCreateIssue?.()
-          break
-        case "f":
-          e.preventDefault()
-          // TODO: Implement filter
-          console.log("Filter shortcut pressed")
-          break
+      // Single key shortcuts (only if no modifier keys are pressed)
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+        switch (key) {
+          case "c":
+            e.preventDefault()
+            onCreateIssue?.()
+            break
+          case "f":
+            e.preventDefault()
+            // TODO: Implement filter
+            console.log("Filter shortcut pressed")
+            break
+        }
       }
     }
 
