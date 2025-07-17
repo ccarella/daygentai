@@ -207,7 +207,7 @@ export function KanbanBoard({
           return (
             <div
               key={column.id}
-              className="flex-shrink-0 w-80"
+              className="flex-shrink-0 w-72"
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, column.id)}
             >
