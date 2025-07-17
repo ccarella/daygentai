@@ -250,7 +250,7 @@ export function WorkspaceLayout({
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="w-full max-w-[1200px] mx-auto flex flex-col flex-1 p-6">
+          <div className="w-full flex flex-col flex-1 p-6">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 overflow-hidden">
               {children}
             </div>
