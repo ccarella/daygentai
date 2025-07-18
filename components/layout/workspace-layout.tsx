@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, HelpCircle, Settings, Terminal } from 'lucide-react'
 import { CreateIssueModal } from '@/components/issues/create-issue-modal'
 import { useCommandPalette } from '@/hooks/use-command-palette'
 
@@ -19,8 +19,10 @@ interface WorkspaceLayoutProps {
   onIssueCreated?: () => void
   onNavigateToIssues?: () => void
   onNavigateToInbox?: () => void
+  onNavigateToSettings?: () => void
   isMobileMenuOpen?: boolean
   setIsMobileMenuOpen?: (open: boolean) => void
+  sidebarRef?: React.RefObject<HTMLDivElement | null>
 }
 
 export function WorkspaceLayout({ 
@@ -29,14 +31,18 @@ export function WorkspaceLayout({
   onIssueCreated, 
   onNavigateToIssues,
   onNavigateToInbox,
+  onNavigateToSettings,
   isMobileMenuOpen: propIsMobileMenuOpen,
-  setIsMobileMenuOpen: propSetIsMobileMenuOpen
+  setIsMobileMenuOpen: propSetIsMobileMenuOpen,
+  sidebarRef: propSidebarRef
 }: WorkspaceLayoutProps) {
   const [createIssueOpen, setCreateIssueOpen] = useState(false)
   const [localIsMobileMenuOpen, setLocalIsMobileMenuOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const pathname = usePathname()
   const { openWithMode } = useCommandPalette()
+  const localSidebarRef = useRef<HTMLDivElement>(null)
+  const sidebarRef = propSidebarRef || localSidebarRef
   
   // Use prop values if provided, otherwise use local state
   const isMobileMenuOpen = propIsMobileMenuOpen !== undefined ? propIsMobileMenuOpen : localIsMobileMenuOpen
@@ -46,6 +52,8 @@ export function WorkspaceLayout({
     onIssueCreated?.()
     setCreateIssueOpen(false)
   }
+
+  // Navigation is now handled by parent component
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -89,11 +97,12 @@ export function WorkspaceLayout({
       </div>
 
       {/* Navigation - scrollable on mobile */}
-      <nav className="flex-1 p-1.5 md:p-2 overflow-y-auto">
+      <nav ref={sidebarRef} className="flex-1 p-1.5 md:p-2 overflow-y-auto">
         {/* Create Issue button - mobile only */}
         <button
+          data-sidebar-item
           onClick={() => setCreateIssueOpen(true)}
-          className="md:hidden w-full flex items-center space-x-2 px-3 min-h-[44px] rounded-lg transition-colors hover:bg-gray-100 text-gray-700 mb-1"
+          className="md:hidden w-full flex items-center space-x-2 px-3 min-h-[44px] rounded-lg transition-colors hover:bg-gray-100 text-gray-700 mb-1 focus:outline-none"
         >
           <Plus className="w-5 h-5" />
           <span>Create Issue</span>
@@ -101,8 +110,9 @@ export function WorkspaceLayout({
         
         {onNavigateToInbox ? (
           <button
+            data-sidebar-item
             onClick={onNavigateToInbox}
-            className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors ${
+            className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors focus:outline-none ${
               pathname === `/${workspace.slug}/inbox` 
                 ? 'bg-gray-100 text-gray-900' 
                 : 'hover:bg-gray-100 text-gray-700'
@@ -115,8 +125,9 @@ export function WorkspaceLayout({
           </button>
         ) : (
           <Link
+            data-sidebar-item
             href={`/${workspace.slug}/inbox`}
-            className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors ${
+            className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors focus:outline-none ${
               pathname === `/${workspace.slug}/inbox` 
                 ? 'bg-gray-100 text-gray-900' 
                 : 'hover:bg-gray-100 text-gray-700'
@@ -131,8 +142,9 @@ export function WorkspaceLayout({
         
         {onNavigateToIssues ? (
           <button
+            data-sidebar-item
             onClick={onNavigateToIssues}
-            className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 ${
+            className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
                 ? 'bg-gray-100 text-gray-900' 
                 : 'hover:bg-gray-100 text-gray-700'
@@ -145,8 +157,9 @@ export function WorkspaceLayout({
           </button>
         ) : (
           <Link
+            data-sidebar-item
             href={`/${workspace.slug}`}
-            className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 ${
+            className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
                 ? 'bg-gray-100 text-gray-900' 
                 : 'hover:bg-gray-100 text-gray-700'
@@ -158,13 +171,52 @@ export function WorkspaceLayout({
             <span>Issues</span>
           </Link>
         )}
+        
+        {/* Command Palette */}
+        <button
+          data-sidebar-item
+          onClick={() => openWithMode('normal')}
+          className="w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none hover:bg-gray-100 text-gray-700"
+        >
+          <Terminal className="w-5 h-5" />
+          <span>Commands</span>
+        </button>
+        
+        {onNavigateToSettings ? (
+          <button
+            data-sidebar-item
+            onClick={onNavigateToSettings}
+            className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
+              pathname === `/${workspace.slug}/settings` 
+                ? 'bg-gray-100 text-gray-900' 
+                : 'hover:bg-gray-100 text-gray-700'
+            }`}
+          >
+            <Settings className="w-5 h-5" />
+            <span>Settings</span>
+          </button>
+        ) : (
+          <Link
+            data-sidebar-item
+            href={`/${workspace.slug}/settings`}
+            className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
+              pathname === `/${workspace.slug}/settings` 
+                ? 'bg-gray-100 text-gray-900' 
+                : 'hover:bg-gray-100 text-gray-700'
+            }`}
+          >
+            <Settings className="w-5 h-5" />
+            <span>Settings</span>
+          </Link>
+        )}
       </nav>
 
       {/* Info Icon at Bottom */}
       <div className="p-2 border-t border-gray-200">
         <button
+          data-sidebar-item
           onClick={() => openWithMode('help')}
-          className="w-full flex items-center justify-center p-2 rounded-lg transition-colors hover:bg-gray-100"
+          className="w-full flex items-center justify-center p-2 rounded-lg transition-colors hover:bg-gray-100 focus:outline-none"
           title="Help & Keyboard shortcuts"
         >
           <HelpCircle className="w-5 h-5 text-gray-500" />
@@ -235,18 +287,63 @@ export function WorkspaceLayout({
                   </svg>
                 </Link>
               )}
-              <Link
-                href={`/${workspace.slug}`}
-                className={`p-2 rounded transition-colors ${
-                  pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
-                    ? 'bg-gray-100' 
-                    : 'hover:bg-gray-100'
-                }`}
+              {onNavigateToIssues ? (
+                <button
+                  onClick={onNavigateToIssues}
+                  className={`p-2 rounded mb-2 transition-colors ${
+                    pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
+                      ? 'bg-gray-100' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              ) : (
+                <Link
+                  href={`/${workspace.slug}`}
+                  className={`p-2 rounded mb-2 transition-colors ${
+                    pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
+                      ? 'bg-gray-100' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </Link>
+              )}
+              <button
+                onClick={() => openWithMode('normal')}
+                className="p-2 rounded mb-2 hover:bg-gray-100 transition-colors"
+                title="Commands"
               >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </Link>
+                <Terminal className="w-5 h-5 text-gray-600" />
+              </button>
+              {onNavigateToSettings ? (
+                <button
+                  onClick={onNavigateToSettings}
+                  className={`p-2 rounded transition-colors ${
+                    pathname === `/${workspace.slug}/settings` 
+                      ? 'bg-gray-100' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <Settings className="w-5 h-5 text-gray-600" />
+                </button>
+              ) : (
+                <Link
+                  href={`/${workspace.slug}/settings`}
+                  className={`p-2 rounded transition-colors ${
+                    pathname === `/${workspace.slug}/settings` 
+                      ? 'bg-gray-100' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <Settings className="w-5 h-5 text-gray-600" />
+                </Link>
+              )}
               <button
                 onClick={() => openWithMode('help')}
                 className="p-2 rounded hover:bg-gray-100 mt-auto"
