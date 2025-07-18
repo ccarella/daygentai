@@ -16,7 +16,9 @@ export function EmailLogin() {
     setMessage(null)
 
     try {
-      const { error } = await signInWithMagicLink(email)
+      // Use window.location.origin to get the current deployment URL
+      const redirectURL = `${window.location.origin}/auth/callback`
+      const { error } = await signInWithMagicLink(email, redirectURL)
 
       if (error) throw error
 

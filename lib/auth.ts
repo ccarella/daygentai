@@ -1,11 +1,7 @@
 import { createClient } from './supabase/client'
-import { getURL } from './helpers'
 
-export async function signInWithMagicLink(email: string) {
+export async function signInWithMagicLink(email: string, redirectURL: string) {
   const supabase = createClient()
-  
-  // This is the magic - getURL() automatically uses the right domain
-  const redirectURL = `${getURL()}/auth/callback`
   
   const { data, error } = await supabase.auth.signInWithOtp({
     email: email,
