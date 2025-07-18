@@ -223,8 +223,8 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
         </div>
       </div>
       
-      {/* Filters - Only show for issues list view */}
-      {currentView === 'list' && (
+      {/* Filters - Show for both list views (list and kanban) */}
+      {currentView === 'list' && (issuesViewMode === 'list' || issuesViewMode === 'kanban') && (
         <div className="border-b border-gray-200 bg-white overflow-hidden relative">
           {/* Mobile and Desktop Filter Header */}
           <div className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-3">
@@ -382,7 +382,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
       {currentView === 'list' ? (
         issuesViewMode === 'list' ? (
           <IssuesList 
-            key={refreshKey}
+            key={`list-${refreshKey}`}
             workspaceId={workspace.id} 
             workspaceSlug={workspace.slug}
             onIssueClick={handleIssueClick}
@@ -392,7 +392,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
           />
         ) : (
           <KanbanBoard
-            key={refreshKey}
+            key={`kanban-${refreshKey}`}
             workspaceId={workspace.id}
             onIssueClick={handleIssueClick}
             statusFilter={statusFilter}
