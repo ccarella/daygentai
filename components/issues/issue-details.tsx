@@ -85,6 +85,8 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
   const [issue, setIssue] = useState<Issue | null>(null)
   const [loading, setLoading] = useState(true)
   const [creatorName, setCreatorName] = useState<string>('')
+  const [creatorAvatar, setCreatorAvatar] = useState<string | null>(null)
+  const [createdAt, setCreatedAt] = useState<string>('')
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   const [isUpdatingType, setIsUpdatingType] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -95,7 +97,24 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
       const cachedIssue = getIssue(issueId)
       if (cachedIssue) {
         setIssue(cachedIssue)
-        setCreatorName(cachedIssue.creator?.name || '')
+        setCreatedAt(cachedIssue.created_at)
+        
+        // Still need to fetch creator info if not in cache
+        const supabase = createClient()
+        const { data: user } = await supabase
+          .from('users')
+          .select('name, avatar_url')
+          .eq('id', cachedIssue.created_by)
+          .single()
+
+        if (user) {
+          setCreatorName(user.name.trim() || 'Unknown')
+          setCreatorAvatar(user.avatar_url)
+        } else {
+          setCreatorName('Unknown')
+          setCreatorAvatar(null)
+        }
+        
         setLoading(false)
         return
       }
@@ -117,16 +136,21 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
       }
 
       setIssue(issue)
+      setCreatedAt(issue.created_at)
 
-      // Fetch creator name
-      const { data: creator } = await supabase
+      // Fetch creator info
+      const { data: user } = await supabase
         .from('users')
-        .select('name')
+        .select('name, avatar_url')
         .eq('id', issue.created_by)
         .single()
 
-      if (creator) {
-        setCreatorName(creator.name)
+      if (user) {
+        setCreatorName(user.name.trim() || 'Unknown')
+        setCreatorAvatar(user.avatar_url)
+      } else {
+        setCreatorName('Unknown')
+        setCreatorAvatar(null)
       }
 
       setLoading(false)
@@ -268,13 +292,10 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
 
           {/* Metadata */}
           <div className="space-y-3">
-            {/* Priority and Created info - separate line on mobile */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[issue.priority]} w-fit`}>
+            {/* Priority - now on its own */}
+            <div className="flex items-center">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[issue.priority]}`}>
                 {priorityLabels[issue.priority]}
-              </span>
-              <span className="text-gray-500 text-sm">
-                Created by {creatorName} {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
               </span>
             </div>
             
@@ -356,8 +377,36 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
           <div className="space-y-4">
             <h2 className="text-lg font-medium text-gray-900">Activity</h2>
             
-            <div className="bg-gray-50 rounded-lg p-6 text-center">
-              <p className="text-gray-500 text-sm">Activity timeline coming soon...</p>
+            <div className="space-y-4">
+              {/* Created by info */}
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                    {creatorAvatar && creatorAvatar.startsWith('http') ? (
+                      <img 
+                        src={creatorAvatar} 
+                        alt={creatorName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : creatorAvatar && creatorAvatar.length <= 2 ? (
+                      <span className="text-lg">{creatorAvatar}</span>
+                    ) : (
+                      <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-900">
+                    <span className="font-medium">{creatorName}</span>
+                    <span className="text-gray-500"> created this issue</span>
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {createdAt && formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
