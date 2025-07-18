@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { WorkspaceWithMobileNav } from '@/components/layout/workspace-with-mobile-nav'
-import { ApiSettings } from '@/components/settings/api-settings'
+import { SettingsPageClient } from './settings-client'
 
 interface SettingsPageProps {
   params: Promise<{ slug: string }>
@@ -38,21 +38,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
   
   return (
     <WorkspaceWithMobileNav workspace={workspace}>
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-2">Workspace Settings</h1>
-          <p className="text-gray-600">Manage your workspace configuration and integrations</p>
-        </div>
-        
-        <ApiSettings 
-          workspaceId={workspace.id}
-          initialSettings={{
-            api_key: workspaceData.api_key,
-            api_provider: workspaceData.api_provider,
-            agents_content: workspaceData.agents_content
-          }}
-        />
-      </div>
+      <SettingsPageClient workspace={workspace} workspaceData={workspaceData} user={user} />
     </WorkspaceWithMobileNav>
   )
 }
