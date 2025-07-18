@@ -7,7 +7,15 @@ import { WorkspaceWithMobileNav } from '@/components/layout/workspace-with-mobil
 import { WorkspaceContent, WorkspaceContentRef } from '@/components/workspace/workspace-content'
 import { IssueCacheProvider } from '@/contexts/issue-cache-context'
 import { CommandPaletteProvider } from '@/hooks/use-command-palette'
-import { CommandPalette } from '@/components/command-palette/command-palette'
+import dynamic from 'next/dynamic'
+
+const CommandPalette = dynamic(
+  () => import('@/components/command-palette/command-palette').then(mod => ({ default: mod.CommandPalette })),
+  { 
+    ssr: false,
+    loading: () => null
+  }
+)
 import { useGlobalShortcuts } from '@/hooks/use-global-shortcuts'
 
 function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> }) {
@@ -119,12 +127,14 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
           />
         </WorkspaceWithMobileNav>
       </IssueCacheProvider>
-      <CommandPalette 
-        workspaceSlug={workspace.slug} 
-        onCreateIssue={handleCreateIssue}
-        onToggleViewMode={handleToggleViewMode}
-        onToggleSearch={handleToggleSearch}
-      />
+      {workspace && (
+        <CommandPalette 
+          workspaceSlug={workspace.slug} 
+          onCreateIssue={handleCreateIssue}
+          onToggleViewMode={handleToggleViewMode}
+          onToggleSearch={handleToggleSearch}
+        />
+      )}
     </>
   )
 }
