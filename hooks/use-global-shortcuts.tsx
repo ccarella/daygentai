@@ -43,6 +43,21 @@ export function useGlobalShortcuts({ workspaceSlug, onCreateIssue, onShowHelp, o
         return
       }
 
+      // Handle Cmd/Ctrl + N for Next Issue recommendation
+      if ((e.metaKey || e.ctrlKey) && e.key === "n") {
+        e.preventDefault()
+        // Trigger command palette with Next Issue command
+        setCommandPaletteOpen(true)
+        // After a small delay, trigger the Next Issue command
+        setTimeout(() => {
+          const nextIssueButton = document.querySelector('[data-command-id="next-issue"]') as HTMLElement
+          if (nextIssueButton) {
+            nextIssueButton.click()
+          }
+        }, 100)
+        return
+      }
+
       // Forward slash is now handled by search bar in workspace-content.tsx
       // Commented out to allow search bar toggle functionality
       // if (e.key === "/") {

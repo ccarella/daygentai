@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { Search, FileText, Inbox, Plus, Filter, Clock, LayoutGrid, Keyboard } from "lucide-react"
+import { Search, FileText, Inbox, Plus, Filter, Clock, LayoutGrid, Keyboard, Sparkles } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { CommandGroup } from "./command-group"
 import { CommandItem } from "./command-item"
 import { useCommandPalette } from "@/hooks/use-command-palette"
+import { recommendNextIssueAction } from "@/app/actions/recommend-issue"
 
 interface Command {
   id: string
@@ -26,12 +27,13 @@ interface Command {
 
 interface CommandPaletteProps {
   workspaceSlug: string
+  workspaceId: string
   onCreateIssue?: () => void
   onToggleViewMode?: () => void
   onToggleSearch?: () => void
 }
 
-export function CommandPalette({ workspaceSlug, onCreateIssue, onToggleViewMode, onToggleSearch }: CommandPaletteProps) {
+export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onToggleViewMode, onToggleSearch }: CommandPaletteProps) {
   const router = useRouter()
   const { isOpen, setIsOpen, mode } = useCommandPalette()
   const [search, setSearch] = React.useState("")
@@ -114,8 +116,84 @@ export function CommandPalette({ workspaceSlug, onCreateIssue, onToggleViewMode,
       },
       keywords: ["history", "viewed", "last"],
       group: "Quick Access"
+    },
+    {
+      id: "next-issue",
+      title: "Next Issue (AI Recommendation)",
+      icon: <Sparkles className="w-4 h-4" />,
+      shortcut: "⌘N",
+      action: async () => {
+        setIsOpen(false)
+        // Show loading state
+        const loadingToast = document.createElement('div')
+        loadingToast.className = 'fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 z-50 flex items-center gap-2'
+        loadingToast.innerHTML = '<div class="animate-spin h-4 w-4 border-2 border-gray-500 border-t-transparent rounded-full"></div><span>Getting AI recommendation...</span>'
+        document.body.appendChild(loadingToast)
+        
+        try {
+          const result = await recommendNextIssueAction(workspaceId)
+          
+          // Remove loading toast
+          document.body.removeChild(loadingToast)
+          
+          if (result.error) {
+            // Show error toast
+            const errorToast = document.createElement('div')
+            errorToast.className = 'fixed bottom-4 right-4 bg-red-50 text-red-900 shadow-lg rounded-lg p-4 z-50'
+            errorToast.innerHTML = `<div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span>${result.error}</span></div>`
+            document.body.appendChild(errorToast)
+            setTimeout(() => document.body.removeChild(errorToast), 5000)
+            return
+          }
+          
+          if (result.issueId) {
+            // Show recommendation toast with justification
+            const recommendationToast = document.createElement('div')
+            recommendationToast.className = 'fixed bottom-4 right-4 bg-green-50 shadow-lg rounded-lg p-4 z-50 max-w-md'
+            recommendationToast.innerHTML = `
+              <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                  <p class="font-medium text-gray-900 mb-1">Recommended: ${result.title}</p>
+                  <p class="text-sm text-gray-600 mb-2">${result.justification}</p>
+                  <button class="text-sm text-green-600 hover:text-green-700 font-medium" onclick="this.closest('div.fixed').remove()">Dismiss</button>
+                </div>
+              </div>
+            `
+            document.body.appendChild(recommendationToast)
+            
+            // Navigate to the issue after a short delay
+            setTimeout(() => {
+              router.push(`/${workspaceSlug}/issue/${result.issueId}`)
+            }, 1000)
+            
+            // Auto-remove toast after 10 seconds
+            setTimeout(() => {
+              if (document.body.contains(recommendationToast)) {
+                document.body.removeChild(recommendationToast)
+              }
+            }, 10000)
+          }
+        } catch (error) {
+          // Remove loading toast if still present
+          if (document.body.contains(loadingToast)) {
+            document.body.removeChild(loadingToast)
+          }
+          
+          // Show error toast
+          const errorToast = document.createElement('div')
+          errorToast.className = 'fixed bottom-4 right-4 bg-red-50 text-red-900 shadow-lg rounded-lg p-4 z-50'
+          errorToast.innerHTML = '<div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span>Failed to get recommendation</span></div>'
+          document.body.appendChild(errorToast)
+          setTimeout(() => document.body.removeChild(errorToast), 5000)
+        }
+      },
+      keywords: ["ai", "recommend", "suggestion", "next", "task", "priority"],
+      group: "AI Assistant"
     }
-  ], [workspaceSlug, router, setIsOpen, onCreateIssue, onToggleViewMode, onToggleSearch])
+  ], [workspaceSlug, workspaceId, router, setIsOpen, onCreateIssue, onToggleViewMode, onToggleSearch])
 
   const filteredCommands = React.useMemo(() => {
     if (!search) return commands
@@ -221,6 +299,13 @@ export function CommandPalette({ workspaceSlug, onCreateIssue, onToggleViewMode,
         ]
       },
       {
+        title: "AI Assistant",
+        shortcuts: [
+          { keys: ["⌘", "N"], description: "Get next issue recommendation" },
+          { keys: ["⌘", "K"], description: "Open command palette → Next Issue" },
+        ]
+      },
+      {
         title: "Command Palette",
         shortcuts: [
           { keys: ["↑", "↓"], description: "Navigate through commands" },
@@ -309,6 +394,7 @@ export function CommandPalette({ workspaceSlug, onCreateIssue, onToggleViewMode,
                     return (
                       <CommandItem
                         key={command.id}
+                        data-command-id={command.id}
                         onSelect={() => {
                           command.action()
                           setIsOpen(false)

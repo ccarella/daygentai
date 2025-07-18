@@ -129,7 +129,8 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
       </IssueCacheProvider>
       {workspace && (
         <CommandPalette 
-          workspaceSlug={workspace.slug} 
+          workspaceSlug={workspace.slug}
+          workspaceId={workspace.id}
           onCreateIssue={handleCreateIssue}
           onToggleViewMode={handleToggleViewMode}
           onToggleSearch={handleToggleSearch}
