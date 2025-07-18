@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MarkdownEditor } from '@/components/ui/markdown-editor';
@@ -196,6 +196,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }) {
             >
                 <DialogHeader className="shrink-0">
                     <DialogTitle>Edit issue</DialogTitle>
+                    <DialogDescription>Update the details of your issue</DialogDescription>
                 </DialogHeader>
 
                 <div className="flex-1 overflow-y-auto px-6 -mx-6 scrollbar-thin">

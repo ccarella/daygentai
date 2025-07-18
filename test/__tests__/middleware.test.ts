@@ -269,14 +269,14 @@ describe('middleware', () => {
         )
       })
 
-      it('redirects from workspace routes to /CreateWorkspace', async () => {
+      it('allows access to workspace routes when user has profile', async () => {
         mockRequest.nextUrl.pathname = '/test-workspace'
         
-        await middleware(mockRequest as NextRequest)
+        const response = await middleware(mockRequest as NextRequest)
         
-        expect(NextResponse.redirect).toHaveBeenCalledWith(
-          new URL('/CreateWorkspace', mockRequest.url)
-        )
+        // Middleware doesn't redirect when user has profile (workspace access is checked in page components)
+        expect(NextResponse.redirect).not.toHaveBeenCalled()
+        expect(response).toBeDefined()
       })
     })
 

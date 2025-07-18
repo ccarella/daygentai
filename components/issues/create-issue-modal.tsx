@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -206,6 +207,7 @@ export function CreateIssueModal({
       >
         <DialogHeader className="shrink-0">
           <DialogTitle>New issue</DialogTitle>
+          <DialogDescription>Create a new issue for your workspace</DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 -mx-6 scrollbar-thin">

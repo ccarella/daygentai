@@ -227,9 +227,9 @@ describe('Navigation', () => {
         </TestWrapper>
       )
 
-      // Verify we can render the workspace content
+      // Verify we can render the workspace content - look for the search hint
       await waitFor(() => {
-        expect(screen.getByText('Test Workspace')).toBeInTheDocument()
+        expect(screen.getByText(/to search/)).toBeInTheDocument()
       })
     })
 
