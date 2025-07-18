@@ -63,7 +63,7 @@ const priorityColors = {
 export function KanbanBoard({ 
   workspaceId, 
   onIssueClick,
-  statusFilter = 'exclude_done',
+  statusFilter = 'all',
   priorityFilter = 'all',
   typeFilter = 'all'
 }: KanbanBoardProps) {
