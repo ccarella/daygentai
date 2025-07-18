@@ -141,7 +141,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       await user.type(titleInput, 'Updated title')
 
       // Submit form
-      const submitButton = screen.getByRole('button', { name: /update issue/i })
+      const submitButton = screen.getByRole('button', { name: /save changes/i })
       await user.click(submitButton)
 
       await waitFor(() => {
@@ -180,7 +180,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       fireEvent.change(prioritySelect, { target: { value: 'HIGH' } })
 
       // Submit form
-      const submitButton = screen.getByRole('button', { name: /update issue/i })
+      const submitButton = screen.getByRole('button', { name: /save changes/i })
       await user.click(submitButton)
 
       await waitFor(() => {
@@ -212,7 +212,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       await user.click(toggle)
 
       // Submit form
-      const submitButton = screen.getByRole('button', { name: /update issue/i })
+      const submitButton = screen.getByRole('button', { name: /save changes/i })
       await user.click(submitButton)
 
       await waitFor(() => {
@@ -233,12 +233,12 @@ describe('EditIssueModal - Prompt Generation', () => {
         expect(screen.getByRole('switch')).toBeInTheDocument()
       })
 
-      // Enable prompt generation
+      // The toggle is automatically enabled when workspace has API key and issue has no prompt
       const toggle = screen.getByRole('switch')
-      await user.click(toggle)
+      expect(toggle).toBeChecked()
 
       // Submit form
-      const submitButton = screen.getByRole('button', { name: /update issue/i })
+      const submitButton = screen.getByRole('button', { name: /save changes/i })
       await user.click(submitButton)
 
       await waitFor(() => {
@@ -268,20 +268,23 @@ describe('EditIssueModal - Prompt Generation', () => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
-      // Enable prompt and change content
+      // The toggle should be ON by default when workspace has API key and issue has no prompt
       const toggle = screen.getByRole('switch')
-      await user.click(toggle)
+      expect(toggle).toBeChecked()
       
       const titleInput = screen.getByLabelText('Issue title')
       await user.clear(titleInput)
       await user.type(titleInput, 'New title')
 
       // Submit form
-      const submitButton = screen.getByRole('button', { name: /update issue/i })
+      const submitButton = screen.getByRole('button', { name: /save changes/i })
       await user.click(submitButton)
 
-      // Should show loading state
-      expect(screen.getByText('Generating prompt...')).toBeInTheDocument()
+      // Should show loading state in button
+      await waitFor(() => {
+        // Find the button by looking for the loading text
+        expect(screen.getByText('Generating prompt...')).toBeInTheDocument()
+      }, { timeout: 2000 })
 
       // Wait for completion
       await waitFor(() => {
@@ -315,7 +318,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       await user.type(titleInput, 'New title')
 
       // Submit form
-      const submitButton = screen.getByRole('button', { name: /update issue/i })
+      const submitButton = screen.getByRole('button', { name: /save changes/i })
       await user.click(submitButton)
 
       await waitFor(() => {
@@ -328,12 +331,42 @@ describe('EditIssueModal - Prompt Generation', () => {
     it('should handle database update errors', async () => {
       const user = userEvent.setup()
       
-      // Mock database error
-      mockSupabase.from.mockReturnValueOnce({
-        update: vi.fn(() => ({
-          eq: vi.fn(() => Promise.resolve({ error: new Error('Database error') }))
-        }))
-      } as any)
+      // Mock error response for the update operation
+      const errorSupabase = {
+        auth: {
+          getSession: vi.fn(() => Promise.resolve({
+            data: { session: { access_token: 'test-token', user: { id: 'test-user-id' } } },
+            error: null
+          }))
+        },
+        from: vi.fn((table: string) => {
+          if (table === 'workspaces') {
+            return {
+              select: vi.fn(() => ({
+                eq: vi.fn(() => ({
+                  single: vi.fn(() => Promise.resolve({ 
+                    data: { id: 'test-workspace', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
+                    error: null 
+                  }))
+                }))
+              }))
+            }
+          }
+          if (table === 'issues') {
+            return {
+              update: vi.fn(() => ({
+                eq: vi.fn(() => Promise.resolve({ error: { message: 'Database error' } }))
+              }))
+            }
+          }
+          return {
+            select: vi.fn(() => ({ eq: vi.fn() })),
+            update: vi.fn(() => ({ eq: vi.fn() }))
+          }
+        })
+      }
+      
+      vi.mocked(createClient).mockReturnValue(errorSupabase as any)
 
       render(<EditIssueModal {...defaultProps} />)
 
@@ -342,22 +375,40 @@ describe('EditIssueModal - Prompt Generation', () => {
       })
 
       // Submit form
-      const submitButton = screen.getByRole('button', { name: /update issue/i })
+      const submitButton = screen.getByRole('button', { name: /save changes/i })
       await user.click(submitButton)
 
       await waitFor(() => {
-        // Modal should remain open on error
-        expect(defaultProps.onOpenChange).not.toHaveBeenCalled()
+        // Should show error message
+        expect(screen.getByText(/Failed to update issue/)).toBeInTheDocument()
       })
     })
   })
 
   describe('Agents.md integration', () => {
-    it('should fetch and use Agents.md content when generating prompt', async () => {
+    it('should use Agents.md content from workspace when generating prompt', async () => {
       const user = userEvent.setup()
       
-      // Mock getAgentsContent
-      vi.mocked(promptGenerator.getAgentsContent).mockResolvedValue('Agents.md content here')
+      // Mock workspace with agents_content
+      mockSupabase.from.mockReturnValue({
+        update: vi.fn(() => ({
+          eq: vi.fn(() => Promise.resolve({ error: null }))
+        })),
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: vi.fn(() => Promise.resolve({ 
+              data: { 
+                id: 'test-workspace', 
+                name: 'Test Workspace', 
+                api_key: 'test-key', 
+                api_provider: 'openai',
+                agents_content: 'Agents.md content here'
+              }, 
+              error: null 
+            }))
+          }))
+        }))
+      })
 
       render(<EditIssueModal {...defaultProps} />)
 
@@ -365,20 +416,19 @@ describe('EditIssueModal - Prompt Generation', () => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
-      // Enable prompt and change content
+      // The toggle is automatically enabled
       const toggle = screen.getByRole('switch')
-      await user.click(toggle)
+      expect(toggle).toBeChecked()
       
       const titleInput = screen.getByLabelText('Issue title')
       await user.clear(titleInput)
       await user.type(titleInput, 'New title')
 
       // Submit form
-      const submitButton = screen.getByRole('button', { name: /update issue/i })
+      const submitButton = screen.getByRole('button', { name: /save changes/i })
       await user.click(submitButton)
 
       await waitFor(() => {
-        expect(promptGenerator.getAgentsContent).toHaveBeenCalledWith('test-workspace')
         expect(promptGenerator.generateIssuePrompt).toHaveBeenCalledWith(
           expect.objectContaining({
             agentsContent: 'Agents.md content here'
@@ -404,9 +454,10 @@ describe('EditIssueModal - Prompt Generation', () => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
-      // Prompt toggle should not be visible
-      expect(screen.queryByRole('switch')).not.toBeInTheDocument()
-      expect(screen.queryByText(/AI prompt/)).not.toBeInTheDocument()
+      // Prompt toggle should be disabled when no API key
+      const promptToggle = screen.getByRole('switch')
+      expect(promptToggle).toBeDisabled()
+      expect(screen.getByText('API key required in workspace settings')).toBeInTheDocument()
     })
   })
 })

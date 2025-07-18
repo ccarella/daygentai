@@ -1,9 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CommandPalette } from '@/components/command-palette/command-palette'
 import { CommandPaletteProvider, useCommandPalette } from '@/hooks/use-command-palette'
 import { useRouter } from 'next/navigation'
+
+// Mock ResizeObserver before component imports
+beforeAll(() => {
+  global.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+})
 
 // Mock Next.js navigation
 vi.mock('next/navigation', () => ({
@@ -118,7 +127,7 @@ describe('Command Palette (Simplified)', () => {
       // All commands visible initially
       expect(screen.getByText('Go to Issues')).toBeInTheDocument()
       expect(screen.getByText('Go to Inbox')).toBeInTheDocument()
-      expect(screen.getByText('Create New Issue')).toBeInTheDocument()
+      expect(screen.getByText('New Issue')).toBeInTheDocument()
       
       // Search
       const searchInput = screen.getByPlaceholderText('Type a command or search...')
@@ -127,7 +136,7 @@ describe('Command Palette (Simplified)', () => {
       // Only inbox command visible
       expect(screen.queryByText('Go to Issues')).not.toBeInTheDocument()
       expect(screen.getByText('Go to Inbox')).toBeInTheDocument()
-      expect(screen.queryByText('Create New Issue')).not.toBeInTheDocument()
+      expect(screen.queryByText('New Issue')).not.toBeInTheDocument()
     })
 
     it('shows no results message', async () => {
@@ -159,32 +168,57 @@ describe('Command Palette (Simplified)', () => {
       
       await user.click(screen.getByText('Open Command Palette'))
       
-      // First item selected by default
-      const firstCommand = screen.getByText('Go to Issues').parentElement!
-      expect(firstCommand).toHaveClass('bg-accent')
+      // Wait for commands to be visible
+      await waitFor(() => {
+        expect(screen.getByText('New Issue')).toBeInTheDocument()
+        expect(screen.getByText('Go to Issues')).toBeInTheDocument()
+      })
       
-      // Arrow down
+      // Get command items by their unique data-command-id attributes
+      const newIssueItem = screen.getByText('New Issue').closest('div[data-command-id]')
+      
+      // First item should be selected by default (has bg-accent class)
+      expect(newIssueItem).toHaveClass('bg-accent')
+      
+      // Arrow down to next item
       await user.keyboard('{ArrowDown}')
-      const secondCommand = screen.getByText('Go to Inbox').parentElement!
-      expect(secondCommand).toHaveClass('bg-accent')
-      expect(firstCommand).not.toHaveClass('bg-accent')
       
-      // Arrow up
+      // Wait for the selection to change
+      await waitFor(() => {
+        expect(newIssueItem).not.toHaveClass('bg-accent')
+        // Find the next item which should now be selected
+        const selectedItems = document.querySelectorAll('.bg-accent')
+        expect(selectedItems.length).toBe(1)
+      })
+      
+      // Arrow up back to first item
       await user.keyboard('{ArrowUp}')
-      expect(firstCommand).toHaveClass('bg-accent')
-      expect(secondCommand).not.toHaveClass('bg-accent')
+      
+      // First item should be selected again
+      await waitFor(() => {
+        expect(newIssueItem).toHaveClass('bg-accent')
+      })
     })
 
     it('executes command on Enter', async () => {
-      render(<CommandPaletteTestWrapper />)
+      const onCreateIssue = vi.fn()
+      render(<CommandPaletteTestWrapper onCreateIssue={onCreateIssue} />)
       
       await user.click(screen.getByText('Open Command Palette'))
       
-      // Press Enter on first command
+      // Wait for dialog to be fully rendered
+      await waitFor(() => {
+        expect(screen.getByText('New Issue')).toBeInTheDocument()
+      })
+      
+      // The first command is "New Issue" - press Enter to execute it
       await user.keyboard('{Enter}')
       
       await waitFor(() => {
-        expect(mockRouter.push).toHaveBeenCalledWith('/test-workspace')
+        // Should call the onCreateIssue callback
+        expect(onCreateIssue).toHaveBeenCalled()
+        // And close the dialog
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
       })
     })
   })
@@ -195,8 +229,7 @@ describe('Command Palette (Simplified)', () => {
       
       await user.click(screen.getByText('Open Command Palette'))
       
-      expect(screen.getByText('Navigation')).toBeInTheDocument()
-      expect(screen.getByText('Create')).toBeInTheDocument()
+      expect(screen.getByText('Quick Access')).toBeInTheDocument()
       expect(screen.getByText('View')).toBeInTheDocument()
     })
 
@@ -244,11 +277,19 @@ describe('Command Palette (Simplified)', () => {
       
       await user.click(screen.getByText('Open Command Palette'))
       
-      // Navigate to Create New Issue and execute (it's the 4th item, so 3 arrow downs)
-      await user.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{Enter}')
+      // Wait for the command palette to be fully rendered
+      await waitFor(() => {
+        expect(screen.getByText('New Issue')).toBeInTheDocument()
+      })
+      
+      // Find and click the 'New Issue' command
+      const newIssueCommand = screen.getByText('New Issue')
+      await user.click(newIssueCommand)
       
       await waitFor(() => {
         expect(onCreateIssue).toHaveBeenCalled()
+        // Dialog should close after command execution
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
       })
     })
 

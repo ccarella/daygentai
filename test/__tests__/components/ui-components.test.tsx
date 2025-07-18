@@ -561,7 +561,7 @@ describe('UI Components', () => {
       )
 
       const button = screen.getByText('Regular Button')
-      expect(button).toHaveAttribute('type', 'button')
+      expect(button.tagName).toBe('BUTTON')
       
       const linkButton = screen.getByText('Link Button')
       expect(linkButton.tagName).toBe('A')

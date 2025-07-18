@@ -48,8 +48,6 @@ export function CreateIssueModal({
   const [hasApiKey, setHasApiKey] = useState(false)
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false)
   
-  // Debug logging
-  console.log('CreateIssueModal rendered:', { open, workspaceId, hasApiKey })
   
   // Check if workspace has API key when modal opens
   useEffect(() => {
@@ -64,7 +62,6 @@ export function CreateIssueModal({
         // First ensure we have a valid session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         if (sessionError || !session) {
-          console.error('No valid session:', sessionError)
           return
         }
         
@@ -76,26 +73,16 @@ export function CreateIssueModal({
           .single()
         
         if (error) {
-          console.error('Error fetching workspace:', error)
-          // If we get a 404, the workspace might not exist
-          if (error.code === 'PGRST116') {
-            console.error('Workspace not found with ID:', workspaceId)
-          }
           return
         }
         
         // Check if api_key exists and is not empty
         const hasKey = !!(workspace?.api_key && workspace.api_key.length > 0)
-        console.log('API Key check:', { 
-          workspaceId, 
-          hasApiKey: hasKey,
-          provider: workspace?.api_provider 
-        })
         
         setHasApiKey(hasKey)
         setCreatePrompt(hasKey) // Set default state based on API key presence
       } catch (error) {
-        console.error('Error checking API key:', error)
+        // Silent error handling
       }
     }
     
