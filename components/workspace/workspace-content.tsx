@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { IssuesList } from '@/components/issues/issues-list'
 import dynamic from 'next/dynamic'
 import { useDebounce } from '@/hooks/use-debounce'
+import { useKeyboardContext, KeyboardPriority } from '@/lib/keyboard'
 
 const KanbanBoard = dynamic(
   () => import('@/components/issues/kanban-board').then(mod => ({ default: mod.KanbanBoard })),
@@ -126,31 +127,33 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
   
 
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Toggle search visibility when "/" is pressed
-      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        // Don't trigger if user is typing in an input/textarea
-        const target = e.target as HTMLElement
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-          return
-        }
-        
-        e.preventDefault()
-        setIsSearchVisible(prev => !prev)
-      }
-      
-      // Close search on Escape
-      if (e.key === 'Escape' && isSearchVisible) {
-        setIsSearchVisible(false)
-        setSearchQuery('')
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isSearchVisible])
+  // Handle keyboard shortcuts using the new keyboard manager
+  useKeyboardContext({
+    id: 'workspace-search',
+    priority: KeyboardPriority.FOCUSED,
+    enabled: true,
+    shortcuts: {
+      '/': {
+        handler: () => {
+          setIsSearchVisible(prev => !prev)
+          return true
+        },
+        description: 'Toggle search',
+      },
+      'escape': {
+        handler: () => {
+          if (isSearchVisible) {
+            setIsSearchVisible(false)
+            setSearchQuery('')
+            return true
+          }
+          return false // Let other handlers process Escape if search is not visible
+        },
+        description: 'Close search',
+      },
+    },
+    deps: [isSearchVisible],
+  })
 
   // Auto-focus search input when it becomes visible
   useEffect(() => {
