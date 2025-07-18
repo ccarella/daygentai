@@ -171,6 +171,27 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
     return unsubscribe
   }, [issue])
 
+  // Handle ESC key to go back
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle ESC if no modal is open and not in an input
+      if (e.key === 'Escape' && !isEditModalOpen) {
+        const target = e.target as HTMLElement
+        const isInInput = target.tagName === 'INPUT' || 
+                         target.tagName === 'TEXTAREA' || 
+                         target.isContentEditable
+        
+        if (!isInInput) {
+          e.preventDefault()
+          onBack()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onBack, isEditModalOpen])
+
   const handleDelete = async () => {
     if (!issue) return
     

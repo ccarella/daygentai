@@ -193,7 +193,7 @@ export function CreateIssueModal({
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && e.shiftKey && !isSubmitting && title.trim()) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !isSubmitting && title.trim()) {
       e.preventDefault()
       handleSubmit()
     }

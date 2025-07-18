@@ -39,7 +39,7 @@ export function EmailLogin() {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
-    if (e.key === 'Enter' && e.shiftKey && !loading && email) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !loading && email) {
       e.preventDefault()
       const formEvent = new Event('submit', { bubbles: true, cancelable: true }) as unknown as React.FormEvent
       handleLogin(formEvent)

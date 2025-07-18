@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { useIssueCache } from '@/contexts/issue-cache-context'
 import { stripMarkdown } from '@/lib/markdown-utils'
+import { useArrowNavigation } from '@/hooks/use-arrow-navigation'
 
 interface Issue {
   id: string
@@ -79,6 +80,27 @@ export function IssuesList({
   const isLoadingRef = useRef(false)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const preloadedIssuesRef = useRef<Set<string>>(new Set())
+  const listContainerRef = useRef<HTMLDivElement>(null)
+
+  // Setup keyboard navigation
+  const handleItemSelect = useCallback((itemEl: HTMLElement) => {
+    const issueId = itemEl.getAttribute('data-issue-id')
+    if (issueId) {
+      if (onIssueClick) {
+        onIssueClick(issueId)
+      } else {
+        router.push(`/${workspaceSlug}/issue/${issueId}`)
+      }
+    }
+  }, [onIssueClick, router, workspaceSlug])
+
+  useArrowNavigation({
+    containerRef: listContainerRef,
+    orientation: 'vertical',
+    onItemSelect: handleItemSelect,
+    itemSelector: '[data-issue-id]',
+    wrapAround: false
+  })
 
   const fetchIssues = useCallback(async (pageNum: number, append = false) => {
     if (isLoadingRef.current) return { issues: [], hasMore: false, totalCount: 0 }
@@ -305,7 +327,7 @@ export function IssuesList({
         </div>
         
         {/* Issues List */}
-        <div className="divide-y divide-gray-100">
+        <div ref={listContainerRef} className="divide-y divide-gray-100">
           {issues.map((issue) => (
             <div
               key={issue.id}

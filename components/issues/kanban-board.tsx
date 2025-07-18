@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useIssueCache } from '@/contexts/issue-cache-context'
 import { formatDistanceToNow } from 'date-fns'
 import { Loader2 } from 'lucide-react'
+import { useColumnNavigation } from '@/hooks/use-column-navigation'
 
 interface Issue {
   id: string
@@ -74,6 +75,23 @@ export function KanbanBoard({
   const supabase = createClient()
   const { preloadIssues } = useIssueCache()
   const loadingMoreRef = useRef(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Setup keyboard navigation
+  const handleItemSelect = useCallback((itemEl: HTMLElement) => {
+    const issueId = itemEl.getAttribute('data-issue-id')
+    if (issueId) {
+      onIssueClick(issueId)
+    }
+  }, [onIssueClick])
+
+  useColumnNavigation({
+    containerRef,
+    onItemSelect: handleItemSelect,
+    wrapAround: true,
+    columnAttribute: 'data-column',
+    itemSelector: '[data-issue-id]'
+  })
 
   const fetchIssues = useCallback(async (pageNum: number, append = false) => {
     if (loadingMoreRef.current && append) return
@@ -202,7 +220,7 @@ export function KanbanBoard({
         </div>
       )}
       
-      <div className="flex gap-4 h-full overflow-x-auto pb-4 px-4">
+      <div ref={containerRef} className="flex gap-4 h-full overflow-x-auto pb-4 px-4">
         {columns.map(column => {
           const columnIssues = getIssuesByStatus(column.id)
           
@@ -210,6 +228,7 @@ export function KanbanBoard({
             <div
               key={column.id}
               className="flex-shrink-0 w-72"
+              data-column={column.id}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, column.id)}
             >
@@ -231,6 +250,7 @@ export function KanbanBoard({
                   columnIssues.map(issue => (
                     <div
                       key={issue.id}
+                      data-issue-id={issue.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, issue.id)}
                       onClick={() => onIssueClick(issue.id)}

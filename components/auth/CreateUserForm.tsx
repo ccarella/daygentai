@@ -52,7 +52,7 @@ export default function CreateUserForm() {
   const isValidName = name.length >= 3
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && e.shiftKey && isValidName && !isLoading) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && isValidName && !isLoading) {
       e.preventDefault()
       handleSave()
     }

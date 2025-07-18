@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronRight } from 'lucide-react'
 
 interface CookbookIssue {
@@ -75,6 +75,30 @@ export function Cookbook() {
   const [selectedIssue, setSelectedIssue] = useState<CookbookIssue | null>(null)
 
   const sections = ['Setup', 'Testing and Debugging', 'Documents']
+
+  // Handle ESC key to go back
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        const target = e.target as HTMLElement
+        const isInInput = target.tagName === 'INPUT' || 
+                         target.tagName === 'TEXTAREA' || 
+                         target.isContentEditable
+        
+        if (!isInInput) {
+          e.preventDefault()
+          if (selectedIssue) {
+            setSelectedIssue(null)
+          } else if (selectedSection) {
+            setSelectedSection(null)
+          }
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedIssue, selectedSection])
 
   const handleSectionClick = (section: string) => {
     setSelectedSection(section)
