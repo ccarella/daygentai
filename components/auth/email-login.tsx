@@ -1,14 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { signInWithMagicLink } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 
 export function EmailLogin() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-  const supabase = createClient()
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -17,12 +16,9 @@ export function EmailLogin() {
     setMessage(null)
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
-      })
+      // Use window.location.origin to get the current deployment URL
+      const redirectURL = `${window.location.origin}/auth/callback`
+      const { error } = await signInWithMagicLink(email, redirectURL)
 
       if (error) throw error
 

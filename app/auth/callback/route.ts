@@ -4,19 +4,23 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
+  const next = requestUrl.searchParams.get('next') || '/workspace'
   const origin = requestUrl.origin
 
   if (code) {
     const supabase = await createClient()
+    
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
-    if (!error) {
-      // Successfully authenticated, redirect to workspace loading page
-      // which will handle the routing based on user's profile/workspace status
-      return NextResponse.redirect(`${origin}/workspace`)
+    if (error) {
+      console.error('Auth callback error:', error)
+      return NextResponse.redirect(`${origin}/?error=auth_failed`)
     }
+
+    // URL to redirect to after sign in process completes
+    return NextResponse.redirect(`${origin}${next}`)
   }
 
-  // Authentication failed or no code, redirect to home
+  // No code provided
   return NextResponse.redirect(`${origin}/`)
 }
