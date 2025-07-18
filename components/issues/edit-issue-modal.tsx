@@ -70,7 +70,6 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
         // First ensure we have a valid session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError || !session) {
-          console.error('No valid session:', sessionError);
           return;
         }
         
@@ -82,17 +81,11 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
           .single();
         
         if (error) {
-          console.error('Error fetching workspace:', error);
           return;
         }
         
         // Check if api_key exists and is not empty
         const hasKey = !!(workspace?.api_key && workspace.api_key.length > 0);
-        console.log('Edit Modal - API Key check:', { 
-          workspaceId, 
-          hasApiKey: hasKey,
-          provider: workspace?.api_provider 
-        });
         
         setHasApiKey(hasKey);
         
@@ -101,7 +94,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
           setCreatePrompt(true);
         }
       } catch (error) {
-        console.error('Error checking API key:', error);
+        // Silent error handling
       }
     };
     
@@ -150,14 +143,12 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
             });
             
             if (promptError) {
-              console.error('Error generating prompt:', promptError);
               // Continue without updating prompt
             } else {
               generatedPrompt = prompt;
             }
           }
         } catch (error) {
-          console.error('Error generating prompt:', error);
           // Continue without updating prompt
         } finally {
           setIsGeneratingPrompt(false);

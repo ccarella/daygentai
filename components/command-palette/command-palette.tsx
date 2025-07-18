@@ -9,6 +9,7 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -459,6 +460,9 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
           <DialogTitle className="sr-only">
             {mode === 'help' ? 'Keyboard Shortcuts & Help' : 'Command Palette'}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {mode === 'help' ? 'View keyboard shortcuts and help information' : 'Search for commands and actions'}
+          </DialogDescription>
           
           {mode === 'help' ? (
             <ScrollArea className="max-h-[600px]">

@@ -81,13 +81,28 @@ async function generateWithOpenAI(userPrompt: string, apiKey: string): Promise<G
     }
 
     const data = await response.json();
-    const generatedPrompt = data.choices[0]?.message?.content || '';
-
+    
+    // Validate response structure
+    if (!data || typeof data !== 'object') {
+      throw new Error('Invalid response format from OpenAI API');
+    }
+    
+    if (!Array.isArray(data.choices) || data.choices.length === 0) {
+      throw new Error('No choices returned from OpenAI API');
+    }
+    
+    const firstChoice = data.choices[0];
+    if (!firstChoice || !firstChoice.message || typeof firstChoice.message.content !== 'string') {
+      throw new Error('Invalid choice format in OpenAI API response');
+    }
+    
+    const generatedPrompt = firstChoice.message.content.trim();
+    
     if (!generatedPrompt) {
       throw new Error('No prompt generated');
     }
 
-    return { prompt: generatedPrompt.trim() };
+    return { prompt: generatedPrompt };
   } catch (error) {
     console.error('OpenAI API error:', error);
     return {
