@@ -221,7 +221,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
 
   return (
     <div className="flex-1 overflow-auto">
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6">
         {/* Header with back button */}
         <div className="mb-6">
           <button
@@ -238,10 +238,10 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
         {/* Issue Content */}
         <div className="space-y-6">
           {/* Title and Actions */}
-          <div className="flex items-start justify-between">
-            <div className="flex items-center space-x-3 flex-1">
-              <span className="text-2xl">{typeIcons[issue.type]}</span>
-              <h1 className="text-2xl font-semibold text-gray-900">{issue.title}</h1>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start space-x-2 sm:space-x-3 flex-1 min-w-0">
+              <span className="text-xl sm:text-2xl flex-shrink-0">{typeIcons[issue.type]}</span>
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 break-words">{issue.title}</h1>
             </div>
             
             <DropdownMenu>
@@ -267,62 +267,69 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
           </div>
 
           {/* Metadata */}
-          <div className="flex items-center space-x-4 text-sm">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[issue.priority]}`}>
-              {priorityLabels[issue.priority]}
-            </span>
-            <span className="text-gray-500">
-              Created by {creatorName} {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
-            </span>
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-500 text-sm">Status:</span>
-              <Select
-                value={issue.status}
-                onValueChange={handleStatusChange}
-                disabled={isUpdatingStatus}
-              >
-                <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-gray-100 focus:ring-0 focus:ring-offset-0">
-                  <SelectValue>
-                    <span className={`text-sm font-medium ${statusOptions.find(s => s.value === issue.status)?.color || 'text-gray-600'}`}>
-                      {statusOptions.find(s => s.value === issue.status)?.label || issue.status}
-                    </span>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
-                      <span className={status.color}>{status.label}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-3">
+            {/* Priority and Created info - separate line on mobile */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[issue.priority]} w-fit`}>
+                {priorityLabels[issue.priority]}
+              </span>
+              <span className="text-gray-500 text-sm">
+                Created by {creatorName} {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
+              </span>
             </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-500 text-sm">Type:</span>
-              <Select
-                value={issue.type}
-                onValueChange={handleTypeChange}
-                disabled={isUpdatingType}
-              >
-                <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-gray-100 focus:ring-0 focus:ring-offset-0">
-                  <SelectValue>
-                    <span className="text-sm font-medium flex items-center gap-1">
-                      <span>{typeOptions.find(t => t.value === issue.type)?.icon || '📌'}</span>
-                      <span>{typeOptions.find(t => t.value === issue.type)?.label || issue.type}</span>
-                    </span>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {typeOptions.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      <span className="flex items-center gap-2">
-                        <span>{type.icon}</span>
-                        <span>{type.label}</span>
+            
+            {/* Status and Type - responsive layout */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-500 text-sm">Status:</span>
+                <Select
+                  value={issue.status}
+                  onValueChange={handleStatusChange}
+                  disabled={isUpdatingStatus}
+                >
+                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-gray-100 focus:ring-0 focus:ring-offset-0">
+                    <SelectValue>
+                      <span className={`text-sm font-medium ${statusOptions.find(s => s.value === issue.status)?.color || 'text-gray-600'}`}>
+                        {statusOptions.find(s => s.value === issue.status)?.label || issue.status}
                       </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        <span className={status.color}>{status.label}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-500 text-sm">Type:</span>
+                <Select
+                  value={issue.type}
+                  onValueChange={handleTypeChange}
+                  disabled={isUpdatingType}
+                >
+                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-gray-100 focus:ring-0 focus:ring-offset-0">
+                    <SelectValue>
+                      <span className="text-sm font-medium flex items-center gap-1">
+                        <span>{typeOptions.find(t => t.value === issue.type)?.icon || '📌'}</span>
+                        <span className="hidden sm:inline">{typeOptions.find(t => t.value === issue.type)?.label || issue.type}</span>
+                      </span>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {typeOptions.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        <span className="flex items-center gap-2">
+                          <span>{type.icon}</span>
+                          <span>{type.label}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -333,7 +340,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
 
           {/* Description */}
           {issue.description ? (
-            <div className="prose prose-sm max-w-none">
+            <div className="prose prose-sm sm:prose max-w-none break-words">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {issue.description}
               </ReactMarkdown>
