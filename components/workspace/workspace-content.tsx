@@ -183,24 +183,25 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     window.history.pushState({}, '', `/${workspace.slug}/cookbook`)
   }
 
+  // Shared function to update filters based on view mode
+  const updateFiltersForViewMode = (viewMode: 'list' | 'kanban') => {
+    if (viewMode === 'list') {
+      // List view default: Active issues (exclude done)
+      setStatusFilter('exclude_done')
+    } else {
+      // Kanban view default: All issues
+      setStatusFilter('all')
+    }
+    // Reset other filters to default
+    setPriorityFilter('all')
+    setTypeFilter('all')
+  }
+
   // Handler to toggle between list and kanban views
   const handleToggleViewMode = () => {
     setIssuesViewMode(prev => {
       const newMode = prev === 'list' ? 'kanban' : 'list'
-      
-      // Update filters based on view mode
-      if (newMode === 'list') {
-        // List view default: Active issues (exclude done)
-        setStatusFilter('exclude_done')
-      } else {
-        // Kanban view default: All issues
-        setStatusFilter('all')
-      }
-      
-      // Reset other filters to default
-      setPriorityFilter('all')
-      setTypeFilter('all')
-      
+      updateFiltersForViewMode(newMode)
       return newMode
     })
   }
@@ -320,10 +321,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                   onClick={() => {
                     if (issuesViewMode !== 'list') {
                       setIssuesViewMode('list')
-                      // List view default: Active issues (exclude done)
-                      setStatusFilter('exclude_done')
-                      setPriorityFilter('all')
-                      setTypeFilter('all')
+                      updateFiltersForViewMode('list')
                     }
                   }}
                   className={`p-1 rounded ${issuesViewMode === 'list' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
@@ -335,10 +333,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                   onClick={() => {
                     if (issuesViewMode !== 'kanban') {
                       setIssuesViewMode('kanban')
-                      // Kanban view default: All issues
-                      setStatusFilter('all')
-                      setPriorityFilter('all')
-                      setTypeFilter('all')
+                      updateFiltersForViewMode('kanban')
                     }
                   }}
                   className={`p-1 rounded ${issuesViewMode === 'kanban' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
