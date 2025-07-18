@@ -16,6 +16,12 @@ vi.mock('next/navigation', () => ({
 
 describe('EditIssueModal - Prompt Generation', () => {
   const mockSupabase = {
+    auth: {
+      getSession: vi.fn(() => Promise.resolve({
+        data: { session: { access_token: 'test-token', user: { id: 'test-user-id' } } },
+        error: null
+      }))
+    },
     from: vi.fn(() => ({
       update: vi.fn(() => ({
         eq: vi.fn(() => Promise.resolve({ error: null }))
@@ -23,7 +29,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
           single: vi.fn(() => Promise.resolve({ 
-            data: { api_key: 'test-key', api_provider: 'openai' }, 
+            data: { id: 'test-workspace', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
             error: null 
           }))
         }))
@@ -52,10 +58,27 @@ describe('EditIssueModal - Prompt Generation', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    
+    // Reset the mock to return API key by default
+    mockSupabase.from.mockReturnValue({
+      update: vi.fn(() => ({
+        eq: vi.fn(() => Promise.resolve({ error: null }))
+      })),
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          single: vi.fn(() => Promise.resolve({ 
+            data: { id: 'test-workspace', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
+            error: null 
+          }))
+        }))
+      }))
+    })
+    
     vi.mocked(createClient).mockReturnValue(mockSupabase as any)
     vi.mocked(promptGenerator.generateIssuePrompt).mockResolvedValue({
       prompt: 'New generated prompt'
     })
+    vi.mocked(promptGenerator.getAgentsContent).mockResolvedValue(null)
   })
 
   describe('prompt generation toggle display', () => {
@@ -63,7 +86,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       render(<EditIssueModal {...defaultProps} />)
 
       await waitFor(() => {
-        expect(screen.getByLabelText('Generate an AI prompt for development agents')).toBeInTheDocument()
+        expect(screen.getByText('Generate an AI prompt for development agents')).toBeInTheDocument()
       })
     })
 
@@ -77,7 +100,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       render(<EditIssueModal {...defaultProps} issue={issueWithPrompt} />)
 
       await waitFor(() => {
-        expect(screen.getByLabelText('Update AI prompt for development agents')).toBeInTheDocument()
+        expect(screen.getByText('Update AI prompt for development agents')).toBeInTheDocument()
       })
     })
 
@@ -109,11 +132,11 @@ describe('EditIssueModal - Prompt Generation', () => {
       render(<EditIssueModal {...defaultProps} issue={issueWithPrompt} />)
 
       await waitFor(() => {
-        expect(screen.getByLabelText('Title')).toBeInTheDocument()
+        expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
       // Update title
-      const titleInput = screen.getByLabelText('Title')
+      const titleInput = screen.getByLabelText('Issue title')
       await user.clear(titleInput)
       await user.type(titleInput, 'Updated title')
 
@@ -242,14 +265,14 @@ describe('EditIssueModal - Prompt Generation', () => {
       render(<EditIssueModal {...defaultProps} />)
 
       await waitFor(() => {
-        expect(screen.getByLabelText('Title')).toBeInTheDocument()
+        expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
       // Enable prompt and change content
       const toggle = screen.getByRole('switch')
       await user.click(toggle)
       
-      const titleInput = screen.getByLabelText('Title')
+      const titleInput = screen.getByLabelText('Issue title')
       await user.clear(titleInput)
       await user.type(titleInput, 'New title')
 
@@ -280,14 +303,14 @@ describe('EditIssueModal - Prompt Generation', () => {
       render(<EditIssueModal {...defaultProps} />)
 
       await waitFor(() => {
-        expect(screen.getByLabelText('Title')).toBeInTheDocument()
+        expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
       // Enable prompt and change content
       const toggle = screen.getByRole('switch')
       await user.click(toggle)
       
-      const titleInput = screen.getByLabelText('Title')
+      const titleInput = screen.getByLabelText('Issue title')
       await user.clear(titleInput)
       await user.type(titleInput, 'New title')
 
@@ -310,12 +333,12 @@ describe('EditIssueModal - Prompt Generation', () => {
         update: vi.fn(() => ({
           eq: vi.fn(() => Promise.resolve({ error: new Error('Database error') }))
         }))
-      })
+      } as any)
 
       render(<EditIssueModal {...defaultProps} />)
 
       await waitFor(() => {
-        expect(screen.getByLabelText('Title')).toBeInTheDocument()
+        expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
       // Submit form
@@ -339,14 +362,14 @@ describe('EditIssueModal - Prompt Generation', () => {
       render(<EditIssueModal {...defaultProps} />)
 
       await waitFor(() => {
-        expect(screen.getByLabelText('Title')).toBeInTheDocument()
+        expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
       // Enable prompt and change content
       const toggle = screen.getByRole('switch')
       await user.click(toggle)
       
-      const titleInput = screen.getByLabelText('Title')
+      const titleInput = screen.getByLabelText('Issue title')
       await user.clear(titleInput)
       await user.type(titleInput, 'New title')
 
@@ -373,12 +396,12 @@ describe('EditIssueModal - Prompt Generation', () => {
             single: vi.fn(() => Promise.resolve({ data: null, error: null }))
           }))
         }))
-      })
+      } as any)
 
       render(<EditIssueModal {...defaultProps} />)
 
       await waitFor(() => {
-        expect(screen.getByLabelText('Title')).toBeInTheDocument()
+        expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
       // Prompt toggle should not be visible

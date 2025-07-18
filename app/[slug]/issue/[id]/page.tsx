@@ -10,8 +10,8 @@ import { IssueCacheProvider } from '@/contexts/issue-cache-context'
 import { CommandPaletteProvider } from '@/hooks/use-command-palette'
 import dynamic from 'next/dynamic'
 
-const CommandPalette = dynamic(
-  () => import('@/components/command-palette/command-palette').then(mod => ({ default: mod.CommandPalette })),
+const AppCommandPalette = dynamic(
+  () => import('@/components/layout/app-command-palette').then(mod => ({ default: mod.AppCommandPalette })),
   { 
     ssr: false,
     loading: () => null
@@ -31,6 +31,7 @@ export default function IssuePage({ params }: { params: Promise<{ slug: string; 
   const [loading, setLoading] = useState(true)
   
   useEffect(() => {
+    console.log('IssuePage effect running for issue:', id)
     const fetchWorkspace = async () => {
       const supabase = createClient()
       
@@ -58,7 +59,7 @@ export default function IssuePage({ params }: { params: Promise<{ slug: string; 
     }
 
     fetchWorkspace()
-  }, [slug, router])
+  }, [slug, id, router])
   
   const handleBack = () => {
     router.push(`/${slug}`)
@@ -73,15 +74,15 @@ export default function IssuePage({ params }: { params: Promise<{ slug: string; 
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading workspace...</p>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     )
   }
   
   return (
-    <IssueCacheProvider>
-      <CommandPaletteProvider>
+    <CommandPaletteProvider>
+      <IssueCacheProvider>
         <WorkspaceWithMobileNav workspace={workspace}>
           <div className="flex-1 overflow-y-auto">
             <div className="container mx-auto max-w-6xl p-6">
@@ -92,9 +93,13 @@ export default function IssuePage({ params }: { params: Promise<{ slug: string; 
               />
             </div>
           </div>
-          <CommandPalette workspaceSlug={workspace.slug} workspaceId={workspace.id} />
         </WorkspaceWithMobileNav>
-      </CommandPaletteProvider>
-    </IssueCacheProvider>
+      </IssueCacheProvider>
+      {workspace && (
+        <AppCommandPalette 
+          workspace={workspace}
+        />
+      )}
+    </CommandPaletteProvider>
   )
 }

@@ -16,6 +16,7 @@ interface RecommendationResult {
   justification: string
   prompt?: string
   error?: string
+  retryCount?: number
 }
 
 const RECOMMENDATION_PROMPT = `Consider: urgency, impact, effort, dependencies, and technical debt.
@@ -40,63 +41,43 @@ export async function recommendNextIssue(
       }
     }
 
-    // Format issues for the LLM
-    const issuesContext = todoIssues.map((issue, index) => {
-      return `
-Issue #${index + 1}:
-- UUID: ${issue.id}
-- Title: ${issue.title}
-- Description: ${issue.description || 'No description'}
-- Type: ${issue.type}
-- Priority: ${issue.priority}
-- Status: ${issue.status}
-- Created: ${new Date(issue.created_at).toLocaleDateString()}
-`
-    }).join('\n---\n')
+    // Main recommendation logic with retry capability
+    const maxRetries = 3
+    let lastError: string | undefined
     
-    // Log available todo issues for debugging
-    console.log('Available TODO issues for recommendation:', todoIssues.map(i => ({
-      id: i.id,
-      title: i.title,
-      status: i.status
-    })))
-
-    const userPrompt = `You must recommend ONE issue from the following list. DO NOT create or reference any other issues.
-
-Available issues (ONLY choose from these):
-${issuesContext}
-
-${agentsContent ? `Additional context from Agents.md:
-${agentsContent}
-
-` : ''}${RECOMMENDATION_PROMPT}
-
-Respond in this exact format:
-RECOMMENDED_ID: [exact_uuid]
-JUSTIFICATION: [2-3 sentence explanation]
-
-CRITICAL INSTRUCTIONS:
-1. You MUST select one of the UUIDs listed above - no other IDs are valid
-2. Copy the UUID exactly as shown, character-by-character
-3. Do NOT create new UUIDs or reference issues not in the list above
-4. The UUID must be from the "UUID:" field of one of the issues above`
-
-    let response: RecommendationResult
-
-    if (provider === 'openai') {
-      response = await getRecommendationFromOpenAI(userPrompt, apiKey, todoIssues)
-    } else {
-      return {
-        recommendedIssue: null,
-        justification: '',
-        error: `Provider ${provider} is not yet implemented`
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const isRetry = attempt > 0
+      const result = await attemptRecommendation(
+        todoIssues,
+        apiKey,
+        provider,
+        agentsContent,
+        isRetry
+      )
+      
+      if (!result.error && result.recommendedIssue) {
+        return {
+          ...result,
+          retryCount: attempt
+        }
+      }
+      
+      lastError = result.error
+      console.log(`Attempt ${attempt + 1} failed: ${lastError}`)
+      
+      // If it's a UUID validation error, continue retrying
+      // Otherwise, fail immediately
+      if (!lastError?.includes('UUID') && !lastError?.includes('not found')) {
+        return result
       }
     }
-
-    // Add the prompt to the response
+    
+    // All retries failed
     return {
-      ...response,
-      prompt: userPrompt
+      recommendedIssue: null,
+      justification: '',
+      error: lastError || 'Failed to get valid recommendation after multiple attempts',
+      retryCount: maxRetries
     }
   } catch (error) {
     console.error('Error recommending issue:', error)
@@ -108,12 +89,103 @@ CRITICAL INSTRUCTIONS:
   }
 }
 
+async function attemptRecommendation(
+  todoIssues: Issue[],
+  apiKey: string,
+  provider: 'openai' | 'anthropic',
+  agentsContent?: string | null,
+  isRetry: boolean = false
+): Promise<RecommendationResult> {
+  // Format issues for the LLM
+  const issuesContext = todoIssues.map((issue, index) => {
+    return `
+Issue #${index + 1}:
+- UUID: ${issue.id}
+- Title: ${issue.title}
+- Description: ${issue.description || 'No description'}
+- Type: ${issue.type}
+- Priority: ${issue.priority}
+- Status: ${issue.status}
+- Created: ${new Date(issue.created_at).toLocaleDateString()}
+`
+  }).join('\n---\n')
+  
+  // Log available todo issues for debugging
+  console.log('Available TODO issues for recommendation:', todoIssues.map(i => ({
+    id: i.id,
+    title: i.title,
+    status: i.status
+  })))
+
+  // Create a more strict prompt for retries
+  const basePrompt = `You must recommend ONE issue from the following list. DO NOT create or reference any other issues.
+
+Available issues (ONLY choose from these):
+${issuesContext}
+
+${agentsContent ? `Additional context from Agents.md:
+${agentsContent}
+
+` : ''}${RECOMMENDATION_PROMPT}
+
+Respond in this exact format:
+RECOMMENDED_ID: [exact_uuid]
+JUSTIFICATION: [2-3 sentence explanation]`
+
+  const strictInstructions = isRetry ? `
+CRITICAL INSTRUCTIONS - READ CAREFULLY:
+1. You MUST select one of the UUIDs listed above - no other IDs are valid
+2. Copy the UUID exactly as shown, character-by-character
+3. Do NOT create new UUIDs or reference issues not in the list above
+4. The UUID must be from the "UUID:" field of one of the issues above
+5. Double-check that your selected UUID matches one from the list EXACTLY
+6. The UUIDs are in standard format: 8-4-4-4-12 characters (e.g., a1b2c3d4-e5f6-7890-abcd-ef1234567890)
+7. If you're unsure, pick the FIRST issue from the list above
+
+VALIDATION CHECK:
+Before responding, verify that your RECOMMENDED_ID exactly matches one of these UUIDs:
+${todoIssues.map(i => i.id).join('\n')}` : `
+CRITICAL INSTRUCTIONS:
+1. You MUST select one of the UUIDs listed above - no other IDs are valid
+2. Copy the UUID exactly as shown, character-by-character
+3. Do NOT create new UUIDs or reference issues not in the list above
+4. The UUID must be from the "UUID:" field of one of the issues above`
+
+  const userPrompt = basePrompt + strictInstructions
+
+  let response: RecommendationResult
+
+  if (provider === 'openai') {
+    response = await getRecommendationFromOpenAI(userPrompt, apiKey, todoIssues, isRetry)
+  } else {
+    return {
+      recommendedIssue: null,
+      justification: '',
+      error: `Provider ${provider} is not yet implemented`
+    }
+  }
+
+  // Add the prompt to the response
+  return {
+    ...response,
+    prompt: userPrompt
+  }
+}
+
 async function getRecommendationFromOpenAI(
   userPrompt: string, 
   apiKey: string,
-  issues: Issue[]
+  issues: Issue[],
+  isRetry: boolean = false
 ): Promise<RecommendationResult> {
   try {
+    // Use lower temperature for retries to get more deterministic results
+    const temperature = isRetry ? 0.1 : 0.3
+    
+    const systemPrompt = isRetry 
+      ? 'You are an AI assistant helping prioritize software development tasks. You MUST only recommend issues from the exact list provided to you. Never create new UUIDs or reference issues not in the provided list. Always copy UUIDs exactly as shown, character by character. When in doubt, choose the first issue from the list. Your response must contain a UUID that exactly matches one from the provided list.'
+      : 'You are an AI assistant helping prioritize software development tasks. You MUST only recommend issues from the exact list provided to you. Never create new UUIDs or reference issues not in the provided list. Always copy UUIDs exactly as shown.'
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -125,11 +197,11 @@ async function getRecommendationFromOpenAI(
         messages: [
           { 
             role: 'system', 
-            content: 'You are an AI assistant helping prioritize software development tasks. You MUST only recommend issues from the exact list provided to you. Never create new UUIDs or reference issues not in the provided list. Always copy UUIDs exactly as shown.'
+            content: systemPrompt
           },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.3,
+        temperature,
         max_tokens: 200
       })
     })
@@ -143,8 +215,8 @@ async function getRecommendationFromOpenAI(
     const content = data.choices[0]?.message?.content || ''
 
     // Parse the response
-    // Match either UUID format (8-4-4-4-12) or simple numeric/alphanumeric IDs
-    const idMatch = content.match(/RECOMMENDED_ID:\s*([a-fA-F0-9-]+)/i)
+    // Match either UUID format (8-4-4-4-12) or any non-whitespace characters
+    const idMatch = content.match(/RECOMMENDED_ID:\s*([^\s]+)/i)
     const justificationMatch = content.match(/JUSTIFICATION:\s*([\s\S]+)/)
 
     if (!idMatch || !justificationMatch) {
@@ -168,56 +240,26 @@ async function getRecommendationFromOpenAI(
       })
     }
 
-    // Find the recommended issue
-    const recommendedIssue = issues.find(issue => issue.id === recommendedId)
+    // Validate UUID format
+    const isValidUUID = validateUUID(recommendedId)
+    if (!isValidUUID) {
+      console.warn(`Invalid UUID format returned by LLM: ${recommendedId}`)
+    }
+
+    // Find the recommended issue with multiple strategies
+    const recommendedIssue = findRecommendedIssue(recommendedId, issues)
 
     if (!recommendedIssue) {
-      // Try case-insensitive match as fallback
-      const recommendedIssueCaseInsensitive = issues.find(
-        issue => issue.id.toLowerCase() === recommendedId.toLowerCase()
-      )
-      
-      if (recommendedIssueCaseInsensitive) {
-        console.log('Found issue with case-insensitive match')
-        return {
-          recommendedIssue: recommendedIssueCaseInsensitive,
-          justification
-        }
-      }
-
-      // Try to find a similar UUID (in case of minor differences)
-      const similarIssue = issues.find(issue => {
-        // Check if most of the UUID matches (allowing for a few character differences)
-        const issueId = issue.id.toLowerCase()
-        const recId = recommendedId.toLowerCase()
-        
-        // Calculate similarity
-        let matches = 0
-        for (let i = 0; i < Math.min(issueId.length, recId.length); i++) {
-          if (issueId[i] === recId[i]) matches++
-        }
-        
-        // If more than 90% of characters match, consider it a match
-        const similarity = matches / Math.max(issueId.length, recId.length)
-        if (similarity > 0.9) {
-          console.log(`Found similar UUID: ${issue.id} (similarity: ${(similarity * 100).toFixed(1)}%)`)
-          return true
-        }
-        return false
-      })
-
-      if (similarIssue) {
-        console.warn(`LLM returned UUID ${recommendedId} which closely matches ${similarIssue.id}`)
-        return {
-          recommendedIssue: similarIssue,
-          justification
-        }
-      }
-
       // List only the first 5 UUIDs in the error message to keep it readable
       const validIds = issues.slice(0, 5).map(i => i.id).join(', ')
       const remainingCount = issues.length > 5 ? ` and ${issues.length - 5} more` : ''
-      throw new Error(`Recommended issue not found. LLM returned ID: ${recommendedId}, but valid todo issues are: ${validIds}${remainingCount}. The LLM may have referenced a non-todo issue or hallucinated an ID.`)
+      
+      // Provide more specific error based on what went wrong
+      const errorDetail = !isValidUUID 
+        ? 'The returned ID is not in valid UUID format.'
+        : 'The UUID is valid but does not match any todo issue.'
+      
+      throw new Error(`Recommended issue not found. LLM returned ID: ${recommendedId}. ${errorDetail} Valid todo issues are: ${validIds}${remainingCount}`)
     }
 
     return {
@@ -232,6 +274,112 @@ async function getRecommendationFromOpenAI(
       error: error instanceof Error ? error.message : 'OpenAI API error'
     }
   }
+}
+
+// Validate UUID format
+function validateUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  return uuidRegex.test(uuid)
+}
+
+// Find recommended issue with multiple strategies
+function findRecommendedIssue(recommendedId: string, issues: Issue[]): Issue | null {
+  // 1. Try exact match
+  const exactMatch = issues.find(issue => issue.id === recommendedId)
+  if (exactMatch) return exactMatch
+
+  // 2. Try case-insensitive match
+  const caseInsensitiveMatch = issues.find(
+    issue => issue.id.toLowerCase() === recommendedId.toLowerCase()
+  )
+  if (caseInsensitiveMatch) {
+    console.log('Found issue with case-insensitive match')
+    return caseInsensitiveMatch
+  }
+
+  // 3. Try removing common UUID issues (extra spaces, dashes in wrong places)
+  const cleanedRecommendedId = recommendedId.trim().toLowerCase()
+  const cleanedMatch = issues.find(issue => {
+    const cleanedIssueId = issue.id.trim().toLowerCase()
+    return cleanedIssueId === cleanedRecommendedId
+  })
+  if (cleanedMatch) {
+    console.log('Found issue after cleaning whitespace')
+    return cleanedMatch
+  }
+
+  // 4. Try to find a similar UUID (in case of minor differences)
+  const similarIssue = issues.find(issue => {
+    const similarity = calculateSimilarity(issue.id, recommendedId)
+    if (similarity > 0.9) {
+      console.log(`Found similar UUID: ${issue.id} (similarity: ${(similarity * 100).toFixed(1)}%)`)
+      return true
+    }
+    return false
+  })
+  
+  if (similarIssue) {
+    console.warn(`LLM returned UUID ${recommendedId} which closely matches ${similarIssue.id}`)
+    return similarIssue
+  }
+
+  // 5. Last resort: check if the LLM returned a partial UUID
+  if (recommendedId.length >= 8) {
+    const partialMatch = issues.find(issue => 
+      issue.id.toLowerCase().startsWith(recommendedId.toLowerCase())
+    )
+    if (partialMatch) {
+      console.warn(`Found issue with partial UUID match: ${partialMatch.id}`)
+      return partialMatch
+    }
+  }
+
+  return null
+}
+
+// Calculate string similarity between two UUIDs
+function calculateSimilarity(str1: string, str2: string): number {
+  const s1 = str1.toLowerCase()
+  const s2 = str2.toLowerCase()
+  
+  // Calculate Levenshtein distance
+  const matrix: number[][] = []
+  
+  for (let i = 0; i <= s2.length; i++) {
+    matrix[i] = [i]
+  }
+  
+  if (!matrix[0]) {
+    matrix[0] = []
+  }
+  
+  for (let j = 0; j <= s1.length; j++) {
+    matrix[0][j] = j
+  }
+  
+  for (let i = 1; i <= s2.length; i++) {
+    for (let j = 1; j <= s1.length; j++) {
+      const prevRow = matrix[i - 1]
+      const currentRow = matrix[i]
+      
+      if (!prevRow || !currentRow) continue
+      
+      if (s2.charAt(i - 1) === s1.charAt(j - 1)) {
+        currentRow[j] = prevRow[j - 1] ?? 0
+      } else {
+        currentRow[j] = Math.min(
+          (prevRow[j - 1] ?? 0) + 1, // substitution
+          (currentRow[j - 1] ?? 0) + 1,     // insertion
+          (prevRow[j] ?? 0) + 1      // deletion
+        )
+      }
+    }
+  }
+  
+  const lastRow = matrix[s2.length]
+  const distance = lastRow ? lastRow[s1.length] : 0
+  const maxLength = Math.max(s1.length, s2.length)
+  return maxLength === 0 ? 1 : 1 - ((distance ?? 0) / maxLength)
 }
 
 // Check if workspace has API key configured for issue recommendations

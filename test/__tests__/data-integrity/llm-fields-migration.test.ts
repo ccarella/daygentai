@@ -40,7 +40,7 @@ describe('LLM Fields Migration', () => {
 
       expect(error).toBeNull()
       expect(data).toHaveLength(1)
-      expect(data[0]).toMatchObject({
+      expect(data?.[0]).toMatchObject({
         api_key: 'sk-test-key-123',
         api_provider: 'openai',
         agents_content: 'Agents.md content'
@@ -93,9 +93,9 @@ describe('LLM Fields Migration', () => {
         .select()
 
       expect(error).toBeNull()
-      expect(data[0].api_key).toBeNull()
-      expect(data[0].api_provider).toBeNull()
-      expect(data[0].agents_content).toBeNull()
+      expect(data?.[0]?.api_key).toBeNull()
+      expect(data?.[0]?.api_provider).toBeNull()
+      expect(data?.[0]?.agents_content).toBeNull()
     })
   })
 
@@ -123,7 +123,7 @@ describe('LLM Fields Migration', () => {
 
       expect(error).toBeNull()
       expect(data).toHaveLength(1)
-      expect(data[0].generated_prompt).toBe('What to do: Fix the bug\nHow: Debug the code')
+      expect(data?.[0]?.generated_prompt).toBe('What to do: Fix the bug\nHow: Debug the code')
     })
 
     it('should allow updating generated_prompt', async () => {
@@ -164,7 +164,7 @@ describe('LLM Fields Migration', () => {
         .select()
 
       expect(error).toBeNull()
-      expect(data[0].generated_prompt).toBeNull()
+      expect(data?.[0]?.generated_prompt).toBeNull()
     })
 
     it('should allow removing generated_prompt by setting to null', async () => {
@@ -202,7 +202,7 @@ describe('LLM Fields Migration', () => {
         .eq('id', 'not-owned-workspace')
 
       expect(error).toBeDefined()
-      expect(error.message).toContain('row-level security policy')
+      expect(error?.message).toContain('row-level security policy')
     })
 
     it('should allow workspace members to view generated prompts', async () => {
@@ -226,7 +226,7 @@ describe('LLM Fields Migration', () => {
         .eq('id', 'issue-123')
 
       expect(error).toBeNull()
-      expect(data[0].generated_prompt).toBe('Test prompt')
+      expect(data?.[0]?.generated_prompt).toBe('Test prompt')
     })
   })
 

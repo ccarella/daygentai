@@ -20,6 +20,13 @@ const IssueDetails = dynamic(
   }
 )
 import { Inbox } from '@/components/inbox/inbox'
+const Cookbook = dynamic(
+  () => import('@/components/cookbook/cookbook').then(mod => ({ default: mod.Cookbook })),
+  { 
+    ssr: false,
+    loading: () => <div className="flex h-full items-center justify-center"><div className="text-gray-500">Loading cookbook...</div></div>
+  }
+)
 import {
   Select,
   SelectContent,
@@ -38,13 +45,14 @@ interface WorkspaceContentProps {
     avatar_url: string | null
     owner_id: string
   }
-  initialView?: 'list' | 'issue' | 'inbox'
+  initialView?: 'list' | 'issue' | 'inbox' | 'cookbook'
   initialIssueId?: string
 }
 
 export interface WorkspaceContentRef {
   navigateToIssuesList: () => void
   navigateToInbox: () => void
+  navigateToCookbook: () => void
   toggleViewMode: () => void
   getCurrentViewMode: () => 'list' | 'kanban'
   toggleSearch: () => void
@@ -91,11 +99,12 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   const getInitialView = () => {
     if (initialView !== 'list') return initialView
     if (pathname.includes('/inbox')) return 'inbox'
+    if (pathname.includes('/cookbook')) return 'cookbook'
     if (pathname.includes('/issue/')) return 'issue'
     return 'list'
   }
   
-  const [currentView, setCurrentView] = useState<'list' | 'issue' | 'inbox'>(getInitialView())
+  const [currentView, setCurrentView] = useState<'list' | 'issue' | 'inbox' | 'cookbook'>(getInitialView())
   const [currentIssueId, setCurrentIssueId] = useState<string | null>(initialIssueId || getIssueIdFromPath() || null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [issuesViewMode, setIssuesViewMode] = useState<'list' | 'kanban'>('list')
@@ -166,6 +175,13 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     window.history.pushState({}, '', `/${workspace.slug}/inbox`)
   }
 
+  const handleNavigateToCookbook = () => {
+    setCurrentView('cookbook')
+    setCurrentIssueId(null)
+    // Update URL without page refresh
+    window.history.pushState({}, '', `/${workspace.slug}/cookbook`)
+  }
+
   // Handler to toggle between list and kanban views
   const handleToggleViewMode = () => {
     setIssuesViewMode(prev => prev === 'list' ? 'kanban' : 'list')
@@ -175,6 +191,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   useImperativeHandle(ref, () => ({
     navigateToIssuesList: handleBackToList,
     navigateToInbox: handleNavigateToInbox,
+    navigateToCookbook: handleNavigateToCookbook,
     toggleViewMode: handleToggleViewMode,
     getCurrentViewMode: () => issuesViewMode,
     toggleSearch: () => setIsSearchVisible(prev => !prev),
@@ -385,6 +402,8 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
         )
       ) : currentView === 'inbox' ? (
         <Inbox />
+      ) : currentView === 'cookbook' ? (
+        <Cookbook />
       ) : currentIssueId ? (
         <IssueDetails
           issueId={currentIssueId}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus, ChevronLeft, ChevronRight, HelpCircle, Settings, Terminal } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, HelpCircle, Settings, Terminal, BookOpen } from 'lucide-react'
 import dynamic from 'next/dynamic'
 
 const CreateIssueModal = dynamic(
@@ -27,6 +27,7 @@ interface WorkspaceLayoutProps {
   onIssueCreated?: () => void
   onNavigateToIssues?: () => void
   onNavigateToInbox?: () => void
+  onNavigateToCookbook?: () => void
   onNavigateToSettings?: () => void
   isMobileMenuOpen?: boolean
   setIsMobileMenuOpen?: (open: boolean) => void
@@ -39,6 +40,7 @@ export function WorkspaceLayout({
   onIssueCreated, 
   onNavigateToIssues,
   onNavigateToInbox,
+  onNavigateToCookbook,
   onNavigateToSettings,
   isMobileMenuOpen: propIsMobileMenuOpen,
   setIsMobileMenuOpen: propSetIsMobileMenuOpen,
@@ -177,6 +179,35 @@ export function WorkspaceLayout({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span>Issues</span>
+          </Link>
+        )}
+        
+        {/* Cookbook */}
+        {onNavigateToCookbook ? (
+          <button
+            data-sidebar-item
+            onClick={onNavigateToCookbook}
+            className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
+              pathname === `/${workspace.slug}/cookbook` 
+                ? 'bg-gray-100 text-gray-900' 
+                : 'hover:bg-gray-100 text-gray-700'
+            }`}
+          >
+            <BookOpen className="w-5 h-5" />
+            <span>Cookbook</span>
+          </button>
+        ) : (
+          <Link
+            data-sidebar-item
+            href={`/${workspace.slug}/cookbook`}
+            className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
+              pathname === `/${workspace.slug}/cookbook` 
+                ? 'bg-gray-100 text-gray-900' 
+                : 'hover:bg-gray-100 text-gray-700'
+            }`}
+          >
+            <BookOpen className="w-5 h-5" />
+            <span>Cookbook</span>
           </Link>
         )}
         
@@ -322,6 +353,31 @@ export function WorkspaceLayout({
                   </svg>
                 </Link>
               )}
+              {onNavigateToCookbook ? (
+                <button
+                  onClick={onNavigateToCookbook}
+                  className={`p-2 rounded mb-2 transition-colors ${
+                    pathname === `/${workspace.slug}/cookbook` 
+                      ? 'bg-gray-100' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                  title="Cookbook"
+                >
+                  <BookOpen className="w-5 h-5 text-gray-600" />
+                </button>
+              ) : (
+                <Link
+                  href={`/${workspace.slug}/cookbook`}
+                  className={`p-2 rounded mb-2 transition-colors ${
+                    pathname === `/${workspace.slug}/cookbook` 
+                      ? 'bg-gray-100' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                  title="Cookbook"
+                >
+                  <BookOpen className="w-5 h-5 text-gray-600" />
+                </Link>
+              )}
               <button
                 onClick={() => openWithMode('normal')}
                 className="p-2 rounded mb-2 hover:bg-gray-100 transition-colors"
@@ -375,9 +431,15 @@ export function WorkspaceLayout({
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 overflow-auto mx-3 mb-6 mt-3">
-            {children}
-          </div>
+          {pathname === `/${workspace.slug}/cookbook` ? (
+            <div className="flex-1 overflow-auto">
+              {children}
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 overflow-auto mx-3 mb-6 mt-3">
+              {children}
+            </div>
+          )}
         </div>
       </div>
 
