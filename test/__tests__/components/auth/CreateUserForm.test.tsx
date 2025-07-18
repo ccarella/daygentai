@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import CreateUserForm from '@/components/auth/CreateUserForm'
 import { createClient } from '@/lib/supabase/client'
@@ -334,7 +334,9 @@ describe('CreateUserForm', () => {
       expect(mockSupabase.from).toHaveBeenCalledTimes(1)
       
       // Resolve the promise
-      resolvePromise({ error: null })
+      await act(async () => {
+        resolvePromise({ error: null })
+      })
     })
 
     it('handles very long names', async () => {

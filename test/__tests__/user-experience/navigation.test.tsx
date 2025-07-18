@@ -220,16 +220,16 @@ describe('Navigation', () => {
               id: 'test-workspace',
               slug: 'test-workspace',
               name: 'Test Workspace',
-              created_at: new Date().toISOString(),
+              avatar_url: null,
               owner_id: 'user-1'
             }}
           />
         </TestWrapper>
       )
 
-      // Verify we can render the workspace content
+      // Verify we can render the workspace content - look for the search hint
       await waitFor(() => {
-        expect(screen.getByText('Test Workspace')).toBeInTheDocument()
+        expect(screen.getByText(/to search/)).toBeInTheDocument()
       })
     })
 

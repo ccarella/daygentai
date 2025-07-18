@@ -36,12 +36,10 @@ describe('User Permissions', () => {
     // Create mock users
     authenticatedUser = createMockUser({ 
       id: 'auth-user-id',
-      name: 'Authenticated User',
       email: 'auth@example.com' 
     })
     anotherUser = createMockUser({ 
       id: 'another-user-id',
-      name: 'Another User',
       email: 'another@example.com' 
     })
     
@@ -50,7 +48,7 @@ describe('User Permissions', () => {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: authenticatedUser }, error: null }),
       },
-      from: vi.fn((table: string) => {
+      from: vi.fn((_table: string) => {
         const mockQuery = {
           select: vi.fn().mockReturnThis(),
           insert: vi.fn().mockReturnThis(),
@@ -72,7 +70,7 @@ describe('User Permissions', () => {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
       },
-      from: vi.fn((table: string) => {
+      from: vi.fn((_table: string) => {
         const mockQuery = {
           select: vi.fn().mockReturnThis(),
           insert: vi.fn().mockReturnThis(),
@@ -144,7 +142,7 @@ describe('User Permissions', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('PGRST116')
+      expect(error?.code).toBe('PGRST116')
     })
 
     it('allows users to update their own profile', async () => {
@@ -208,7 +206,7 @@ describe('User Permissions', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('42501')
+      expect(error?.code).toBe('42501')
     })
 
     it('allows users to create their own profile', async () => {
@@ -236,7 +234,7 @@ describe('User Permissions', () => {
         .select()
       
       expect(insertMock).toHaveBeenCalledWith(newProfile)
-      expect(data.id).toBe(authenticatedUser.id)
+      expect(data && 'id' in data ? data.id : null).toBe(authenticatedUser.id)
       expect(error).toBeNull()
     })
 
@@ -268,7 +266,7 @@ describe('User Permissions', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('42501')
+      expect(error?.code).toBe('42501')
     })
 
     it('prevents profile deletion (no delete policy)', async () => {
@@ -294,7 +292,7 @@ describe('User Permissions', () => {
       
       // Users should not be able to delete their profiles
       expect(error).toBeDefined()
-      expect(error.code).toBe('42501')
+      expect(error?.code).toBe('42501')
     })
   })
 
@@ -309,7 +307,7 @@ describe('User Permissions', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('PGRST301')
+      expect(error?.code).toBe('PGRST301')
     })
 
     it('requires authentication to create workspaces', async () => {
@@ -329,7 +327,7 @@ describe('User Permissions', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('PGRST301')
+      expect(error?.code).toBe('PGRST301')
     })
 
     it('requires authentication to create issues', async () => {
@@ -350,7 +348,7 @@ describe('User Permissions', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('PGRST301')
+      expect(error?.code).toBe('PGRST301')
     })
   })
 
@@ -383,7 +381,7 @@ describe('User Permissions', () => {
         .eq('id', issue.id)
         .select()
       
-      expect(data.assignee_id).toBe(anotherUser.id)
+      expect(data && 'assignee_id' in data ? data.assignee_id : null).toBe(anotherUser.id)
       expect(error).toBeNull()
     })
 
@@ -415,7 +413,7 @@ describe('User Permissions', () => {
         .eq('id', issue.id)
         .select()
       
-      expect(data.assignee_id).toBe(authenticatedUser.id)
+      expect(data && 'assignee_id' in data ? data.assignee_id : null).toBe(authenticatedUser.id)
       expect(error).toBeNull()
     })
 
@@ -447,7 +445,7 @@ describe('User Permissions', () => {
         .eq('id', issue.id)
         .select()
       
-      expect(data.assignee_id).toBeNull()
+      expect(data && 'assignee_id' in data ? data.assignee_id : null).toBeNull()
       expect(error).toBeNull()
     })
 
@@ -483,14 +481,14 @@ describe('User Permissions', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('23503')
+      expect(error?.code).toBe('23503')
     })
   })
 
   describe('Data Visibility Scope', () => {
     it('users can only see data in their own workspaces', async () => {
       const userWorkspace = createMockWorkspace({ owner_id: authenticatedUser.id })
-      const otherWorkspace = createMockWorkspace({ owner_id: anotherUser.id })
+      // const otherWorkspace = createMockWorkspace({ owner_id: anotherUser.id })
       
       // Mock issues query
       const userIssues = [
@@ -515,8 +513,8 @@ describe('User Permissions', () => {
         .select('*')
         .eq('workspace_id', userWorkspace.id)
       
-      expect(data).toHaveLength(2)
-      expect(data.every((issue: any) => issue.workspace_id === userWorkspace.id)).toBe(true)
+      expect(data || []).toHaveLength(2)
+      expect(data?.every((issue: any) => issue.workspace_id === userWorkspace.id)).toBe(true)
       expect(error).toBeNull()
     })
 
@@ -610,7 +608,7 @@ describe('User Permissions', () => {
         .eq('id', issue.id)
         .select()
       
-      expect(data.status).toBe('done')
+      expect(data && 'status' in data ? data.status : null).toBe('done')
       expect(error).toBeNull()
     })
 
@@ -676,7 +674,7 @@ describe('User Permissions', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('42501')
+      expect(error?.code).toBe('42501')
     })
   })
 })

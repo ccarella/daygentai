@@ -244,8 +244,8 @@ describe('Command Palette (Simplified)', () => {
       
       await user.click(screen.getByText('Open Command Palette'))
       
-      // Navigate to Create New Issue and execute
-      await user.keyboard('{ArrowDown}{ArrowDown}{Enter}')
+      // Navigate to Create New Issue and execute (it's the 4th item, so 3 arrow downs)
+      await user.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{Enter}')
       
       await waitFor(() => {
         expect(onCreateIssue).toHaveBeenCalled()

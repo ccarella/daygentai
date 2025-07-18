@@ -1,9 +1,9 @@
 /**
  * @vitest-environment node
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createServerClient } from '@supabase/ssr'
-import { createMockIssue, createMockIssues, issueTypes, issuePriorities, issueStatuses } from '@/test/fixtures/issues'
+import { createMockIssue, createMockIssues, issueTypes, issuePriorities } from '@/test/fixtures/issues'
 import { createMockUser } from '@/test/fixtures/users'
 import { createMockWorkspace } from '@/test/fixtures/workspaces'
 
@@ -46,7 +46,7 @@ describe('Issue CRUD Operations', () => {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: mockUser }, error: null }),
       },
-      from: vi.fn((table: string) => {
+      from: vi.fn((_table: string) => {
         const mockQuery = {
           select: vi.fn().mockReturnThis(),
           insert: vi.fn().mockReturnThis(),
@@ -139,7 +139,7 @@ describe('Issue CRUD Operations', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('23502')
+      expect(error?.code).toBe('23502')
     })
 
     it('enforces enum constraints for issue type', async () => {
@@ -174,7 +174,7 @@ describe('Issue CRUD Operations', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('22P02')
+      expect(error?.code).toBe('22P02')
     })
 
     it('accepts all valid issue types', async () => {
@@ -206,7 +206,7 @@ describe('Issue CRUD Operations', () => {
           .select()
         
         expect(error).toBeNull()
-        expect(data.type).toBe(type)
+        expect(data && 'type' in data ? data.type : null).toBe(type)
       }
     })
 
@@ -239,7 +239,7 @@ describe('Issue CRUD Operations', () => {
           .select()
         
         expect(error).toBeNull()
-        expect(data.priority).toBe(priority)
+        expect(data && 'priority' in data ? data.priority : null).toBe(priority)
       }
     })
 
@@ -278,10 +278,10 @@ describe('Issue CRUD Operations', () => {
         .select()
       
       expect(error).toBeNull()
-      expect(data.type).toBe('task') // Default type
-      expect(data.priority).toBe('medium') // Default priority
-      expect(data.description).toBeNull()
-      expect(data.assignee_id).toBeNull()
+      expect(data && 'type' in data ? data.type : null).toBe('task') // Default type
+      expect(data && 'priority' in data ? data.priority : null).toBe('medium') // Default priority
+      expect(data && 'description' in data ? data.description : null).toBeNull()
+      expect(data && 'assignee_id' in data ? data.assignee_id : null).toBeNull()
     })
   })
 
@@ -354,7 +354,7 @@ describe('Issue CRUD Operations', () => {
       
       // Chain eq calls
       let callCount = 0
-      eqMock.mockImplementation((field: string, value: any) => {
+      eqMock.mockImplementation((_field: string, _value: any) => {
         callCount++
         if (callCount === 2) {
           // After second eq call, return the resolved value
@@ -378,7 +378,7 @@ describe('Issue CRUD Operations', () => {
       expect(eqMock).toHaveBeenCalledWith('workspace_id', mockWorkspace.id)
       expect(eqMock).toHaveBeenCalledWith('status', 'todo')
       expect(data).toHaveLength(3)
-      expect(data.every((issue: any) => issue.status === 'todo')).toBe(true)
+      expect(data?.every((issue: any) => issue.status === 'todo')).toBe(true)
       expect(error).toBeNull()
     })
 
@@ -441,7 +441,7 @@ describe('Issue CRUD Operations', () => {
       
       expect(updateMock).toHaveBeenCalledWith({ status: newStatus })
       expect(eqMock).toHaveBeenCalledWith('id', mockIssue.id)
-      expect(data.status).toBe(newStatus)
+      expect(data && 'status' in data ? data.status : null).toBe(newStatus)
       expect(error).toBeNull()
     })
 
@@ -508,7 +508,7 @@ describe('Issue CRUD Operations', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('22P02')
+      expect(error?.code).toBe('22P02')
     })
 
     it('handles concurrent updates gracefully', async () => {
@@ -550,8 +550,8 @@ describe('Issue CRUD Operations', () => {
         .eq('id', mockIssue.id)
         .select()
       
-      expect(data1.status).toBe('in_progress')
-      expect(data2.status).toBe('in_review')
+      expect(data1 && 'status' in data1 ? data1.status : null).toBe('in_progress')
+      expect(data2 && 'status' in data2 ? data2.status : null).toBe('in_review')
     })
   })
 
@@ -601,7 +601,7 @@ describe('Issue CRUD Operations', () => {
         .eq('id', 'non-existent-id')
       
       expect(error).toBeDefined()
-      expect(error.code).toBe('PGRST116')
+      expect(error?.code).toBe('PGRST116')
     })
 
     it('bulk deletes multiple issues', async () => {
@@ -663,7 +663,7 @@ describe('Issue CRUD Operations', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('23503')
+      expect(error?.code).toBe('23503')
     })
 
     it('maintains referential integrity with user', async () => {
@@ -698,7 +698,7 @@ describe('Issue CRUD Operations', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('23503')
+      expect(error?.code).toBe('23503')
     })
 
     it('cascades updates when workspace is deleted', async () => {

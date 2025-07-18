@@ -55,7 +55,7 @@ describe('Workspace Access Control', () => {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: ownerUser }, error: null }),
       },
-      from: vi.fn((table: string) => {
+      from: vi.fn((_table: string) => {
         const mockQuery = {
           select: vi.fn().mockReturnThis(),
           insert: vi.fn().mockReturnThis(),
@@ -97,7 +97,7 @@ describe('Workspace Access Control', () => {
       
       expect(eqMock).toHaveBeenCalledWith('owner_id', ownerUser.id)
       expect(data).toHaveLength(1)
-      expect(data[0].id).toBe(ownerWorkspace.id)
+      expect(data?.[0]?.id).toBe(ownerWorkspace.id)
       expect(error).toBeNull()
     })
 
@@ -145,8 +145,8 @@ describe('Workspace Access Control', () => {
         .from('workspaces')
         .select('*')
       
-      expect(data).toHaveLength(2)
-      expect(data.every((w: any) => w.owner_id === ownerUser.id)).toBe(true)
+      expect(data || []).toHaveLength(2)
+      expect(data?.every((w: any) => w.owner_id === ownerUser.id)).toBe(true)
       expect(error).toBeNull()
     })
   })
@@ -213,7 +213,7 @@ describe('Workspace Access Control', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('42501')
+      expect(error?.code).toBe('42501')
     })
 
     it('prevents ownership transfer through update', async () => {
@@ -246,7 +246,7 @@ describe('Workspace Access Control', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('42501')
+      expect(error?.code).toBe('42501')
     })
   })
 
@@ -296,7 +296,7 @@ describe('Workspace Access Control', () => {
         .eq('id', otherWorkspace.id) // Trying to delete another user's workspace
       
       expect(error).toBeDefined()
-      expect(error.code).toBe('42501')
+      expect(error?.code).toBe('42501')
     })
   })
 
@@ -326,7 +326,7 @@ describe('Workspace Access Control', () => {
         .select()
       
       expect(insertMock).toHaveBeenCalledWith(newWorkspace)
-      expect(data.owner_id).toBe(ownerUser.id)
+      expect(data && 'owner_id' in data ? data.owner_id : null).toBe(ownerUser.id)
       expect(error).toBeNull()
     })
 
@@ -359,7 +359,7 @@ describe('Workspace Access Control', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('42501')
+      expect(error?.code).toBe('42501')
     })
 
     it('enforces unique slug constraint', async () => {
@@ -391,7 +391,7 @@ describe('Workspace Access Control', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('23505')
+      expect(error?.code).toBe('23505')
     })
   })
 
@@ -420,7 +420,7 @@ describe('Workspace Access Control', () => {
         .eq('workspace_id', ownerWorkspace.id)
       
       expect(data).toHaveLength(1)
-      expect(data[0].workspace_id).toBe(ownerWorkspace.id)
+      expect(data?.[0]?.workspace_id).toBe(ownerWorkspace.id)
       expect(error).toBeNull()
     })
 
@@ -478,7 +478,7 @@ describe('Workspace Access Control', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('42501')
+      expect(error?.code).toBe('42501')
     })
 
     it('prevents updating issues in other users workspaces', async () => {
@@ -513,7 +513,7 @@ describe('Workspace Access Control', () => {
       
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('42501')
+      expect(error?.code).toBe('42501')
     })
 
     it('prevents deleting issues in other users workspaces', async () => {
@@ -544,7 +544,7 @@ describe('Workspace Access Control', () => {
         .eq('id', otherIssue.id)
       
       expect(error).toBeDefined()
-      expect(error.code).toBe('42501')
+      expect(error?.code).toBe('42501')
     })
   })
 
@@ -589,16 +589,16 @@ describe('Workspace Access Control', () => {
       })
       
       const supabase = createServerClient('', '', { cookies: {} as any })
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('workspaces')
         .select('*')
         .eq('id', otherWorkspace.id)
         .single()
       
       // Should get "not found" error, not "access denied"
-      expect(error.code).toBe('PGRST116')
-      expect(error.message).not.toContain('security')
-      expect(error.message).not.toContain('policy')
+      expect(error?.code).toBe('PGRST116')
+      expect(error?.message).not.toContain('security')
+      expect(error?.message).not.toContain('policy')
     })
   })
 })
