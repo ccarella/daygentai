@@ -37,11 +37,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
   }
   
   return (
-    <WorkspaceWithMobileNav 
-      workspace={workspace}
-      mobileNavOpen={false}
-      onMobileNavToggle={() => {}}
-    >
+    <WorkspaceWithMobileNav workspace={workspace}>
       <div className="max-w-4xl mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-2xl font-bold mb-2">Workspace Settings</h1>
