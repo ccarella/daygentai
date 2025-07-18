@@ -10,6 +10,7 @@ export default function EditIssueDemo() {
   // Sample issue data
   const sampleIssue = {
     id: 'demo-issue-1',
+    workspace_id: 'demo-workspace-1',
     title: 'Implement user authentication',
     description: `## Overview
 This issue tracks the implementation of user authentication for our application.
