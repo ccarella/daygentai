@@ -153,7 +153,7 @@ export default function PromptGenerationDemo() {
             <li>📋 One-click copy functionality for generated prompts</li>
             <li>🔄 Automatic prompt updates when issue content changes</li>
             <li>📝 Optional Agents.md context for better prompts</li>
-            <li>⚡ Non-blocking generation (doesn\'t delay issue creation)</li>
+            <li>⚡ Non-blocking generation (doesn&apos;t delay issue creation)</li>
           </ul>
 
           <h3>Use Cases</h3>

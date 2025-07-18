@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as React from 'react'
-import { Header } from '@/components/layout/header'
+// import { Header } from '@/components/layout/header'
 // NOTE: Sidebar components don't exist in the codebase
 // import { Sidebar } from '@/components/layout/sidebar'
 // import { SidebarHeader } from '@/components/layout/sidebar-header'
@@ -317,10 +317,10 @@ describe('Layout Components', () => {
       const SwipeableComponent = () => {
         const handleTouchStart = (e: React.TouchEvent) => {
           // Simple swipe detection
-          const startX = e.touches[0].clientX
+          const startX = e.touches[0]?.clientX || 0
           
           const handleTouchEnd = (endEvent: TouchEvent) => {
-            const endX = endEvent.changedTouches[0].clientX
+            const endX = endEvent.changedTouches[0]?.clientX || 0
             const diff = startX - endX
             
             if (Math.abs(diff) > 50) {

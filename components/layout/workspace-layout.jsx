@@ -15,7 +15,7 @@ export function WorkspaceLayout({ workspace, children, onIssueCreated, onNavigat
     const isMobileMenuOpen = propIsMobileMenuOpen !== undefined ? propIsMobileMenuOpen : localIsMobileMenuOpen;
     const setIsMobileMenuOpen = propSetIsMobileMenuOpen || setLocalIsMobileMenuOpen;
     const handleIssueCreated = () => {
-        onIssueCreated === null || onIssueCreated === void 0 ? void 0 : onIssueCreated();
+        if (onIssueCreated) onIssueCreated();
         setCreateIssueOpen(false);
     };
     // Close mobile menu when route changes

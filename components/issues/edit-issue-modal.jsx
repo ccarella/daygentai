@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Loader2 } from 'lucide-react';
-import { generateIssuePrompt, getAgentsContent } from '@/lib/llm/prompt-generator';
+import { generateIssuePrompt } from '@/lib/llm/prompt-generator';
 
 export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }) {
     const [title, setTitle] = useState('');

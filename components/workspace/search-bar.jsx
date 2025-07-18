@@ -5,11 +5,11 @@ export const SearchBar = forwardRef(({ onSearch, placeholder = "Search issues...
     const [query, setQuery] = useState('');
     const handleSearch = (value) => {
         setQuery(value);
-        onSearch === null || onSearch === void 0 ? void 0 : onSearch(value);
+        if (onSearch) onSearch(value);
     };
     const handleKeyDown = (e) => {
         if (e.key === 'Escape') {
-            onEscape === null || onEscape === void 0 ? void 0 : onEscape();
+            if (onEscape) onEscape();
         }
     };
     return (<div className="w-full">

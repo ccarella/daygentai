@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createServerClient } from '@supabase/ssr'
 import { createMockUser } from '@/test/fixtures/users'
 import { createMockWorkspace } from '@/test/fixtures/workspaces'
-import { createMockIssue, createMockIssues } from '@/test/fixtures/issues'
+import { createMockIssue, createMockIssues, type Issue } from '@/test/fixtures/issues'
 
 // Reset modules to avoid conflicts with global mocks
 vi.resetModules()
@@ -41,7 +41,7 @@ describe('Database Transaction Handling', () => {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: mockUser }, error: null }),
       },
-      from: vi.fn((table: string) => {
+      from: vi.fn((_table: string) => {
         const mockQuery = {
           select: vi.fn().mockReturnThis(),
           insert: vi.fn().mockReturnThis(),
@@ -141,7 +141,7 @@ describe('Database Transaction Handling', () => {
       // Entire update should fail, not just the invalid field
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('23503')
+      expect(error?.code).toBe('23503')
     })
   })
 
@@ -153,7 +153,7 @@ describe('Database Transaction Handling', () => {
       })
       
       // One issue has invalid data
-      batchIssues[2] = { ...batchIssues[2], workspace_id: 'invalid-workspace' }
+      batchIssues[2] = { ...batchIssues[2], workspace_id: 'invalid-workspace' } as Issue
       
       const insertMock = vi.fn().mockReturnThis()
       const selectMock = vi.fn().mockResolvedValue({ 
@@ -178,7 +178,7 @@ describe('Database Transaction Handling', () => {
       // All inserts should fail if one fails
       expect(data).toBeNull()
       expect(error).toBeDefined()
-      expect(error.code).toBe('23503')
+      expect(error?.code).toBe('23503')
     })
 
     it('handles batch updates atomically', async () => {
@@ -206,7 +206,7 @@ describe('Database Transaction Handling', () => {
         .select()
       
       expect(data).toHaveLength(3)
-      expect(data.every((issue: any) => issue.status === 'done')).toBe(true)
+      expect(data?.every((issue: any) => issue.status === 'done')).toBe(true)
       expect(error).toBeNull()
     })
 
@@ -307,7 +307,7 @@ describe('Database Transaction Handling', () => {
       
       // Should prevent deletion due to dependent workspaces
       expect(error).toBeDefined()
-      expect(error.code).toBe('23503')
+      expect(error?.code).toBe('23503')
     })
   })
 
@@ -344,7 +344,7 @@ describe('Database Transaction Handling', () => {
         .eq('id', issue.id)
         .select()
       
-      expect(data1.status).toBe('in_progress')
+      expect(data1 && 'status' in data1 ? data1.status : null).toBe('in_progress')
       
       // User 2's update (would succeed in real scenario, demonstrating last-write-wins)
       const updateMock2 = vi.fn().mockReturnThis()
@@ -366,8 +366,8 @@ describe('Database Transaction Handling', () => {
         .eq('id', issue.id)
         .select()
       
-      expect(data2.status).toBe('in_review')
-      expect(data2.updated_at > data1.updated_at).toBe(true)
+      expect(data2 && 'status' in data2 ? data2.status : null).toBe('in_review')
+      expect(data2 && 'updated_at' in data2 && data1 && 'updated_at' in data1 ? (data2.updated_at as string) > (data1.updated_at as string) : false).toBe(true)
     })
 
     it('handles race conditions in unique constraint scenarios', async () => {
@@ -429,7 +429,7 @@ describe('Database Transaction Handling', () => {
       
       expect(data2).toBeNull()
       expect(error2).toBeDefined()
-      expect(error2.code).toBe('23505')
+      expect(error2?.code).toBe('23505')
     })
   })
 
@@ -494,7 +494,7 @@ describe('Database Transaction Handling', () => {
         
         expect(data).toBeNull()
         expect(error).toBeDefined()
-        expect(error.code).toBe(op.expectedError)
+        expect(error?.code).toBe(op.expectedError)
       }
     })
 
@@ -550,7 +550,7 @@ describe('Database Transaction Handling', () => {
         
         expect(data).toBeNull()
         expect(error).toBeDefined()
-        expect(error.code).toBe('22P02')
+        expect(error?.code).toBe('22P02')
       }
     })
 
@@ -588,13 +588,13 @@ describe('Database Transaction Handling', () => {
         const issues = [
           {
             title: 'Setup project',
-            workspace_id: workspaceData.id,
+            workspace_id: workspaceData && 'id' in workspaceData ? workspaceData.id : '',
             created_by: mockUser.id,
             status: 'todo' as const,
           },
           {
             title: 'Create README',
-            workspace_id: workspaceData.id,
+            workspace_id: workspaceData && 'id' in workspaceData ? workspaceData.id : '',
             created_by: mockUser.id,
             status: 'todo' as const,
           },
@@ -674,8 +674,8 @@ describe('Database Transaction Handling', () => {
           .select()
         
         expect(error).toBeDefined()
-        expect(error.code).toBe(scenario.code)
-        expect(error.message).toContain(scenario.message)
+        expect(error?.code).toBe(scenario.code)
+        expect(error?.message).toContain(scenario.message)
       }
     })
 

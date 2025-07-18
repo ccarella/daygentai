@@ -220,7 +220,7 @@ describe('Navigation', () => {
               id: 'test-workspace',
               slug: 'test-workspace',
               name: 'Test Workspace',
-              created_at: new Date().toISOString(),
+              avatar_url: null,
               owner_id: 'user-1'
             }}
           />

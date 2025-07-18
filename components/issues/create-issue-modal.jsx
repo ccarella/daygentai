@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Loader2 } from 'lucide-react';
-import { generateIssuePrompt, getAgentsContent } from '@/lib/llm/prompt-generator';
+import { generateIssuePrompt } from '@/lib/llm/prompt-generator';
 export function CreateIssueModal({ open, onOpenChange, workspaceId, onIssueCreated, }) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -150,9 +150,9 @@ export function CreateIssueModal({ open, onOpenChange, workspaceId, onIssueCreat
             setPriority('medium');
             setCreatePrompt(false);
             onOpenChange(false);
-            onIssueCreated === null || onIssueCreated === void 0 ? void 0 : onIssueCreated();
+            if (onIssueCreated) onIssueCreated();
         }
-        catch (_a) {
+        catch {
             setError('An unexpected error occurred');
         }
         finally {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { IssuesList } from '@/components/issues/issues-list'
 import { CreateIssueModal } from '@/components/issues/create-issue-modal'
@@ -69,7 +69,7 @@ vi.mock('@/lib/supabase/client', () => ({
       getUser: vi.fn().mockResolvedValue({ data: { user: { email: 'test@example.com' } } })
     },
     from: vi.fn(() => ({
-      select: vi.fn().mockImplementation(function(this: any, columns: string, options?: any) {
+      select: vi.fn().mockImplementation(function(this: any, _columns: string, options?: any) {
         if (options?.count === 'exact' && options?.head) {
           // Count query
           return {
@@ -164,7 +164,7 @@ describe('Issue Management', () => {
           getUser: vi.fn().mockResolvedValue({ data: { user: { email: 'test@example.com' } } })
         },
         from: vi.fn(() => ({
-          select: vi.fn().mockImplementation(function(columns: string, options?: any) {
+          select: vi.fn().mockImplementation(function(_columns: string, options?: any) {
             if (options?.count === 'exact' && options?.head) {
               return {
                 eq: vi.fn().mockReturnThis(),
@@ -214,7 +214,7 @@ describe('Issue Management', () => {
           getUser: vi.fn().mockResolvedValue({ data: { user: { email: 'test@example.com' } } })
         },
         from: vi.fn(() => ({
-          select: vi.fn().mockImplementation(function(columns: string, options?: any) {
+          select: vi.fn().mockImplementation(function(_columns: string, options?: any) {
             if (options?.count === 'exact' && options?.head) {
               return {
                 eq: vi.fn().mockReturnThis(),
@@ -351,7 +351,7 @@ describe('Issue Management', () => {
           getUser: vi.fn().mockResolvedValue({ data: { user: { email: 'test@example.com' } } })
         },
         from: vi.fn(() => ({
-          select: vi.fn().mockImplementation(function(columns: string, options?: any) {
+          select: vi.fn().mockImplementation(function(_columns: string, options?: any) {
             if (options?.count === 'exact' && options?.head) {
               return {
                 eq: vi.fn().mockReturnThis(),

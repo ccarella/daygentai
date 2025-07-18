@@ -50,7 +50,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
             shortcut: "C",
             action: () => {
                 setIsOpen(false);
-                onCreateIssue === null || onCreateIssue === void 0 ? void 0 : onCreateIssue();
+                if (onCreateIssue) onCreateIssue();
             },
             keywords: ["new", "add", "make"],
             group: "Create"
@@ -62,7 +62,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
             shortcut: "⌘B",
             action: () => {
                 setIsOpen(false);
-                onToggleViewMode === null || onToggleViewMode === void 0 ? void 0 : onToggleViewMode();
+                if (onToggleViewMode) onToggleViewMode();
             },
             keywords: ["view", "switch", "kanban", "list", "board", "toggle"],
             group: "View"
@@ -74,7 +74,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
             shortcut: "/",
             action: () => {
                 setIsOpen(false);
-                onToggleSearch === null || onToggleSearch === void 0 ? void 0 : onToggleSearch();
+                if (onToggleSearch) onToggleSearch();
             },
             keywords: ["search", "find", "filter", "query", "toggle", "show", "hide"],
             group: "View"
@@ -160,7 +160,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
                             }
                         }, 10000);
                     }
-                } catch (error) {
+                } catch {
                     // Remove loading toast if still present
                     if (document.body.contains(loadingToast)) {
                         document.body.removeChild(loadingToast);
@@ -201,9 +201,8 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
     }, [filteredCommands]);
     const flatCommands = React.useMemo(() => Object.values(groupedCommands).flat(), [groupedCommands]);
     React.useEffect(() => {
-        var _a;
         if (isOpen) {
-            (_a = inputRef.current) === null || _a === void 0 ? void 0 : _a.focus();
+            if (inputRef.current) inputRef.current.focus();
             setSearch("");
             setSelectedIndex(0);
         }

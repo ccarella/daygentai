@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function TestApiKey() {
-  const [data, setData] = useState<any>({ loading: true });
+  const [data, setData] = useState<{ loading: boolean; user?: unknown; fullWorkspace?: unknown; apiKeyOnly?: unknown; isOwner?: boolean }>({ loading: true });
 
   useEffect(() => {
     const test = async () => {
@@ -14,7 +14,7 @@ export default function TestApiKey() {
       const { data: { user } } = await supabase.auth.getUser();
       
       // Try different queries
-      const results: any = { user };
+      const results: { user?: unknown; fullWorkspace?: unknown; apiKeyOnly?: unknown; isOwner?: boolean } = { user };
       
       // Query 1: Just get workspace
       const { data: ws1, error: e1 } = await supabase
