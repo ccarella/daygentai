@@ -14,6 +14,7 @@ import { CommandGroup } from "./command-group"
 import { CommandItem } from "./command-item"
 import { useCommandPalette } from "@/hooks/use-command-palette"
 import { recommendNextIssueAction } from "@/app/actions/recommend-issue"
+import { NextIssueModal } from "@/components/issues/next-issue-modal"
 
 interface Command {
   id: string
@@ -39,6 +40,18 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   const [search, setSearch] = React.useState("")
   const [selectedIndex, setSelectedIndex] = React.useState(0)
   const inputRef = React.useRef<HTMLInputElement>(null)
+  
+  // Next Issue Modal state
+  const [nextIssueModalOpen, setNextIssueModalOpen] = React.useState(false)
+  const [nextIssueData, setNextIssueData] = React.useState<{
+    issueId?: string
+    title?: string
+    justification?: string
+    prompt?: string | undefined
+    issueGeneratedPrompt?: string | null | undefined
+    error?: string
+  }>({})
+  const [isLoadingNextIssue, setIsLoadingNextIssue] = React.useState(false)
 
   const commands: Command[] = React.useMemo(() => [
     {
@@ -124,70 +137,18 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       shortcut: "⌘N",
       action: async () => {
         setIsOpen(false)
-        // Show loading state
-        const loadingToast = document.createElement('div')
-        loadingToast.className = 'fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 z-50 flex items-center gap-2'
-        loadingToast.innerHTML = '<div class="animate-spin h-4 w-4 border-2 border-gray-500 border-t-transparent rounded-full"></div><span>Getting AI recommendation...</span>'
-        document.body.appendChild(loadingToast)
+        setIsLoadingNextIssue(true)
+        setNextIssueModalOpen(true)
         
         try {
           const result = await recommendNextIssueAction(workspaceId)
-          
-          // Remove loading toast
-          document.body.removeChild(loadingToast)
-          
-          if (result.error) {
-            // Show error toast
-            const errorToast = document.createElement('div')
-            errorToast.className = 'fixed bottom-4 right-4 bg-red-50 text-red-900 shadow-lg rounded-lg p-4 z-50'
-            errorToast.innerHTML = `<div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span>${result.error}</span></div>`
-            document.body.appendChild(errorToast)
-            setTimeout(() => document.body.removeChild(errorToast), 5000)
-            return
-          }
-          
-          if (result.issueId) {
-            // Show recommendation toast with justification
-            const recommendationToast = document.createElement('div')
-            recommendationToast.className = 'fixed bottom-4 right-4 bg-green-50 shadow-lg rounded-lg p-4 z-50 max-w-md'
-            recommendationToast.innerHTML = `
-              <div class="flex items-start gap-3">
-                <svg class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <div>
-                  <p class="font-medium text-gray-900 mb-1">Recommended: ${result.title}</p>
-                  <p class="text-sm text-gray-600 mb-2">${result.justification}</p>
-                  <button class="text-sm text-green-600 hover:text-green-700 font-medium" onclick="this.closest('div.fixed').remove()">Dismiss</button>
-                </div>
-              </div>
-            `
-            document.body.appendChild(recommendationToast)
-            
-            // Navigate to the issue after a short delay
-            setTimeout(() => {
-              router.push(`/${workspaceSlug}/issue/${result.issueId}`)
-            }, 1000)
-            
-            // Auto-remove toast after 10 seconds
-            setTimeout(() => {
-              if (document.body.contains(recommendationToast)) {
-                document.body.removeChild(recommendationToast)
-              }
-            }, 10000)
-          }
-        } catch (error) {
-          // Remove loading toast if still present
-          if (document.body.contains(loadingToast)) {
-            document.body.removeChild(loadingToast)
-          }
-          
-          // Show error toast
-          const errorToast = document.createElement('div')
-          errorToast.className = 'fixed bottom-4 right-4 bg-red-50 text-red-900 shadow-lg rounded-lg p-4 z-50'
-          errorToast.innerHTML = '<div class="flex items-center gap-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span>Failed to get recommendation</span></div>'
-          document.body.appendChild(errorToast)
-          setTimeout(() => document.body.removeChild(errorToast), 5000)
+          setNextIssueData(result)
+        } catch {
+          setNextIssueData({
+            error: 'Failed to get recommendation. Please try again.'
+          })
+        } finally {
+          setIsLoadingNextIssue(false)
         }
       },
       keywords: ["ai", "recommend", "suggestion", "next", "task", "priority"],
@@ -364,64 +325,85 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="p-0 max-w-2xl">
-        <DialogTitle className="sr-only">
-          {mode === 'help' ? 'Keyboard Shortcuts & Help' : 'Command Palette'}
-        </DialogTitle>
-        
-        {mode === 'help' ? (
-          <ScrollArea className="max-h-[600px]">
-            {renderCheatsheet()}
-          </ScrollArea>
-        ) : (
-          <>
-            <div className="flex items-center border-b px-3">
-              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-              <Input
-                ref={inputRef}
-                placeholder="Type a command or search..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="flex h-12 w-full border-0 bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-0"
-              />
-            </div>
-            <ScrollArea className="max-h-[300px] overflow-y-auto p-2">
-              {Object.entries(groupedCommands).map(([group, commands]) => (
-                <CommandGroup key={group} heading={group}>
-                  {commands.map((command) => {
-                    const globalIndex = flatCommands.indexOf(command)
-                    return (
-                      <CommandItem
-                        key={command.id}
-                        data-command-id={command.id}
-                        onSelect={() => {
-                          command.action()
-                          setIsOpen(false)
-                        }}
-                        className={globalIndex === selectedIndex ? "bg-accent" : ""}
-                      >
-                        {command.icon}
-                        <span className="ml-2">{command.title}</span>
-                        {command.shortcut && (
-                          <span className="ml-auto text-xs tracking-widest opacity-60">
-                            {command.shortcut}
-                          </span>
-                        )}
-                      </CommandItem>
-                    )
-                  })}
-                </CommandGroup>
-              ))}
-              {filteredCommands.length === 0 && (
-                <div className="py-6 text-center text-sm text-muted-foreground">
-                  No results found.
-                </div>
-              )}
+    <>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="p-0 max-w-2xl">
+          <DialogTitle className="sr-only">
+            {mode === 'help' ? 'Keyboard Shortcuts & Help' : 'Command Palette'}
+          </DialogTitle>
+          
+          {mode === 'help' ? (
+            <ScrollArea className="max-h-[600px]">
+              {renderCheatsheet()}
             </ScrollArea>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+          ) : (
+            <>
+              <div className="flex items-center border-b px-3">
+                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                <Input
+                  ref={inputRef}
+                  placeholder="Type a command or search..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="flex h-12 w-full border-0 bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-0"
+                />
+              </div>
+              <ScrollArea className="max-h-[300px] overflow-y-auto p-2">
+                {Object.entries(groupedCommands).map(([group, commands]) => (
+                  <CommandGroup key={group} heading={group}>
+                    {commands.map((command) => {
+                      const globalIndex = flatCommands.indexOf(command)
+                      return (
+                        <CommandItem
+                          key={command.id}
+                          data-command-id={command.id}
+                          onSelect={() => {
+                            command.action()
+                            setIsOpen(false)
+                          }}
+                          className={globalIndex === selectedIndex ? "bg-accent" : ""}
+                        >
+                          {command.icon}
+                          <span className="ml-2">{command.title}</span>
+                          {command.shortcut && (
+                            <span className="ml-auto text-xs tracking-widest opacity-60">
+                              {command.shortcut}
+                            </span>
+                          )}
+                        </CommandItem>
+                      )
+                    })}
+                  </CommandGroup>
+                ))}
+                {filteredCommands.length === 0 && (
+                  <div className="py-6 text-center text-sm text-muted-foreground">
+                    No results found.
+                  </div>
+                )}
+              </ScrollArea>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <NextIssueModal
+        open={nextIssueModalOpen}
+        onOpenChange={(open) => {
+          setNextIssueModalOpen(open)
+          if (!open) {
+            // Reset data when modal is closed
+            setNextIssueData({})
+          }
+        }}
+        issueId={nextIssueData.issueId || undefined}
+        title={nextIssueData.title || undefined}
+        justification={nextIssueData.justification || undefined}
+        error={nextIssueData.error || undefined}
+        prompt={nextIssueData.prompt || undefined}
+        issueGeneratedPrompt={nextIssueData.issueGeneratedPrompt || undefined}
+        workspaceSlug={workspaceSlug}
+        isLoading={isLoadingNextIssue}
+      />
+    </>
   )
 }

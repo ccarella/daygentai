@@ -93,14 +93,13 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // If accessing a workspace route, ensure user has profile and workspace
+    // If accessing a workspace route, ensure user has profile
     if (isWorkspaceRoute) {
       if (!profile) {
         return NextResponse.redirect(new URL('/CreateUser', request.url))
       }
-      if (!workspace) {
-        return NextResponse.redirect(new URL('/CreateWorkspace', request.url))
-      }
+      // For workspace routes, we'll check access in the page components
+      // Don't require workspace ownership here since users can be members of workspaces they don't own
     }
     
     // If authenticated user is on home page, redirect to workspace loading page

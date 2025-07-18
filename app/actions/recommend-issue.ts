@@ -7,6 +7,8 @@ interface RecommendIssueResult {
   issueId?: string
   title?: string
   justification?: string
+  prompt?: string | undefined
+  issueGeneratedPrompt?: string | null | undefined
   error?: string
 }
 
@@ -33,7 +35,7 @@ export async function recommendNextIssueAction(
       return { error: 'Failed to fetch workspace settings' }
     }
 
-    // Fetch all issues for the workspace
+    // Fetch all issues for the workspace including generated_prompt
     const { data: issues, error: issuesError } = await supabase
       .from('issues')
       .select('*')
@@ -44,13 +46,6 @@ export async function recommendNextIssueAction(
       return { error: 'Failed to fetch issues' }
     }
 
-    // Filter out completed issues
-    const openIssues = issues.filter(issue => issue.status !== 'done')
-    
-    if (openIssues.length === 0) {
-      return { error: 'No open issues available' }
-    }
-
     // Get API key from workspace settings, fallback to environment variable
     const apiKey = workspace.api_key || process.env['OPENAI_API_KEY']
     const provider = workspace.api_provider || 'openai'
@@ -59,9 +54,9 @@ export async function recommendNextIssueAction(
       return { error: 'AI recommendation not configured. Please add an OpenAI API key in workspace settings.' }
     }
 
-    // Get recommendation
+    // Get recommendation (the recommendNextIssue function will filter for 'todo' status)
     const result = await recommendNextIssue(
-      openIssues, 
+      issues, 
       apiKey, 
       provider as 'openai' | 'anthropic',
       workspace.agents_content
@@ -74,7 +69,9 @@ export async function recommendNextIssueAction(
     return {
       issueId: result.recommendedIssue.id,
       title: result.recommendedIssue.title,
-      justification: result.justification
+      justification: result.justification,
+      prompt: result.prompt || undefined,
+      issueGeneratedPrompt: result.recommendedIssue.generated_prompt || undefined
     }
   } catch (error) {
     console.error('Error in recommendNextIssueAction:', error)
