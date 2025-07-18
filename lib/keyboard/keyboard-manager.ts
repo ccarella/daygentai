@@ -175,7 +175,7 @@ export class KeyboardManager {
     const parts: string[] = []
     
     if (event.ctrlKey) parts.push('ctrl')
-    if (event.metaKey || event.metaKey) parts.push('cmd')
+    if (event.metaKey) parts.push('cmd')
     if (event.altKey) parts.push('alt')
     if (event.shiftKey) parts.push('shift')
     
