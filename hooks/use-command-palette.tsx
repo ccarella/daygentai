@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useKeyboardContext, KeyboardPriority } from '@/lib/keyboard'
 
 interface CommandPaletteContextType {
   isOpen: boolean
@@ -21,19 +22,31 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
     setIsOpen(true)
   }, [])
 
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Check for Cmd+K (Mac) or Ctrl+K (Windows/Linux)
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault()
-        setMode('normal')
-        setIsOpen(prev => !prev)
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
+  // Register keyboard shortcut for command palette
+  useKeyboardContext({
+    id: 'command-palette-toggle',
+    priority: KeyboardPriority.MODAL, // High priority since it's a modal
+    enabled: true,
+    shortcuts: {
+      'cmd+k': {
+        handler: () => {
+          setMode('normal')
+          setIsOpen(prev => !prev)
+          return true
+        },
+        description: 'Toggle command palette',
+      },
+      'ctrl+k': {
+        handler: () => {
+          setMode('normal')
+          setIsOpen(prev => !prev)
+          return true
+        },
+        description: 'Toggle command palette',
+      },
+    },
+    deps: [],
+  })
 
   // Reset mode to normal when closing
   React.useEffect(() => {
