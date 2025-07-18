@@ -8,6 +8,16 @@ if (typeof global !== 'undefined') {
         unobserve() {}
         disconnect() {}
     };
+    
+    // Mock IntersectionObserver
+    global.IntersectionObserver = class IntersectionObserver {
+        constructor(callback) {
+            this.callback = callback;
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    };
 }
 
 import '@testing-library/jest-dom/vitest';

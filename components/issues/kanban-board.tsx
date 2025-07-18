@@ -29,6 +29,7 @@ interface KanbanBoardProps {
   statusFilter?: string
   priorityFilter?: string
   typeFilter?: string
+  searchQuery?: string
 }
 
 const columns = [
@@ -66,7 +67,8 @@ export function KanbanBoard({
   onIssueClick,
   statusFilter = 'all',
   priorityFilter = 'all',
-  typeFilter = 'all'
+  typeFilter = 'all',
+  searchQuery = ''
 }: KanbanBoardProps) {
   const [issues, setIssues] = useState<Issue[]>([])
   const [loading, setLoading] = useState(true)
@@ -84,34 +86,80 @@ export function KanbanBoard({
     const from = pageNum * pageSize
     const to = from + pageSize - 1
 
-    let query = supabase
-      .from('issues')
-      .select('*')
-      .eq('workspace_id', workspaceId)
-      .order('created_at', { ascending: false })
-      .range(from, to)
+    let data: Issue[] | null = null
+    let error: Error | null = null
 
-    if (statusFilter !== 'all') {
-      if (statusFilter === 'exclude_done') {
-        query = query.neq('status', 'done')
-      } else {
-        query = query.eq('status', statusFilter)
+    // If there's a search query, use the search function
+    if (searchQuery && searchQuery.trim() !== '') {
+      const response = await supabase
+        .rpc('search_issues', {
+          search_query: searchQuery.trim(),
+          p_workspace_id: workspaceId,
+          limit_count: to + 1 // Request more to handle pagination
+        })
+      
+      data = response.data
+      error = response.error
+      
+      // Apply client-side filters on search results
+      if (data && !error) {
+        let filteredData = data
+        
+        if (statusFilter !== 'all') {
+          if (statusFilter === 'exclude_done') {
+            filteredData = filteredData.filter(issue => issue.status !== 'done')
+          } else {
+            filteredData = filteredData.filter(issue => issue.status === statusFilter)
+          }
+        }
+        
+        if (priorityFilter !== 'all') {
+          filteredData = filteredData.filter(issue => issue.priority === priorityFilter)
+        }
+        
+        if (typeFilter !== 'all') {
+          const validTypes = ['feature', 'bug', 'chore', 'design', 'non-technical']
+          if (validTypes.includes(typeFilter)) {
+            filteredData = filteredData.filter(issue => issue.type === typeFilter)
+          }
+        }
+        
+        // Apply pagination on filtered results
+        data = filteredData.slice(from, to + 1)
       }
-    }
+    } else {
+      // Original query logic for non-search cases
+      let query = supabase
+        .from('issues')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .order('created_at', { ascending: false })
+        .range(from, to)
 
-    if (priorityFilter !== 'all') {
-      query = query.eq('priority', priorityFilter)
-    }
-
-    if (typeFilter !== 'all') {
-      // Only apply type filter if it's a valid type
-      const validTypes = ['feature', 'bug', 'chore', 'design', 'non-technical']
-      if (validTypes.includes(typeFilter)) {
-        query = query.eq('type', typeFilter)
+      if (statusFilter !== 'all') {
+        if (statusFilter === 'exclude_done') {
+          query = query.neq('status', 'done')
+        } else {
+          query = query.eq('status', statusFilter)
+        }
       }
-    }
+      
+      if (priorityFilter !== 'all') {
+        query = query.eq('priority', priorityFilter)
+      }
 
-    const { data, error } = await query
+      if (typeFilter !== 'all') {
+        // Only apply type filter if it's a valid type
+        const validTypes = ['feature', 'bug', 'chore', 'design', 'non-technical']
+        if (validTypes.includes(typeFilter)) {
+          query = query.eq('type', typeFilter)
+        }
+      }
+      
+      const response = await query
+      data = response.data
+      error = response.error
+    }
 
     if (error) {
       console.error('Error fetching issues:', error.message || error)
@@ -138,14 +186,14 @@ export function KanbanBoard({
       const issueIds = newIssues.map(issue => issue.id)
       preloadIssues(issueIds)
     }
-  }, [workspaceId, statusFilter, priorityFilter, typeFilter, preloadIssues])
+  }, [workspaceId, statusFilter, priorityFilter, typeFilter, searchQuery, preloadIssues])
 
   useEffect(() => {
     setLoading(true)
     setPage(0)
     fetchIssues(0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, priorityFilter, typeFilter, workspaceId])
+  }, [statusFilter, priorityFilter, typeFilter, searchQuery, workspaceId])
 
   const loadMore = () => {
     const nextPage = page + 1

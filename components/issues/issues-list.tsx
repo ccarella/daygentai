@@ -27,6 +27,8 @@ interface IssuesListProps {
   statusFilter?: string
   priorityFilter?: string
   typeFilter?: string
+  searchQuery?: string
+  onSearchResultsChange?: (count: number) => void
 }
 
 const typeColors = {
@@ -67,7 +69,9 @@ export function IssuesList({
   onIssueClick,
   statusFilter = 'exclude_done',
   priorityFilter = 'all',
-  typeFilter = 'all'
+  typeFilter = 'all',
+  searchQuery = '',
+  onSearchResultsChange
 }: IssuesListProps) {
   const router = useRouter()
   const { preloadIssues } = useIssueCache()
@@ -88,6 +92,51 @@ export function IssuesList({
     isLoadingRef.current = true
     const supabase = createClient()
     
+    // If there's a search query, use the search function
+    if (searchQuery && searchQuery.trim() !== '') {
+      // Call the search function via RPC
+      const { data, error } = await supabase
+        .rpc('search_issues', {
+          search_query: searchQuery.trim(),
+          p_workspace_id: workspaceId,
+          limit_count: ISSUES_PER_PAGE + (pageNum * ISSUES_PER_PAGE)
+        })
+
+      isLoadingRef.current = false
+
+      if (error) {
+        console.error('Error searching issues:', error)
+        return { issues: [], hasMore: false, totalCount: 0 }
+      }
+
+      const allSearchResults = data || []
+      
+      // Apply client-side filters on search results
+      let filteredResults = allSearchResults
+      
+      if (statusFilter === 'exclude_done') {
+        filteredResults = filteredResults.filter((issue: Issue) => issue.status !== 'done')
+      } else if (statusFilter !== 'all') {
+        filteredResults = filteredResults.filter((issue: Issue) => issue.status === statusFilter)
+      }
+
+      if (priorityFilter !== 'all') {
+        filteredResults = filteredResults.filter((issue: Issue) => issue.priority === priorityFilter)
+      }
+
+      if (typeFilter !== 'all') {
+        filteredResults = filteredResults.filter((issue: Issue) => issue.type === typeFilter)
+      }
+
+      // Apply pagination to filtered results
+      const start = pageNum * ISSUES_PER_PAGE
+      const paginatedResults = filteredResults.slice(start, start + ISSUES_PER_PAGE)
+      const hasMorePages = filteredResults.length > start + ISSUES_PER_PAGE
+      
+      return { issues: paginatedResults, hasMore: hasMorePages, totalCount: filteredResults.length }
+    }
+    
+    // Original query logic for non-search cases
     // First, get the total count with filters applied
     let countQuery = supabase
       .from('issues')
@@ -168,7 +217,7 @@ export function IssuesList({
     }
 
     return { issues: newIssues, hasMore: hasMorePages, totalCount }
-  }, [workspaceId, statusFilter, priorityFilter, typeFilter, preloadIssues])
+  }, [workspaceId, statusFilter, priorityFilter, typeFilter, searchQuery, preloadIssues, onSearchResultsChange])
 
   // Initial load when component mounts or filters change
   useEffect(() => {
@@ -188,6 +237,11 @@ export function IssuesList({
         setTotalCount(total)
         setPage(0)
         setInitialLoading(false)
+        
+        // Notify parent of search results count if searching
+        if (searchQuery && onSearchResultsChange) {
+          onSearchResultsChange(total)
+        }
       }
     }
 
@@ -197,7 +251,7 @@ export function IssuesList({
       cancelled = true
       isLoadingRef.current = false
     }
-  }, [workspaceId, statusFilter, priorityFilter, typeFilter]) // Removed fetchIssues dependency
+  }, [workspaceId, statusFilter, priorityFilter, typeFilter, searchQuery]) // Added searchQuery dependency
 
   // Setup IntersectionObserver for viewport-based preloading
   useEffect(() => {
