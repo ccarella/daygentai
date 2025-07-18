@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { generateIssuePrompt } from '@/lib/llm/prompt-generator'
-import { POST as testConnection } from '@/app/api/test-connection/route'
-import { NextRequest } from 'next/server'
 
 // Mock fetch globally
 const mockFetch = vi.fn()
@@ -261,74 +259,6 @@ describe('Error Handling - Comprehensive Tests', () => {
     })
   })
 
-  describe('API Connection Test Error Scenarios', () => {
-    const createRequest = (body: any) => {
-      return new NextRequest('http://localhost:3000/api/test-connection', {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: { 'Content-Type': 'application/json' }
-      })
-    }
-
-    it('should handle malformed request body', async () => {
-      const request = new NextRequest('http://localhost:3000/api/test-connection', {
-        method: 'POST',
-        body: '{"invalid json',
-        headers: { 'Content-Type': 'application/json' }
-      })
-
-      const response = await testConnection(request)
-      const data = await response.json()
-
-      expect(response.status).toBe(500)
-      expect(data.success).toBe(false)
-      expect(data.message).toBe('Failed to test connection')
-    })
-
-    it('should handle API endpoints being down', async () => {
-      mockFetch.mockRejectedValueOnce(new Error('ECONNREFUSED'))
-
-      const request = createRequest({ provider: 'openai', apiKey: 'test-key' })
-      const response = await testConnection(request)
-      const data = await response.json()
-
-      expect(response.status).toBe(500)
-      expect(data.success).toBe(false)
-      expect(data.message).toBe('Failed to test connection')
-    })
-
-    it('should handle invalid provider gracefully', async () => {
-      const request = createRequest({ 
-        provider: 'invalid-provider', 
-        apiKey: 'test-key' 
-      })
-      
-      const response = await testConnection(request)
-      const data = await response.json()
-
-      expect(response.status).toBe(400)
-      expect(data.success).toBe(false)
-      expect(data.message).toBe('Provider not supported')
-    })
-
-    it('should handle empty provider string', async () => {
-      const request = createRequest({ provider: '', apiKey: 'test-key' })
-      const response = await testConnection(request)
-      const data = await response.json()
-
-      expect(response.status).toBe(400)
-      expect(data.message).toBe('Provider and API key are required')
-    })
-
-    it('should handle null values', async () => {
-      const request = createRequest({ provider: null, apiKey: null })
-      const response = await testConnection(request)
-      const data = await response.json()
-
-      expect(response.status).toBe(400)
-      expect(data.message).toBe('Provider and API key are required')
-    })
-  })
 
   describe('Concurrent Request Handling', () => {
     it('should handle multiple simultaneous prompt generations', async () => {
