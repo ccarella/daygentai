@@ -100,8 +100,8 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   const [refreshKey, setRefreshKey] = useState(0)
   const [issuesViewMode, setIssuesViewMode] = useState<'list' | 'kanban'>('list')
   
-  // Filter states - default excludes done status
-  const [statusFilter, setStatusFilter] = useState<string>('exclude_done')
+  // Filter states - default shows all issues
+  const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
