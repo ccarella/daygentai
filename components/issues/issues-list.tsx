@@ -97,9 +97,9 @@ export function IssuesList({
   useArrowNavigation({
     containerRef: listContainerRef,
     orientation: 'vertical',
-    onItemSelect: handleItemSelect,
+    onEnter: handleItemSelect,
     itemSelector: '[data-issue-id]',
-    wrapAround: false
+    enableWrapAround: false
   })
 
   const fetchIssues = useCallback(async (pageNum: number, append = false) => {

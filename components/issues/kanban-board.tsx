@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useIssueCache } from '@/contexts/issue-cache-context'
 import { formatDistanceToNow } from 'date-fns'
@@ -76,9 +76,15 @@ export function KanbanBoard({
   const { preloadIssues } = useIssueCache()
   const loadingMoreRef = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const columnRefs = useRef<Array<React.RefObject<HTMLDivElement>>>([])
+
+  // Initialize column refs
+  if (columnRefs.current.length !== columns.length) {
+    columnRefs.current = columns.map(() => React.createRef<HTMLDivElement>())
+  }
 
   // Setup keyboard navigation
-  const handleItemSelect = useCallback((itemEl: HTMLElement) => {
+  const handleItemSelect = useCallback((itemEl: HTMLElement, columnIndex: number) => {
     const issueId = itemEl.getAttribute('data-issue-id')
     if (issueId) {
       onIssueClick(issueId)
@@ -86,11 +92,12 @@ export function KanbanBoard({
   }, [onIssueClick])
 
   useColumnNavigation({
-    containerRef,
-    onItemSelect: handleItemSelect,
-    wrapAround: true,
-    columnAttribute: 'data-column',
-    itemSelector: '[data-issue-id]'
+    columns: columnRefs.current.map((ref) => ({
+      containerRef: ref,
+      itemSelector: '[data-issue-id]'
+    })),
+    onEnter: handleItemSelect,
+    enableWrapAround: true
   })
 
   const fetchIssues = useCallback(async (pageNum: number, append = false) => {
@@ -221,14 +228,13 @@ export function KanbanBoard({
       )}
       
       <div ref={containerRef} className="flex gap-4 h-full overflow-x-auto pb-4 px-4">
-        {columns.map(column => {
+        {columns.map((column, columnIndex) => {
           const columnIssues = getIssuesByStatus(column.id)
           
           return (
             <div
               key={column.id}
               className="flex-shrink-0 w-72"
-              data-column={column.id}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, column.id)}
             >
@@ -241,7 +247,7 @@ export function KanbanBoard({
                 </h3>
               </div>
               
-              <div className="bg-gray-50 border border-t-0 rounded-b-lg min-h-[400px] max-h-[calc(100vh-300px)] overflow-y-auto p-2 space-y-2">
+              <div ref={columnRefs.current[columnIndex]} className="bg-gray-50 border border-t-0 rounded-b-lg min-h-[400px] max-h-[calc(100vh-300px)] overflow-y-auto p-2 space-y-2">
                 {columnIssues.length === 0 ? (
                   <p className="text-gray-400 text-sm text-center py-8">
                     No issues
