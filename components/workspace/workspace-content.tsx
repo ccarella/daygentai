@@ -4,6 +4,7 @@ import { useState, useImperativeHandle, forwardRef, useEffect, useRef } from 're
 import { usePathname } from 'next/navigation'
 import { IssuesList } from '@/components/issues/issues-list'
 import dynamic from 'next/dynamic'
+import { useDebounce } from '@/hooks/use-debounce'
 
 const KanbanBoard = dynamic(
   () => import('@/components/issues/kanban-board').then(mod => ({ default: mod.KanbanBoard })),
@@ -34,8 +35,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { LayoutGrid, List, Filter } from 'lucide-react'
-import { SearchBar } from '@/components/workspace/search-bar'
+import { LayoutGrid, List, Filter, X } from 'lucide-react'
+import { SearchBar, SearchBarRef } from '@/components/workspace/search-bar'
 
 interface WorkspaceContentProps {
   workspace: {
@@ -117,10 +118,13 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false)
   const [isFiltersVisible, setIsFiltersVisible] = useState<boolean>(false)
-  const searchInputRef = useRef<HTMLInputElement>(null)
+  const [isSearching, setIsSearching] = useState<boolean>(false)
+  const [searchResultCount, setSearchResultCount] = useState<number>(0)
+  const searchInputRef = useRef<SearchBarRef>(null)
   
-  // TODO: Pass searchQuery to IssuesList and KanbanBoard components when search functionality is implemented
-  console.log('Search query:', searchQuery) // Temporary to avoid unused variable warning
+  // Debounce search query for better performance
+  const debouncedSearchQuery = useDebounce(searchQuery, 300)
+  
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -154,6 +158,15 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
       searchInputRef.current.focus()
     }
   }, [isSearchVisible])
+  
+  // Track search state
+  useEffect(() => {
+    if (searchQuery !== debouncedSearchQuery) {
+      setIsSearching(true)
+    } else {
+      setIsSearching(false)
+    }
+  }, [searchQuery, debouncedSearchQuery])
 
   const handleIssueClick = (issueId: string) => {
     setCurrentIssueId(issueId)
@@ -233,10 +246,14 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
           <SearchBar 
             ref={searchInputRef}
             onSearch={setSearchQuery}
-            placeholder="Search issues..."
+            placeholder="Search issues by title..."
+            isSearching={isSearching}
+            showResultCount={true}
+            resultCount={searchResultCount}
             onEscape={() => {
               setIsSearchVisible(false)
               setSearchQuery('')
+              setSearchResultCount(0)
             }}
           />
         </div>
@@ -250,9 +267,25 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
             {/* Left side - Search hint and desktop filters */}
             <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
               {/* Search hint when search is hidden */}
-              {!isSearchVisible && (
+              {!isSearchVisible && !debouncedSearchQuery && (
                 <div className="text-sm text-gray-500 hidden sm:block">
                   Press <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 border border-gray-200 rounded">/</kbd> to search
+                </div>
+              )}
+              
+              {/* Active search indicator */}
+              {!isSearchVisible && debouncedSearchQuery && (
+                <div className="text-sm text-blue-600 font-medium hidden sm:flex items-center gap-2">
+                  <span>Searching: &ldquo;{debouncedSearchQuery}&rdquo;</span>
+                  <button
+                    onClick={() => {
+                      setSearchQuery('')
+                      setSearchResultCount(0)
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               )}
               
@@ -418,6 +451,8 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
             statusFilter={statusFilter}
             priorityFilter={priorityFilter}
             typeFilter={typeFilter}
+            searchQuery={debouncedSearchQuery}
+            onSearchResultsChange={setSearchResultCount}
           />
         ) : (
           <KanbanBoard
@@ -427,6 +462,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
             statusFilter={statusFilter}
             priorityFilter={priorityFilter}
             typeFilter={typeFilter}
+            searchQuery={debouncedSearchQuery}
           />
         )
       ) : currentView === 'inbox' ? (
