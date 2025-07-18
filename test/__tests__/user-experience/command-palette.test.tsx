@@ -13,11 +13,13 @@ vi.mock('next/navigation', () => ({
 // Helper component to test hook
 function CommandPaletteTestWrapper({ 
   workspaceSlug = 'test-workspace',
+  workspaceId = 'test-workspace-id',
   onCreateIssue = vi.fn(),
   onToggleViewMode = vi.fn(),
   onToggleSearch = vi.fn(),
 }: {
   workspaceSlug?: string
+  workspaceId?: string
   onCreateIssue?: () => void
   onToggleViewMode?: () => void
   onToggleSearch?: () => void
@@ -26,6 +28,7 @@ function CommandPaletteTestWrapper({
     <CommandPaletteProvider>
       <CommandPalette 
         workspaceSlug={workspaceSlug}
+        workspaceId={workspaceId}
         onCreateIssue={onCreateIssue}
         onToggleViewMode={onToggleViewMode}
         onToggleSearch={onToggleSearch}
