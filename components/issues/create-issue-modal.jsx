@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MarkdownEditor } from '@/components/ui/markdown-editor';
@@ -169,6 +169,7 @@ export function CreateIssueModal({ open, onOpenChange, workspaceId, onIssueCreat
       <DialogContent className="sm:max-w-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh]" onKeyDown={handleKeyDown}>
         <DialogHeader className="shrink-0">
           <DialogTitle>New issue</DialogTitle>
+          <DialogDescription>Create a new issue for your workspace</DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6 -mx-6 scrollbar-thin">

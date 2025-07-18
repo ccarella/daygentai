@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { EmailLogin } from '@/components/auth/email-login'
 import { createClient } from '@/lib/supabase/client'
@@ -302,7 +302,9 @@ describe('EmailLogin', () => {
       expect(mockSupabase.auth.signInWithOtp).toHaveBeenCalledTimes(1)
       
       // Resolve the promise
-      resolvePromise({ data: { user: null, session: null }, error: null })
+      await act(async () => {
+        resolvePromise({ data: { user: null, session: null }, error: null })
+      })
     })
 
     it('handles email input value correctly', async () => {
