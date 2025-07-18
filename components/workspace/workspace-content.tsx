@@ -109,8 +109,9 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   const [refreshKey, setRefreshKey] = useState(0)
   const [issuesViewMode, setIssuesViewMode] = useState<'list' | 'kanban'>('list')
   
-  // Filter states - default shows all issues
-  const [statusFilter, setStatusFilter] = useState<string>('all')
+  // Filter states - default based on view mode
+  // List view defaults to Active (exclude_done), Kanban defaults to All
+  const [statusFilter, setStatusFilter] = useState<string>('exclude_done')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -184,7 +185,24 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
 
   // Handler to toggle between list and kanban views
   const handleToggleViewMode = () => {
-    setIssuesViewMode(prev => prev === 'list' ? 'kanban' : 'list')
+    setIssuesViewMode(prev => {
+      const newMode = prev === 'list' ? 'kanban' : 'list'
+      
+      // Update filters based on view mode
+      if (newMode === 'list') {
+        // List view default: Active issues (exclude done)
+        setStatusFilter('exclude_done')
+      } else {
+        // Kanban view default: All issues
+        setStatusFilter('all')
+      }
+      
+      // Reset other filters to default
+      setPriorityFilter('all')
+      setTypeFilter('all')
+      
+      return newMode
+    })
   }
 
   // Expose method to parent component
@@ -299,14 +317,30 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               {/* View Mode Toggle */}
               <div className="flex items-center gap-1 border rounded-md p-1">
                 <button
-                  onClick={() => setIssuesViewMode('list')}
+                  onClick={() => {
+                    if (issuesViewMode !== 'list') {
+                      setIssuesViewMode('list')
+                      // List view default: Active issues (exclude done)
+                      setStatusFilter('exclude_done')
+                      setPriorityFilter('all')
+                      setTypeFilter('all')
+                    }
+                  }}
                   className={`p-1 rounded ${issuesViewMode === 'list' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
                   title="List view"
                 >
                   <List className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => setIssuesViewMode('kanban')}
+                  onClick={() => {
+                    if (issuesViewMode !== 'kanban') {
+                      setIssuesViewMode('kanban')
+                      // Kanban view default: All issues
+                      setStatusFilter('all')
+                      setPriorityFilter('all')
+                      setTypeFilter('all')
+                    }
+                  }}
                   className={`p-1 rounded ${issuesViewMode === 'kanban' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
                   title="Kanban view"
                 >
