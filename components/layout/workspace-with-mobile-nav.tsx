@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Header } from './header'
 import { WorkspaceLayout } from './workspace-layout'
+import { useWorkspaceNavigation } from '@/hooks/use-workspace-navigation'
 
 interface WorkspaceWithMobileNavProps {
   workspace: {
@@ -23,6 +24,8 @@ interface WorkspaceWithMobileNavProps {
 export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, onNavigateToIssues, onNavigateToInbox, onNavigateToCookbook }: WorkspaceWithMobileNavProps) {
   const [profile, setProfile] = useState<{ name: string; avatar_url: string | null } | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const sidebarRef = useRef<HTMLDivElement>(null)
+  const mainContentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -47,6 +50,12 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
     setIsMobileMenuOpen(!isMobileMenuOpen)
   }
 
+  // Set up unified workspace navigation
+  useWorkspaceNavigation({
+    sidebarRef,
+    mainContentRef,
+  })
+
   return (
     <>
       {profile ? (
@@ -70,8 +79,11 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
           {...(onNavigateToCookbook && { onNavigateToCookbook })}
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
+          sidebarRef={sidebarRef}
         >
-          {children}
+          <div ref={mainContentRef}>
+            {children}
+          </div>
         </WorkspaceLayout>
       </div>
     </>

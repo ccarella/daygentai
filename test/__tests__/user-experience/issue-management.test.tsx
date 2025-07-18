@@ -326,8 +326,8 @@ describe('Issue Management', () => {
       // Focus in the form to ensure keyboard event is captured
       titleInput.focus()
 
-      // Submit with Shift+Enter
-      await user.keyboard('{Shift>}{Enter}{/Shift}')
+      // Submit with Cmd+Enter (or Meta+Enter)
+      await user.keyboard('{Meta>}{Enter}{/Meta}')
 
       await waitFor(() => {
         expect(onIssueCreated).toHaveBeenCalled()

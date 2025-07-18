@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { useIssueCache } from '@/contexts/issue-cache-context'
 import { stripMarkdown } from '@/lib/markdown-utils'
+// Navigation is now handled by useWorkspaceNavigation in the parent component
 
 interface Issue {
   id: string
@@ -79,6 +80,7 @@ export function IssuesList({
   const isLoadingRef = useRef(false)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const preloadedIssuesRef = useRef<Set<string>>(new Set())
+  const listContainerRef = useRef<HTMLDivElement>(null)
 
   const fetchIssues = useCallback(async (pageNum: number, append = false) => {
     if (isLoadingRef.current) return { issues: [], hasMore: false, totalCount: 0 }
@@ -292,7 +294,7 @@ export function IssuesList({
 
   return (
     <div className="flex-1 overflow-auto bg-white">
-      <div className="">
+      <div ref={listContainerRef} className="">
         {/* Header with count */}
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="text-sm font-medium text-gray-600">
@@ -309,6 +311,7 @@ export function IssuesList({
           {issues.map((issue) => (
             <div
               key={issue.id}
+              data-issue-row
               data-issue-id={issue.id}
               ref={(el) => {
                 if (el && observerRef.current) {

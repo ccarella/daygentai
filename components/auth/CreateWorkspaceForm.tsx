@@ -103,7 +103,7 @@ export default function CreateWorkspaceForm() {
   const isValidForm = name.length >= 3 && validateSlug(slug) && !slugError
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && e.shiftKey && isValidForm && !isLoading) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && isValidForm && !isLoading) {
       e.preventDefault()
       handleNext()
     }

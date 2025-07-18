@@ -317,7 +317,7 @@ describe('CreateWorkspaceForm', () => {
       })
     })
 
-    it('handles Shift+Enter keyboard shortcut', async () => {
+    it('handles Cmd+Enter keyboard shortcut', async () => {
       render(<CreateWorkspaceForm />)
       
       const nameInput = screen.getByLabelText('Workspace Name (Required)')
@@ -327,11 +327,11 @@ describe('CreateWorkspaceForm', () => {
         expect(screen.getByLabelText('Workspace URL (Required)')).toHaveValue('test-workspace')
       })
       
-      // Simulate Shift+Enter on the container
+      // Simulate Cmd+Enter on the container
       const container = screen.getByText('Create Your Workspace').closest('div')!
       fireEvent.keyDown(container, {
         key: 'Enter',
-        shiftKey: true,
+        metaKey: true,
       })
       
       await waitFor(() => {

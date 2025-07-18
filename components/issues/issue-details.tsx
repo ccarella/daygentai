@@ -92,6 +92,19 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
   const [isUpdatingType, setIsUpdatingType] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
+  // Handle ESC key to navigate back
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isEditModalOpen) {
+        e.preventDefault()
+        onBack()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onBack, isEditModalOpen])
+
   useEffect(() => {
     const fetchIssue = async () => {
       // Check cache first

@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface CookbookIssue {
   id: string
@@ -73,6 +74,7 @@ const placeholderIssues: CookbookIssue[] = [
 export function Cookbook() {
   const [selectedSection, setSelectedSection] = useState<string | null>(null)
   const [selectedIssue, setSelectedIssue] = useState<CookbookIssue | null>(null)
+  const router = useRouter()
 
   const sections = ['Setup', 'Testing and Debugging', 'Documents']
 
@@ -84,6 +86,25 @@ export function Cookbook() {
   const handleIssueClick = (issue: CookbookIssue) => {
     setSelectedIssue(issue)
   }
+
+  // Handle ESC key to navigate back
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        if (selectedIssue) {
+          setSelectedIssue(null)
+        } else if (selectedSection) {
+          setSelectedSection(null)
+        } else {
+          router.back()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedIssue, selectedSection, router])
 
   const filteredIssues = selectedSection 
     ? placeholderIssues.filter(issue => issue.section === selectedSection)

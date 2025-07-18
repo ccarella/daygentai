@@ -81,7 +81,7 @@ We'll be using NextAuth.js for the authentication implementation.`,
             <li>Same layout and styling as create issue modal</li>
             <li>Includes status field (not present in create modal)</li>
             <li>Disabled &quot;Create a prompt&quot; toggle (future feature)</li>
-            <li>Shift+Enter to save changes</li>
+            <li>Cmd+Enter (or Ctrl+Enter) to save changes</li>
           </ul>
         </div>
       </div>

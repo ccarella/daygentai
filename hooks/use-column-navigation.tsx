@@ -19,7 +19,7 @@ export function useColumnNavigation({
   onEscape,
   enableWrapAround = true,
   scrollIntoView = { behavior: 'smooth', block: 'nearest' },
-  focusClass = 'ring-2 ring-primary ring-offset-2',
+  focusClass = 'shadow-[0_0_0_2px_rgba(0,0,0,1)]',
   disableWhenModalOpen = true,
 }: ColumnNavigationConfig) {
   const currentColumnRef = useRef<number>(-1);
