@@ -2,7 +2,9 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { Search, FileText, Inbox, Plus, Filter, Clock, LayoutGrid, Keyboard, Sparkles } from "lucide-react"
+import { Search, FileText, Inbox, Plus, Filter, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { emitIssueStatusUpdate } from "@/lib/events/issue-events"
 import {
   Dialog,
   DialogContent,
@@ -20,7 +22,7 @@ interface Command {
   id: string
   title: string
   icon: React.ReactNode
-  shortcut?: string
+  shortcut?: string | undefined
   action: () => void
   keywords?: string[]
   group: string
@@ -32,9 +34,26 @@ interface CommandPaletteProps {
   onCreateIssue?: () => void
   onToggleViewMode?: () => void
   onToggleSearch?: () => void
+  currentIssue?: {
+    id: string
+    title: string
+    status: string
+  } | null
+  onIssueStatusChange?: (newStatus: string) => void
 }
 
-export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onToggleViewMode, onToggleSearch }: CommandPaletteProps) {
+export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onToggleViewMode, onToggleSearch, currentIssue, onIssueStatusChange }: CommandPaletteProps) {
+  // Log props on mount
+  React.useEffect(() => {
+    const location = typeof window !== 'undefined' ? window.location.pathname : 'unknown'
+    console.log(`CommandPalette [${location}] props:`, {
+      workspaceSlug,
+      workspaceId,
+      hasCurrentIssue: !!currentIssue,
+      currentIssue,
+      hasOnIssueStatusChange: !!onIssueStatusChange
+    })
+  }, [])
   const router = useRouter()
   const { isOpen, setIsOpen, mode } = useCommandPalette()
   const [search, setSearch] = React.useState("")
@@ -53,38 +72,130 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   }>({})
   const [isLoadingNextIssue, setIsLoadingNextIssue] = React.useState(false)
 
-  const commands: Command[] = React.useMemo(() => [
-    {
-      id: "go-issues",
-      title: "Go to Issues",
-      icon: <FileText className="w-4 h-4" />,
-      shortcut: "G then I",
-      action: () => router.push(`/${workspaceSlug}`),
-      keywords: ["navigate", "view", "list"],
-      group: "Navigation"
-    },
-    {
-      id: "go-inbox",
-      title: "Go to Inbox",
-      icon: <Inbox className="w-4 h-4" />,
-      shortcut: "G then N",
-      action: () => router.push(`/${workspaceSlug}/inbox`),
-      keywords: ["navigate", "triage"],
-      group: "Navigation"
-    },
-    {
+  // Debug effect to see when currentIssue changes
+  React.useEffect(() => {
+    const location = typeof window !== 'undefined' ? window.location.pathname : 'unknown'
+    console.log(`CommandPalette [${location}] mounted/updated - currentIssue:`, currentIssue)
+    console.log(`CommandPalette [${location}] - onIssueStatusChange defined:`, !!onIssueStatusChange)
+  }, [currentIssue, onIssueStatusChange])
+
+  const commands: Command[] = React.useMemo(() => {
+    const baseCommands: Command[] = []
+
+    // Add status change command if we're on an issue page
+    if (currentIssue && onIssueStatusChange) {
+      const statusOptions = [
+        { value: 'todo', label: 'Todo' },
+        { value: 'in_progress', label: 'In Progress' },
+        { value: 'in_review', label: 'In Review' },
+        { value: 'done', label: 'Done' },
+      ]
+
+      console.log('Current issue status:', currentIssue.status)
+      
+      statusOptions.forEach(option => {
+        if (option.value !== currentIssue.status) {
+          console.log('Adding status option:', option.label, 'for status:', option.value)
+          baseCommands.push({
+            id: `change-status-${option.value}`,
+            title: `Change Status to ${option.label}`,
+            icon: <CheckCircle className="w-4 h-4" />,
+            shortcut: option.value === 'todo' ? 'S then T' : 
+                     option.value === 'in_progress' ? 'S then P' :
+                     option.value === 'in_review' ? 'S then R' :
+                     option.value === 'done' ? 'S then D' : undefined,
+            action: async () => {
+              setIsOpen(false)
+              const supabase = createClient()
+              
+              const { error } = await supabase
+                .from('issues')
+                .update({ status: option.value })
+                .eq('id', currentIssue.id)
+
+              if (!error) {
+                onIssueStatusChange(option.value)
+                // Also emit the event for other components
+                emitIssueStatusUpdate(currentIssue.id, option.value)
+              }
+            },
+            keywords: ["status", "change", option.label.toLowerCase(), option.value],
+            group: "Issue Actions"
+          })
+        }
+      })
+    }
+
+    // Quick Access Section
+    baseCommands.push({
       id: "create-issue",
-      title: "Create New Issue",
+      title: "New Issue",
       icon: <Plus className="w-4 h-4" />,
       shortcut: "C",
       action: () => {
         setIsOpen(false)
         onCreateIssue?.()
       },
-      keywords: ["new", "add", "make"],
-      group: "Create"
-    },
-    {
+      keywords: ["new", "add", "make", "create"],
+      group: "Quick Access"
+    })
+
+    baseCommands.push({
+      id: "next-issue",
+      title: "Next Issue",
+      icon: <Sparkles className="w-4 h-4" />,
+      shortcut: "⌘N",
+      action: async () => {
+        setIsOpen(false)
+        setIsLoadingNextIssue(true)
+        setNextIssueModalOpen(true)
+        
+        try {
+          const result = await recommendNextIssueAction(workspaceId)
+          if (result.error && result.retryCount !== undefined && result.retryCount >= 3) {
+            // If we failed after retries, provide a more detailed error message
+            setNextIssueData({
+              ...result,
+              error: `${result.error} (Attempted ${result.retryCount} times with different prompting strategies)`
+            })
+          } else {
+            setNextIssueData(result)
+          }
+        } catch (error) {
+          console.error('Error getting AI recommendation:', error)
+          setNextIssueData({
+            error: 'Failed to get recommendation. Please try again.'
+          })
+        } finally {
+          setIsLoadingNextIssue(false)
+        }
+      },
+      keywords: ["ai", "recommend", "suggestion", "next", "task", "priority"],
+      group: "Quick Access"
+    })
+
+    baseCommands.push({
+      id: "go-issues",
+      title: "Go to Issues",
+      icon: <FileText className="w-4 h-4" />,
+      shortcut: "G then I",
+      action: () => router.push(`/${workspaceSlug}`),
+      keywords: ["navigate", "view", "list", "issues"],
+      group: "Quick Access"
+    })
+
+    baseCommands.push({
+      id: "go-inbox",
+      title: "Go to Inbox",
+      icon: <Inbox className="w-4 h-4" />,
+      shortcut: "G then N",
+      action: () => router.push(`/${workspaceSlug}/inbox`),
+      keywords: ["navigate", "triage", "inbox"],
+      group: "Quick Access"
+    })
+
+    // View Section
+    baseCommands.push({
       id: "toggle-view",
       title: "Toggle List/Kanban View",
       icon: <LayoutGrid className="w-4 h-4" />,
@@ -95,8 +206,9 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       },
       keywords: ["view", "switch", "kanban", "list", "board", "toggle"],
       group: "View"
-    },
-    {
+    })
+
+    baseCommands.push({
       id: "toggle-search",
       title: "Toggle Search Bar",
       icon: <Search className="w-4 h-4" />,
@@ -107,8 +219,10 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       },
       keywords: ["search", "find", "filter", "query", "toggle", "show", "hide"],
       group: "View"
-    },
-    {
+    })
+
+    // Filters Section
+    baseCommands.push({
       id: "filter-status",
       title: "Filter by Status",
       icon: <Filter className="w-4 h-4" />,
@@ -118,8 +232,9 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       },
       keywords: ["status", "todo", "in progress", "done"],
       group: "Filters"
-    },
-    {
+    })
+
+    baseCommands.push({
       id: "recent-issues",
       title: "Recent Issues",
       icon: <Clock className="w-4 h-4" />,
@@ -127,34 +242,19 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
         // TODO: Implement recent issues
         console.log("Show recent issues")
       },
-      keywords: ["history", "viewed", "last"],
-      group: "Quick Access"
-    },
-    {
-      id: "next-issue",
-      title: "Next Issue (AI Recommendation)",
-      icon: <Sparkles className="w-4 h-4" />,
-      shortcut: "⌘N",
-      action: async () => {
-        setIsOpen(false)
-        setIsLoadingNextIssue(true)
-        setNextIssueModalOpen(true)
-        
-        try {
-          const result = await recommendNextIssueAction(workspaceId)
-          setNextIssueData(result)
-        } catch {
-          setNextIssueData({
-            error: 'Failed to get recommendation. Please try again.'
-          })
-        } finally {
-          setIsLoadingNextIssue(false)
-        }
-      },
-      keywords: ["ai", "recommend", "suggestion", "next", "task", "priority"],
-      group: "AI Assistant"
-    }
-  ], [workspaceSlug, workspaceId, router, setIsOpen, onCreateIssue, onToggleViewMode, onToggleSearch])
+      keywords: ["history", "viewed", "last", "recent"],
+      group: "Filters"
+    })
+
+    const location = typeof window !== 'undefined' ? window.location.pathname : 'unknown'
+    console.log(`Total commands generated [${location}]:`, baseCommands.length)
+    console.log(`Commands by group [${location}]:`, baseCommands.reduce((acc, cmd) => {
+      acc[cmd.group] = (acc[cmd.group] || 0) + 1
+      return acc
+    }, {} as Record<string, number>))
+    
+    return baseCommands
+  }, [workspaceSlug, workspaceId, router, setIsOpen, onCreateIssue, onToggleViewMode, onToggleSearch, currentIssue, onIssueStatusChange])
 
   const filteredCommands = React.useMemo(() => {
     if (!search) return commands
@@ -171,13 +271,38 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
 
   const groupedCommands = React.useMemo(() => {
     const groups: Record<string, Command[]> = {}
+    // Define the order of groups
+    const groupOrder = ["Issue Actions", "Quick Access", "View", "Filters"]
+    
+    // Initialize groups in the desired order
+    groupOrder.forEach(group => {
+      groups[group] = []
+    })
+    
+    // Add commands to their respective groups
     filteredCommands.forEach(command => {
       if (!groups[command.group]) {
         groups[command.group] = []
       }
       groups[command.group]!.push(command)
     })
-    return groups
+    
+    // Return only groups that have commands, maintaining order
+    const orderedGroups: Record<string, Command[]> = {}
+    groupOrder.forEach(group => {
+      if (groups[group] && groups[group]!.length > 0) {
+        orderedGroups[group] = groups[group]!
+      }
+    })
+    
+    // Add any remaining groups that weren't in groupOrder
+    Object.keys(groups).forEach(group => {
+      if (!orderedGroups[group] && groups[group]!.length > 0) {
+        orderedGroups[group] = groups[group]!
+      }
+    })
+    
+    return orderedGroups
   }, [filteredCommands])
 
   const flatCommands = React.useMemo(() => 
@@ -246,24 +371,27 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
         ]
       },
       {
-        title: "Navigation",
+        title: "Quick Access",
         shortcuts: [
+          { keys: ["C"], description: "Create new issue" },
+          { keys: ["⌘", "N"], description: "Get next issue recommendation" },
           { keys: ["G", "then", "I"], description: "Go to Issues" },
           { keys: ["G", "then", "N"], description: "Go to Inbox" },
         ]
       },
-      {
-        title: "Actions",
+      ...(currentIssue ? [{
+        title: "Issue Actions",
         shortcuts: [
-          { keys: ["C"], description: "Create new issue" },
-          { keys: ["⌘", "B"], description: "Toggle List/Kanban view" },
+          { keys: ["S", "then", "T"], description: "Change status to Todo" },
+          { keys: ["S", "then", "P"], description: "Change status to In Progress" },
+          { keys: ["S", "then", "R"], description: "Change status to In Review" },
+          { keys: ["S", "then", "D"], description: "Change status to Done" },
         ]
-      },
+      }] : []),
       {
-        title: "AI Assistant",
+        title: "View",
         shortcuts: [
-          { keys: ["⌘", "N"], description: "Get next issue recommendation" },
-          { keys: ["⌘", "K"], description: "Open command palette → Next Issue" },
+          { keys: ["⌘", "B"], description: "Toggle List/Kanban view" },
         ]
       },
       {

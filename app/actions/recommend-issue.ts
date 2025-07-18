@@ -10,6 +10,7 @@ interface RecommendIssueResult {
   prompt?: string | undefined
   issueGeneratedPrompt?: string | null | undefined
   error?: string
+  retryCount?: number
 }
 
 export async function recommendNextIssueAction(
@@ -66,13 +67,19 @@ export async function recommendNextIssueAction(
       return { error: result.error || 'Failed to get recommendation' }
     }
 
-    return {
+    const response: RecommendIssueResult = {
       issueId: result.recommendedIssue.id,
       title: result.recommendedIssue.title,
       justification: result.justification,
       prompt: result.prompt || undefined,
       issueGeneratedPrompt: result.recommendedIssue.generated_prompt || undefined
     }
+    
+    if (result.retryCount !== undefined) {
+      response.retryCount = result.retryCount
+    }
+    
+    return response
   } catch (error) {
     console.error('Error in recommendNextIssueAction:', error)
     return { error: 'An unexpected error occurred' }

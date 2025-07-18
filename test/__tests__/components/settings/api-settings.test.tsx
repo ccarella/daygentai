@@ -112,8 +112,8 @@ describe('ApiSettings', () => {
       // Verify Supabase was called correctly
       await waitFor(() => {
         expect(mockSupabase.from).toHaveBeenCalledWith('workspaces')
-        const updateCall = mockSupabase.from('workspaces').update
-        expect(updateCall).toHaveBeenCalledWith({
+        const updateMock = mockSupabase.from().update
+        expect(updateMock).toHaveBeenCalledWith({
           api_key: 'test-api-key',
           api_provider: 'openai',
           agents_content: 'Test agents content'
@@ -185,8 +185,8 @@ describe('ApiSettings', () => {
       await user.click(saveButton)
 
       await waitFor(() => {
-        const eqCall = mockSupabase.from('workspaces').update().eq
-        expect(eqCall).toHaveBeenCalledWith('id', workspaceId)
+        const eqMock = mockSupabase.from().update().eq
+        expect(eqMock).toHaveBeenCalledWith('id', workspaceId)
       })
     })
   })
@@ -221,7 +221,7 @@ describe('ApiSettings', () => {
       }
       vi.mocked(createClient).mockReturnValue(errorSupabase as any)
 
-      const { rerender } = render(<ApiSettings workspaceId="test-workspace" />)
+      render(<ApiSettings workspaceId="test-workspace" />)
       
       const saveButton = screen.getByText('Save Settings')
       await user.click(saveButton)

@@ -9,14 +9,13 @@ import { IssueCacheProvider } from '@/contexts/issue-cache-context'
 import { CommandPaletteProvider } from '@/hooks/use-command-palette'
 import dynamic from 'next/dynamic'
 
-const CommandPalette = dynamic(
-  () => import('@/components/command-palette/command-palette').then(mod => ({ default: mod.CommandPalette })),
+const AppCommandPalette = dynamic(
+  () => import('@/components/layout/app-command-palette').then(mod => ({ default: mod.AppCommandPalette })),
   { 
     ssr: false,
     loading: () => null
   }
 )
-import { useGlobalShortcuts } from '@/hooks/use-global-shortcuts'
 
 function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter()
@@ -75,6 +74,10 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
     contentRef.current?.navigateToInbox()
   }
 
+  const handleNavigateToCookbook = () => {
+    contentRef.current?.navigateToCookbook()
+  }
+
   // Handler to trigger create issue modal
   const handleCreateIssue = () => {
     // Find and click the create issue button in the sidebar
@@ -94,12 +97,7 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
     contentRef.current?.toggleSearch()
   }
 
-  // Use global shortcuts - must be called before any returns
-  useGlobalShortcuts({
-    workspaceSlug: workspace?.slug || '',
-    onCreateIssue: handleCreateIssue,
-    onToggleViewMode: handleToggleViewMode,
-  })
+  // Global shortcuts are now handled by AppCommandPalette
 
   if (loading) {
     return (
@@ -119,6 +117,7 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
           onIssueCreated={handleIssueCreated}
           onNavigateToIssues={handleNavigateToIssues}
           onNavigateToInbox={handleNavigateToInbox}
+          onNavigateToCookbook={handleNavigateToCookbook}
         >
           <WorkspaceContent 
             ref={contentRef}
@@ -128,9 +127,8 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
         </WorkspaceWithMobileNav>
       </IssueCacheProvider>
       {workspace && (
-        <CommandPalette 
-          workspaceSlug={workspace.slug}
-          workspaceId={workspace.id}
+        <AppCommandPalette 
+          workspace={workspace}
           onCreateIssue={handleCreateIssue}
           onToggleViewMode={handleToggleViewMode}
           onToggleSearch={handleToggleSearch}

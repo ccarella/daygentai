@@ -7,6 +7,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { useIssueCache } from '@/contexts/issue-cache-context'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { subscribeToIssueStatusUpdates } from '@/lib/events/issue-events'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -158,6 +159,17 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
 
     fetchIssue()
   }, [issueId, onBack, getIssue])
+
+  // Subscribe to status updates
+  useEffect(() => {
+    const unsubscribe = subscribeToIssueStatusUpdates((event) => {
+      if (issue && event.detail.issueId === issue.id) {
+        setIssue({ ...issue, status: event.detail.newStatus as Issue['status'] })
+      }
+    })
+
+    return unsubscribe
+  }, [issue])
 
   const handleDelete = async () => {
     if (!issue) return
