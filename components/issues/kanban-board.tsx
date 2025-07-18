@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useIssueCache } from '@/contexts/issue-cache-context'
 import { formatDistanceToNow } from 'date-fns'
 import { Loader2 } from 'lucide-react'
+// Navigation is now handled by useWorkspaceNavigation in the parent component
 
 interface Issue {
   id: string
@@ -203,7 +204,7 @@ export function KanbanBoard({
       )}
       
       <div className="flex gap-4 h-full overflow-x-auto pb-4 px-4">
-        {columns.map(column => {
+        {columns.map((column) => {
           const columnIssues = getIssuesByStatus(column.id)
           
           return (
@@ -222,7 +223,9 @@ export function KanbanBoard({
                 </h3>
               </div>
               
-              <div className="bg-gray-50 border border-t-0 rounded-b-lg min-h-[400px] max-h-[calc(100vh-300px)] overflow-y-auto p-2 space-y-2">
+              <div 
+                className="bg-gray-50 border border-t-0 rounded-b-lg min-h-[400px] max-h-[calc(100vh-300px)] overflow-y-auto p-2 space-y-2"
+              >
                 {columnIssues.length === 0 ? (
                   <p className="text-gray-400 text-sm text-center py-8">
                     No issues
@@ -231,6 +234,8 @@ export function KanbanBoard({
                   columnIssues.map(issue => (
                     <div
                       key={issue.id}
+                      data-issue-card
+                      data-issue-id={issue.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, issue.id)}
                       onClick={() => onIssueClick(issue.id)}

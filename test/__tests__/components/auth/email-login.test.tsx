@@ -139,7 +139,7 @@ describe('EmailLogin', () => {
       })
     })
 
-    it('handles Shift+Enter keyboard shortcut', async () => {
+    it('handles Cmd+Enter keyboard shortcut', async () => {
       mockSupabase.auth.signInWithOtp.mockResolvedValueOnce({
         data: { user: null, session: null },
         error: null,
@@ -150,11 +150,11 @@ describe('EmailLogin', () => {
       const emailInput = screen.getByLabelText('Email address')
       await user.type(emailInput, 'test@example.com')
       
-      // Simulate Shift+Enter on the form element
+      // Simulate Cmd+Enter on the form element
       const form = screen.getByLabelText('Email address').closest('form')!
       fireEvent.keyDown(form, {
         key: 'Enter',
-        shiftKey: true,
+        metaKey: true,
       })
       
       await waitFor(() => {

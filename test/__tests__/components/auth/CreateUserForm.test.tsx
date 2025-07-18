@@ -191,7 +191,7 @@ describe('CreateUserForm', () => {
       })
     })
 
-    it('handles Shift+Enter keyboard shortcut', async () => {
+    it('handles Cmd+Enter keyboard shortcut', async () => {
       mockSupabase.from.mockReturnValue({
         insert: vi.fn().mockResolvedValue({ error: null }),
       })
@@ -201,11 +201,11 @@ describe('CreateUserForm', () => {
       const nameInput = screen.getByLabelText('Your Name (Required)')
       await user.type(nameInput, 'Test User')
       
-      // Simulate Shift+Enter on the container
+      // Simulate Cmd+Enter on the container
       const container = screen.getByText('Complete Your Profile').closest('div')!
       fireEvent.keyDown(container, {
         key: 'Enter',
-        shiftKey: true,
+        metaKey: true,
       })
       
       await waitFor(() => {
