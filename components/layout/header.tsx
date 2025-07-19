@@ -110,13 +110,24 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
                   <p className="text-sm font-medium text-gray-900">{userProfile.name}</p>
                 </div>
                 
-                <Link
-                  href="/success?debug=true"
-                  onClick={() => setIsDropdownOpen(false)}
-                  className="block px-4 py-3 md:px-4 md:py-2 text-sm text-gray-700 hover:bg-gray-100"
+                <button
+                  onClick={() => {
+                    setIsDropdownOpen(false)
+                    // Click the settings button in the sidebar after a small delay to ensure dropdown closes
+                    setTimeout(() => {
+                      const settingsButtons = document.querySelectorAll('[data-sidebar-item]')
+                      settingsButtons.forEach(button => {
+                        const span = button.querySelector('span')
+                        if (span && span.textContent === 'Settings') {
+                          (button as HTMLElement).click()
+                        }
+                      })
+                    }, 100)
+                  }}
+                  className="block w-full text-left px-4 py-3 md:px-4 md:py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
-                  Debug
-                </Link>
+                  Profile Settings
+                </button>
                 
                 <button
                   onClick={handleLogout}

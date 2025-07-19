@@ -29,6 +29,7 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
   } | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [userAvatar, setUserAvatar] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchWorkspace = async () => {
@@ -78,6 +79,10 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
     contentRef.current?.navigateToCookbook()
   }
 
+  const handleNavigateToSettings = () => {
+    contentRef.current?.navigateToSettings()
+  }
+
   // Handler to trigger create issue modal
   const handleCreateIssue = () => {
     // Find and click the create issue button in the sidebar
@@ -95,6 +100,10 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
   // Handler to toggle search
   const handleToggleSearch = () => {
     contentRef.current?.toggleSearch()
+  }
+
+  const handleAvatarUpdate = (newAvatar: string) => {
+    setUserAvatar(newAvatar)
   }
 
   // Global shortcuts are now handled by AppCommandPalette
@@ -118,11 +127,14 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
           onNavigateToIssues={handleNavigateToIssues}
           onNavigateToInbox={handleNavigateToInbox}
           onNavigateToCookbook={handleNavigateToCookbook}
+          onNavigateToSettings={handleNavigateToSettings}
+          userAvatar={userAvatar}
         >
           <WorkspaceContent 
             ref={contentRef}
             key={refreshKey} 
-            workspace={workspace} 
+            workspace={workspace}
+            onAvatarUpdate={handleAvatarUpdate}
           />
         </WorkspaceWithMobileNav>
       </IssueCacheProvider>

@@ -29,6 +29,13 @@ const Cookbook = dynamic(
     loading: () => <div className="flex h-full items-center justify-center"><div className="text-gray-500">Loading cookbook...</div></div>
   }
 )
+const ProfileSettings = dynamic(
+  () => import('@/components/settings/profile-settings').then(mod => ({ default: mod.ProfileSettings })),
+  { 
+    ssr: false,
+    loading: () => <div className="flex h-full items-center justify-center"><div className="text-gray-500">Loading settings...</div></div>
+  }
+)
 import {
   Select,
   SelectContent,
@@ -47,14 +54,16 @@ interface WorkspaceContentProps {
     avatar_url: string | null
     owner_id: string
   }
-  initialView?: 'list' | 'issue' | 'inbox' | 'cookbook'
+  initialView?: 'list' | 'issue' | 'inbox' | 'cookbook' | 'settings'
   initialIssueId?: string
+  onAvatarUpdate?: (newAvatar: string) => void
 }
 
 export interface WorkspaceContentRef {
   navigateToIssuesList: () => void
   navigateToInbox: () => void
   navigateToCookbook: () => void
+  navigateToSettings: () => void
   toggleViewMode: () => void
   getCurrentViewMode: () => 'list' | 'kanban'
   toggleSearch: () => void
@@ -88,7 +97,7 @@ const typeOptions = [
 ]
 
 export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContentProps>(
-  function WorkspaceContent({ workspace, initialView = 'list', initialIssueId }, ref) {
+  function WorkspaceContent({ workspace, initialView = 'list', initialIssueId, onAvatarUpdate }, ref) {
   const pathname = usePathname()
   
   // Extract issue ID from URL if present
@@ -102,11 +111,12 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     if (initialView !== 'list') return initialView
     if (pathname.includes('/inbox')) return 'inbox'
     if (pathname.includes('/cookbook')) return 'cookbook'
+    if (pathname.includes('/settings')) return 'settings'
     if (pathname.includes('/issue/')) return 'issue'
     return 'list'
   }
   
-  const [currentView, setCurrentView] = useState<'list' | 'issue' | 'inbox' | 'cookbook'>(getInitialView())
+  const [currentView, setCurrentView] = useState<'list' | 'issue' | 'inbox' | 'cookbook' | 'settings'>(getInitialView())
   const [currentIssueId, setCurrentIssueId] = useState<string | null>(initialIssueId || getIssueIdFromPath() || null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [issuesViewMode, setIssuesViewMode] = useState<'list' | 'kanban'>('list')
@@ -199,6 +209,13 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     window.history.pushState({}, '', `/${workspace.slug}/cookbook`)
   }
 
+  const handleNavigateToSettings = () => {
+    setCurrentView('settings')
+    setCurrentIssueId(null)
+    // Update URL without page refresh
+    window.history.pushState({}, '', `/${workspace.slug}/settings`)
+  }
+
   // Shared function to update filters based on view mode
   const updateFiltersForViewMode = (viewMode: 'list' | 'kanban') => {
     if (viewMode === 'list') {
@@ -227,6 +244,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     navigateToIssuesList: handleBackToList,
     navigateToInbox: handleNavigateToInbox,
     navigateToCookbook: handleNavigateToCookbook,
+    navigateToSettings: handleNavigateToSettings,
     toggleViewMode: handleToggleViewMode,
     getCurrentViewMode: () => issuesViewMode,
     toggleSearch: () => setIsSearchVisible(prev => !prev),
@@ -472,6 +490,8 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
         <Inbox />
       ) : currentView === 'cookbook' ? (
         <Cookbook />
+      ) : currentView === 'settings' ? (
+        <ProfileSettings {...(onAvatarUpdate && { onAvatarUpdate })} />
       ) : currentIssueId ? (
         <IssueDetails
           issueId={currentIssueId}

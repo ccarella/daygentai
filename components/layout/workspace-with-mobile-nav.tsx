@@ -19,9 +19,11 @@ interface WorkspaceWithMobileNavProps {
   onNavigateToIssues?: () => void
   onNavigateToInbox?: () => void
   onNavigateToCookbook?: () => void
+  onNavigateToSettings?: () => void
+  userAvatar?: string | null
 }
 
-export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, onNavigateToIssues, onNavigateToInbox, onNavigateToCookbook }: WorkspaceWithMobileNavProps) {
+export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, onNavigateToIssues, onNavigateToInbox, onNavigateToCookbook, onNavigateToSettings, userAvatar }: WorkspaceWithMobileNavProps) {
   const [profile, setProfile] = useState<{ name: string; avatar_url: string | null } | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
@@ -60,7 +62,10 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
     <>
       {profile ? (
         <Header 
-          initialProfile={profile} 
+          initialProfile={{
+            ...profile,
+            avatar_url: userAvatar || profile.avatar_url
+          }} 
           onMenuToggle={handleMenuToggle}
           isMobileMenuOpen={isMobileMenuOpen}
         />
@@ -77,6 +82,7 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
           {...(onNavigateToIssues && { onNavigateToIssues })}
           {...(onNavigateToInbox && { onNavigateToInbox })}
           {...(onNavigateToCookbook && { onNavigateToCookbook })}
+          {...(onNavigateToSettings && { onNavigateToSettings })}
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
           sidebarRef={sidebarRef}
