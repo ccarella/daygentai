@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { Search, FileText, Inbox, Plus, Filter, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle, Circle, ChevronLeft } from "lucide-react"
+import { Search, FileText, Inbox, Plus, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle, Circle } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { emitIssueStatusUpdate } from "@/lib/events/issue-events"
 import {
@@ -64,7 +64,6 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   const [search, setSearch] = React.useState("")
   const [selectedIndex, setSelectedIndex] = React.useState(0)
   const inputRef = React.useRef<HTMLInputElement>(null)
-  const [showStatusFilter, setShowStatusFilter] = React.useState(false)
   
   // Memoize callbacks to prevent recreating functions
   const handleCreateIssue = React.useCallback(() => {
@@ -90,22 +89,6 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
     router.push(`/${workspaceSlug}/inbox`)
   }, [router, workspaceSlug])
   
-  // Handler for filter by status - memoized
-  const handleFilterByStatus = React.useCallback(() => {
-    // Check if we're in a view that supports filtering
-    const currentView = getCurrentView?.()
-    if (currentView === 'list') {
-      setShowStatusFilter(true)
-      setSearch('') // Clear search to show all status options
-    } else {
-      setIsOpen(false)
-      toast({
-        title: "Filter not available",
-        description: "Status filters are only available in the Issues List or Kanban views.",
-        variant: "default"
-      })
-    }
-  }, [getCurrentView, setIsOpen, toast])
   
   const handleShowRecentIssues = React.useCallback(() => {
     // TODO: Implement recent issues
@@ -237,39 +220,6 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   const commands: Command[] = React.useMemo(() => {
     const baseCommands: Command[] = []
 
-    // If we're showing status filter options, only show those
-    if (showStatusFilter) {
-      const statusFilterOptions = [
-        { value: 'all', label: 'All Issues', icon: <FileText className="w-4 h-4" /> },
-        { value: 'exclude_done', label: 'Active Issues', icon: <CheckCircle className="w-4 h-4" /> },
-        { value: 'todo', label: 'Todo', icon: <Circle className="w-4 h-4" /> },
-        { value: 'in_progress', label: 'In Progress', icon: <Clock className="w-4 h-4" /> },
-        { value: 'in_review', label: 'In Review', icon: <Search className="w-4 h-4" /> },
-        { value: 'done', label: 'Done', icon: <CheckCircle className="w-4 h-4" /> },
-      ]
-
-      statusFilterOptions.forEach(option => {
-        baseCommands.push({
-          id: `filter-status-${option.value}`,
-          title: option.label,
-          icon: option.icon,
-          action: () => {
-            onSetStatusFilter?.(option.value)
-            setShowStatusFilter(false)
-            setIsOpen(false)
-            toast({
-              title: "Filter applied",
-              description: `Showing ${option.label.toLowerCase()}`,
-            })
-          },
-          keywords: ["filter", "status", option.label.toLowerCase(), option.value],
-          group: "Select Status Filter"
-        })
-      })
-
-      return baseCommands
-    }
-
     // Add status change command if we're on an issue page
     if (currentIssue && onIssueStatusChange) {
       const statusOptions = [
@@ -362,16 +312,38 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       group: "View"
     })
 
-    // Filters Section
-    baseCommands.push({
-      id: "filter-status",
-      title: "Filter by Status",
-      icon: <Filter className="w-4 h-4" />,
-      action: handleFilterByStatus,
-      keywords: ["status", "todo", "in progress", "done"],
-      group: "Filters"
-    })
+    // Filter by Status Section - Only show when in list view
+    const currentView = getCurrentView?.()
+    if (currentView === 'list' && onSetStatusFilter) {
+      const statusFilterOptions = [
+        { value: 'all', label: 'Filter by All', icon: <FileText className="w-4 h-4" /> },
+        { value: 'exclude_done', label: 'Filter by Active', icon: <CheckCircle className="w-4 h-4" /> },
+        { value: 'todo', label: 'Filter by Todo', icon: <Circle className="w-4 h-4" /> },
+        { value: 'in_progress', label: 'Filter by In Progress', icon: <Clock className="w-4 h-4" /> },
+        { value: 'in_review', label: 'Filter by In Review', icon: <Search className="w-4 h-4" /> },
+        { value: 'done', label: 'Filter by Done', icon: <CheckCircle className="w-4 h-4" /> },
+      ]
 
+      statusFilterOptions.forEach(option => {
+        baseCommands.push({
+          id: `filter-status-${option.value}`,
+          title: option.label,
+          icon: option.icon,
+          action: () => {
+            onSetStatusFilter(option.value)
+            setIsOpen(false)
+            toast({
+              title: "Filter applied",
+              description: `Showing ${option.label.replace('Filter by ', '').toLowerCase()} issues`,
+            })
+          },
+          keywords: ["filter", "status", option.label.toLowerCase(), option.value],
+          group: "Filter by Status"
+        })
+      })
+    }
+
+    // Other Filters
     baseCommands.push({
       id: "recent-issues",
       title: "Recent Issues",
@@ -389,7 +361,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
     }, {} as Record<string, number>))
     
     return baseCommands
-  }, [workspaceSlug, currentIssue, onIssueStatusChange, statusChangeHandlers, handleCreateIssue, handleNextIssue, handleNavigateToIssues, handleNavigateToInbox, handleToggleViewMode, handleToggleSearch, handleFilterByStatus, handleShowRecentIssues, showStatusFilter, onSetStatusFilter, setIsOpen, toast])
+  }, [workspaceSlug, currentIssue, onIssueStatusChange, statusChangeHandlers, handleCreateIssue, handleNextIssue, handleNavigateToIssues, handleNavigateToInbox, handleToggleViewMode, handleToggleSearch, handleShowRecentIssues, onSetStatusFilter, getCurrentView, setIsOpen, toast])
 
   const filteredCommands = React.useMemo(() => {
     if (!search) return commands
@@ -407,7 +379,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   const groupedCommands = React.useMemo(() => {
     const groups: Record<string, Command[]> = {}
     // Define the order of groups
-    const groupOrder = ["Issue Actions", "Quick Access", "View", "Filters"]
+    const groupOrder = ["Issue Actions", "Quick Access", "View", "Filter by Status", "Filters"]
     
     // Initialize groups in the desired order
     groupOrder.forEach(group => {
@@ -450,7 +422,6 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       inputRef.current?.focus()
       setSearch("")
       setSelectedIndex(0)
-      setShowStatusFilter(false)
     }
   }, [isOpen])
 
@@ -606,31 +577,14 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
           ) : (
             <>
               <div className="flex items-center border-b px-3">
-                {showStatusFilter ? (
-                  <>
-                    <button
-                      onClick={() => {
-                        setShowStatusFilter(false)
-                        setSearch('')
-                      }}
-                      className="mr-2 p-1 hover:bg-gray-100 rounded"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <span className="text-sm font-medium">Select Status Filter</span>
-                  </>
-                ) : (
-                  <>
-                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                    <Input
-                      ref={inputRef}
-                      placeholder="Type a command or search..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="flex h-12 w-full border-0 bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-0"
-                    />
-                  </>
-                )}
+                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                <Input
+                  ref={inputRef}
+                  placeholder="Type a command or search..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="flex h-12 w-full border-0 bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-0"
+                />
               </div>
               <ScrollArea className="max-h-[300px] overflow-y-auto p-2">
                 {Object.entries(groupedCommands).map(([group, commands]) => (
