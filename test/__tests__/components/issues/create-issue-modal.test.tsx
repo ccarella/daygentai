@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CreateIssueModal } from '@/components/issues/create-issue-modal'
+import { WorkspaceProvider } from '@/contexts/workspace-context'
 import { createClient } from '@/lib/supabase/client'
 import * as promptGenerator from '@/lib/llm/prompt-generator'
 
@@ -48,6 +49,28 @@ describe('CreateIssueModal - Prompt Generation', () => {
     onIssueCreated: vi.fn()
   }
 
+  // Helper function to render with WorkspaceProvider
+  const renderWithProvider = (hasApiKey = true, customProps = {}) => {
+    const initialWorkspace = {
+      id: 'test-workspace',
+      name: 'Test Workspace',
+      slug: 'test-workspace',
+      avatar_url: null,
+      owner_id: 'test-user',
+      hasApiKey,
+      apiProvider: hasApiKey ? 'openai' : null,
+      agentsContent: null
+    }
+
+    const props = { ...defaultProps, ...customProps }
+
+    return render(
+      <WorkspaceProvider workspaceId="test-workspace" initialWorkspace={initialWorkspace}>
+        <CreateIssueModal {...props} />
+      </WorkspaceProvider>
+    )
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
     
@@ -75,7 +98,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
 
   describe('prompt generation toggle', () => {
     it('should show prompt toggle when workspace has API key', async () => {
-      render(<CreateIssueModal {...defaultProps} />)
+      renderWithProvider(true)
 
       await waitFor(() => {
         expect(screen.getByRole('switch', { name: 'Create a prompt' })).toBeInTheDocument()
@@ -83,18 +106,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
     })
 
     it('should hide prompt toggle when workspace has no API key', async () => {
-      mockSupabase.from.mockReturnValue({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            single: vi.fn(() => Promise.resolve({ 
-              data: { id: 'test-workspace', name: 'Test Workspace', api_key: null, api_provider: null }, 
-              error: null 
-            }))
-          }))
-        }))
-      } as any)
-
-      render(<CreateIssueModal {...defaultProps} />)
+      renderWithProvider(false)
 
       await waitFor(() => {
         expect(screen.queryByText('Generate an AI prompt for development agents')).not.toBeInTheDocument()
@@ -103,7 +115,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
 
     it('should toggle prompt generation on and off', async () => {
       const user = userEvent.setup()
-      render(<CreateIssueModal {...defaultProps} />)
+      renderWithProvider()
 
       await waitFor(() => {
         const toggle = screen.getByRole('switch', { name: 'Create a prompt' })
@@ -129,7 +141,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
   describe('prompt generation during issue creation', () => {
     it('should generate prompt when toggle is enabled', async () => {
       const user = userEvent.setup()
-      render(<CreateIssueModal {...defaultProps} />)
+      renderWithProvider()
 
       // Wait for component to load
       await waitFor(() => {
@@ -170,7 +182,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
 
     it('should not generate prompt when toggle is disabled', async () => {
       const user = userEvent.setup()
-      render(<CreateIssueModal {...defaultProps} />)
+      renderWithProvider()
 
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
@@ -212,7 +224,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
         () => new Promise(resolve => setTimeout(() => resolve({ prompt: 'Test prompt' }), 100))
       )
 
-      render(<CreateIssueModal {...defaultProps} />)
+      renderWithProvider()
 
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
@@ -251,7 +263,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
         error: 'API key invalid'
       })
 
-      render(<CreateIssueModal {...defaultProps} />)
+      renderWithProvider()
 
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
@@ -306,7 +318,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
         }))
       } as any)
 
-      render(<CreateIssueModal {...defaultProps} />)
+      renderWithProvider()
 
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
@@ -338,7 +350,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
   describe('form validation', () => {
     it('should not submit without required fields', async () => {
       const user = userEvent.setup()
-      render(<CreateIssueModal {...defaultProps} />)
+      renderWithProvider()
 
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
@@ -355,7 +367,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
 
     it('should require title even with prompt generation enabled', async () => {
       const user = userEvent.setup()
-      render(<CreateIssueModal {...defaultProps} />)
+      renderWithProvider()
 
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
@@ -380,7 +392,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
       const user = userEvent.setup()
       const onOpenChange = vi.fn()
       
-      render(<CreateIssueModal {...defaultProps} onOpenChange={onOpenChange} />)
+      renderWithProvider(true, { onOpenChange })
 
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
@@ -402,7 +414,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
 
     it('should reset form when modal is closed and reopened', async () => {
       const user = userEvent.setup()
-      const { rerender } = render(<CreateIssueModal {...defaultProps} />)
+      const { rerender } = renderWithProvider()
 
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
@@ -414,10 +426,36 @@ describe('CreateIssueModal - Prompt Generation', () => {
       await user.click(toggle)
 
       // Close modal
-      rerender(<CreateIssueModal {...defaultProps} open={false} />)
+      rerender(
+        <WorkspaceProvider workspaceId="test-workspace" initialWorkspace={{
+          id: 'test-workspace',
+          name: 'Test Workspace',
+          slug: 'test-workspace',
+          avatar_url: null,
+          owner_id: 'test-user',
+          hasApiKey: true,
+          apiProvider: 'openai',
+          agentsContent: null
+        }}>
+          <CreateIssueModal {...defaultProps} open={false} />
+        </WorkspaceProvider>
+      )
 
       // Reopen modal
-      rerender(<CreateIssueModal {...defaultProps} open={true} />)
+      rerender(
+        <WorkspaceProvider workspaceId="test-workspace" initialWorkspace={{
+          id: 'test-workspace',
+          name: 'Test Workspace',
+          slug: 'test-workspace',
+          avatar_url: null,
+          owner_id: 'test-user',
+          hasApiKey: true,
+          apiProvider: 'openai',
+          agentsContent: null
+        }}>
+          <CreateIssueModal {...defaultProps} open={true} />
+        </WorkspaceProvider>
+      )
 
       await waitFor(() => {
         const titleInput = screen.getByLabelText('Issue title') as HTMLInputElement

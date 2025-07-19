@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PromptDisplay } from '@/components/issues/prompt-display';
 import { CreateIssueModal } from '@/components/issues/create-issue-modal';
+import { WorkspaceProvider } from '@/contexts/workspace-context';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Sparkles, Key, FileText } from 'lucide-react';
@@ -29,8 +30,20 @@ export default function PromptGenerationDemo() {
     setDemoPrompt(examplePrompt);
   };
 
+  const demoWorkspace = {
+    id: demoWorkspaceId,
+    name: 'Demo Workspace',
+    slug: 'demo-workspace',
+    avatar_url: null,
+    owner_id: 'demo-user',
+    hasApiKey: !!apiKey,
+    apiProvider: 'openai' as string | null,
+    agentsContent: 'Demo agents content for testing purposes.'
+  };
+
   return (
-    <div className="container mx-auto py-8 max-w-6xl">
+    <WorkspaceProvider workspaceId={demoWorkspaceId} initialWorkspace={demoWorkspace}>
+      <div className="container mx-auto py-8 max-w-6xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">AI Prompt Generation for Issues</h1>
         <p className="text-gray-600">
@@ -176,6 +189,7 @@ export default function PromptGenerationDemo() {
           setDemoPrompt(examplePrompt);
         }}
       />
-    </div>
+      </div>
+    </WorkspaceProvider>
   );
 }

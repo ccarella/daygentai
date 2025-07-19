@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Loader2 } from 'lucide-react';
 import { generateIssuePrompt } from '@/lib/llm/prompt-generator';
 import { useToast } from '@/components/ui/use-toast';
+import { useWorkspace } from '@/contexts/workspace-context';
 
 interface Issue {
   id: string;
@@ -33,6 +34,7 @@ interface EditIssueModalProps {
 
 export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: EditIssueModalProps) {
   const { toast } = useToast();
+  const { workspace } = useWorkspace();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<Issue['type']>('feature');
@@ -41,9 +43,9 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
   const [createPrompt, setCreatePrompt] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [hasApiKey, setHasApiKey] = useState(false);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  
+  const hasApiKey = workspace?.hasApiKey || false;
 
   // Initialize form with issue data when modal opens or issue changes
   useEffect(() => {
@@ -54,54 +56,11 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
       setPriority(issue.priority || 'medium');
       setStatus(issue.status || 'todo');
       setError('');
-      setWorkspaceId(issue.workspace_id);
       
-      // Check if the issue already has a prompt
-      setCreatePrompt(!!issue.generated_prompt);
+      // Check if the issue already has a prompt or enable by default if API key exists
+      setCreatePrompt(!!issue.generated_prompt || (hasApiKey && !issue.generated_prompt));
     }
-  }, [issue, open]);
-  
-  // Check if workspace has API key when modal opens
-  useEffect(() => {
-    const checkApiKey = async () => {
-      if (!open || !workspaceId) return;
-      
-      try {
-        const supabase = createClient();
-        
-        // First ensure we have a valid session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError || !session) {
-          return;
-        }
-        
-        // Now fetch workspace with api_key
-        const { data: workspace, error } = await supabase
-          .from('workspaces')
-          .select('id, name, api_key, api_provider')
-          .eq('id', workspaceId)
-          .single();
-        
-        if (error) {
-          return;
-        }
-        
-        // Check if api_key exists and is not empty
-        const hasKey = !!(workspace?.api_key && workspace.api_key.length > 0);
-        
-        setHasApiKey(hasKey);
-        
-        // If workspace has API key and issue doesn't have prompt yet, enable toggle
-        if (hasKey && issue && !issue.generated_prompt) {
-          setCreatePrompt(true);
-        }
-      } catch (error) {
-        // Silent error handling
-      }
-    };
-    
-    checkApiKey();
-  }, [open, workspaceId, issue]);
+  }, [issue, open, hasApiKey]);
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -132,7 +91,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
           const { data: workspace } = await supabase
             .from('workspaces')
             .select('api_key, api_provider, agents_content')
-            .eq('id', workspaceId)
+            .eq('id', issue.workspace_id)
             .single();
           
           if (workspace?.api_key) {
