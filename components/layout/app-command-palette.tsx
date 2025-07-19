@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { CommandPalette } from '@/components/command-palette/command-palette'
 import { useGlobalShortcuts } from '@/hooks/use-global-shortcuts'
+import { useCommandPalette } from '@/hooks/use-command-palette'
 import { emitIssueStatusUpdate } from '@/lib/events/issue-events'
 
 interface AppCommandPaletteProps {
@@ -21,6 +22,7 @@ interface AppCommandPaletteProps {
 
 export function AppCommandPalette({ workspace, onCreateIssue, onToggleViewMode, onToggleSearch, onSetStatusFilter, getCurrentView }: AppCommandPaletteProps) {
   const pathname = usePathname()
+  const { openWithMode } = useCommandPalette()
   const [currentIssue, setCurrentIssue] = useState<{
     id: string
     title: string
@@ -68,11 +70,17 @@ export function AppCommandPalette({ workspace, onCreateIssue, onToggleViewMode, 
     }
   }
 
+  // Handler for showing help modal
+  const handleShowHelp = () => {
+    openWithMode('help')
+  }
+
   // Use global shortcuts for issue status changes
   useGlobalShortcuts({
     workspaceSlug: workspace.slug,
     currentIssue,
     onIssueStatusChange: handleIssueStatusChange,
+    onShowHelp: handleShowHelp,
     ...(onCreateIssue && { onCreateIssue }),
     ...(onToggleViewMode && { onToggleViewMode }),
     ...(onToggleSearch && { onToggleSearch })

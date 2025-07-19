@@ -483,6 +483,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
         title: "General",
         shortcuts: [
           { keys: ["⌘", "K"], description: "Open command palette" },
+          { keys: ["?"], description: "Show keyboard shortcuts" },
           ...(onToggleSearch ? [{ keys: ["/"], description: "Toggle search bar" }] : []),
           { keys: ["Esc"], description: "Close dialogs and cancel actions" },
         ]
