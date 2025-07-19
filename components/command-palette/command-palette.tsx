@@ -44,9 +44,11 @@ interface CommandPaletteProps {
     status: string
   } | null
   onIssueStatusChange?: (newStatus: string) => void
+  onNavigateToIssues?: () => void
+  onNavigateToInbox?: () => void
 }
 
-export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onToggleViewMode, onToggleSearch, onSetStatusFilter, getCurrentView, currentIssue, onIssueStatusChange }: CommandPaletteProps) {
+export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onToggleViewMode, onToggleSearch, onSetStatusFilter, getCurrentView, currentIssue, onIssueStatusChange, onNavigateToIssues, onNavigateToInbox }: CommandPaletteProps) {
   // Log props on mount
   React.useEffect(() => {
     const location = typeof window !== 'undefined' ? window.location.pathname : 'unknown'
@@ -83,12 +85,20 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   }, [setIsOpen, onToggleSearch])
   
   const handleNavigateToIssues = React.useCallback(() => {
-    router.push(`/${workspaceSlug}`)
-  }, [router, workspaceSlug])
+    if (onNavigateToIssues) {
+      onNavigateToIssues()
+    } else {
+      router.push(`/${workspaceSlug}`)
+    }
+  }, [router, workspaceSlug, onNavigateToIssues])
   
   const handleNavigateToInbox = React.useCallback(() => {
-    router.push(`/${workspaceSlug}/inbox`)
-  }, [router, workspaceSlug])
+    if (onNavigateToInbox) {
+      onNavigateToInbox()
+    } else {
+      router.push(`/${workspaceSlug}/inbox`)
+    }
+  }, [router, workspaceSlug, onNavigateToInbox])
   
   
   const handleShowRecentIssues = React.useCallback(() => {

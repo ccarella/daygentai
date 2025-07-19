@@ -161,6 +161,34 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     loadTags()
   }, [workspace.id])
   
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const pathname = window.location.pathname
+      if (pathname.includes('/inbox')) {
+        setCurrentView('inbox')
+        setCurrentIssueId(null)
+      } else if (pathname.includes('/cookbook')) {
+        setCurrentView('cookbook')
+        setCurrentIssueId(null)
+      } else if (pathname.includes('/settings')) {
+        setCurrentView('settings')
+        setCurrentIssueId(null)
+      } else if (pathname.includes('/issue/')) {
+        const issueId = getIssueIdFromPath()
+        if (issueId) {
+          setCurrentView('issue')
+          setCurrentIssueId(issueId)
+        }
+      } else if (pathname.endsWith(`/${workspace.slug}`)) {
+        setCurrentView('list')
+        setCurrentIssueId(null)
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [workspace.slug])
 
   // Handle keyboard shortcuts using the new keyboard manager
   useKeyboardContext({
