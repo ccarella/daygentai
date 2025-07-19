@@ -171,7 +171,7 @@ export function CreateIssueModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="sm:max-w-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh]"
+        className="sm:max-w-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh] relative"
         onKeyDown={handleKeyDown}
       >
         <DialogHeader className="shrink-0">
@@ -286,6 +286,18 @@ export function CreateIssueModal({
             {isGeneratingPrompt ? 'Generating prompt...' : 'Create issue'}
           </Button>
         </DialogFooter>
+        
+        {/* Loading overlay */}
+        {(isSubmitting || isGeneratingPrompt) && (
+          <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center rounded-lg z-50">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">
+                {isGeneratingPrompt ? 'Generating AI prompt...' : 'Creating issue...'}
+              </span>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )
