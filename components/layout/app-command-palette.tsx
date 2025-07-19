@@ -15,9 +15,12 @@ interface AppCommandPaletteProps {
   onCreateIssue?: () => void
   onToggleViewMode?: () => void
   onToggleSearch?: () => void
+  onNavigateToIssue?: (issueId: string) => void
+  onNavigateToIssues?: () => void
+  onNavigateToInbox?: () => void
 }
 
-export function AppCommandPalette({ workspace, onCreateIssue, onToggleViewMode, onToggleSearch }: AppCommandPaletteProps) {
+export function AppCommandPalette({ workspace, onCreateIssue, onToggleViewMode, onToggleSearch, onNavigateToIssue, onNavigateToIssues, onNavigateToInbox }: AppCommandPaletteProps) {
   const pathname = usePathname()
   const [currentIssue, setCurrentIssue] = useState<{
     id: string
@@ -82,6 +85,9 @@ export function AppCommandPalette({ workspace, onCreateIssue, onToggleViewMode, 
       {...(onCreateIssue && { onCreateIssue })}
       {...(onToggleViewMode && { onToggleViewMode })}
       {...(onToggleSearch && { onToggleSearch })}
+      {...(onNavigateToIssue && { onNavigateToIssue })}
+      {...(onNavigateToIssues && { onNavigateToIssues })}
+      {...(onNavigateToInbox && { onNavigateToInbox })}
       currentIssue={currentIssue}
       onIssueStatusChange={handleIssueStatusChange}
     />

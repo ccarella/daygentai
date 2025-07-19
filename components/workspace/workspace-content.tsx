@@ -64,6 +64,7 @@ export interface WorkspaceContentRef {
   navigateToInbox: () => void
   navigateToCookbook: () => void
   navigateToSettings: () => void
+  navigateToIssue: (issueId: string) => void
   toggleViewMode: () => void
   getCurrentViewMode: () => 'list' | 'kanban'
   toggleSearch: () => void
@@ -188,6 +189,11 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     window.history.pushState({}, '', `/${workspace.slug}/issue/${issueId}`)
   }
 
+  // Public method to navigate to a specific issue
+  const navigateToIssue = (issueId: string) => {
+    handleIssueClick(issueId)
+  }
+
   const handleBackToList = () => {
     setCurrentView('list')
     setCurrentIssueId(null)
@@ -245,6 +251,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     navigateToInbox: handleNavigateToInbox,
     navigateToCookbook: handleNavigateToCookbook,
     navigateToSettings: handleNavigateToSettings,
+    navigateToIssue,
     toggleViewMode: handleToggleViewMode,
     getCurrentViewMode: () => issuesViewMode,
     toggleSearch: () => setIsSearchVisible(prev => !prev),

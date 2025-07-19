@@ -36,6 +36,9 @@ interface CommandPaletteProps {
   onCreateIssue?: () => void
   onToggleViewMode?: () => void
   onToggleSearch?: () => void
+  onNavigateToIssue?: (issueId: string) => void
+  onNavigateToIssues?: () => void
+  onNavigateToInbox?: () => void
   currentIssue?: {
     id: string
     title: string
@@ -44,7 +47,7 @@ interface CommandPaletteProps {
   onIssueStatusChange?: (newStatus: string) => void
 }
 
-export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onToggleViewMode, onToggleSearch, currentIssue, onIssueStatusChange }: CommandPaletteProps) {
+export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onToggleViewMode, onToggleSearch, onNavigateToIssue, onNavigateToIssues, onNavigateToInbox, currentIssue, onIssueStatusChange }: CommandPaletteProps) {
   // Log props on mount
   React.useEffect(() => {
     const location = typeof window !== 'undefined' ? window.location.pathname : 'unknown'
@@ -80,12 +83,22 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   }, [setIsOpen, onToggleSearch])
   
   const handleNavigateToIssues = React.useCallback(() => {
-    router.push(`/${workspaceSlug}`)
-  }, [router, workspaceSlug])
+    if (onNavigateToIssues) {
+      setIsOpen(false)
+      onNavigateToIssues()
+    } else {
+      router.push(`/${workspaceSlug}`)
+    }
+  }, [router, workspaceSlug, onNavigateToIssues, setIsOpen])
   
   const handleNavigateToInbox = React.useCallback(() => {
-    router.push(`/${workspaceSlug}/inbox`)
-  }, [router, workspaceSlug])
+    if (onNavigateToInbox) {
+      setIsOpen(false)
+      onNavigateToInbox()
+    } else {
+      router.push(`/${workspaceSlug}/inbox`)
+    }
+  }, [router, workspaceSlug, onNavigateToInbox, setIsOpen])
   
   // Placeholder handlers for filter actions - memoized
   const handleFilterByStatus = React.useCallback(() => {
@@ -616,6 +629,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
         issueGeneratedPrompt={nextIssueData.issueGeneratedPrompt || undefined}
         workspaceSlug={workspaceSlug}
         isLoading={isLoadingNextIssue}
+        {...(onNavigateToIssue && { onNavigateToIssue })}
       />
     </>
   )

@@ -25,6 +25,7 @@ interface NextIssueModalProps {
   prompt?: string | undefined
   issueGeneratedPrompt?: string | null | undefined
   isLoading?: boolean
+  onNavigateToIssue?: (issueId: string) => void
 }
 
 export function NextIssueModal({
@@ -37,14 +38,19 @@ export function NextIssueModal({
   workspaceSlug,
   issueGeneratedPrompt,
   isLoading,
+  onNavigateToIssue,
 }: NextIssueModalProps) {
   const router = useRouter()
 
   const handleGoToIssue = () => {
     if (issueId && workspaceSlug) {
-      const issueUrl = `/${workspaceSlug}/issue/${issueId}`
-      router.push(issueUrl)
       onOpenChange(false)
+      if (onNavigateToIssue) {
+        onNavigateToIssue(issueId)
+      } else {
+        const issueUrl = `/${workspaceSlug}/issue/${issueId}`
+        router.push(issueUrl)
+      }
     }
   }
 

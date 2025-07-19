@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useAjaxNavigation } from '@/hooks/use-ajax-navigation'
 import { WorkspaceWithMobileNav } from '@/components/layout/workspace-with-mobile-nav'
 import { WorkspaceContent, WorkspaceContentRef } from '@/components/workspace/workspace-content'
 import { IssueCacheProvider } from '@/contexts/issue-cache-context'
@@ -68,12 +69,18 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
     setRefreshKey(prev => prev + 1)
   }
 
+  // Use AJAX navigation hook
+  const { navigateToIssue, navigateToIssues, navigateToInbox } = useAjaxNavigation({
+    workspaceSlug: workspace?.slug || '',
+    contentRef
+  })
+
   const handleNavigateToIssues = () => {
-    contentRef.current?.navigateToIssuesList()
+    navigateToIssues()
   }
 
   const handleNavigateToInbox = () => {
-    contentRef.current?.navigateToInbox()
+    navigateToInbox()
   }
 
   const handleNavigateToCookbook = () => {
@@ -147,6 +154,9 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
           onCreateIssue={handleCreateIssue}
           onToggleViewMode={handleToggleViewMode}
           onToggleSearch={handleToggleSearch}
+          onNavigateToIssue={navigateToIssue}
+          onNavigateToIssues={navigateToIssues}
+          onNavigateToInbox={navigateToInbox}
         />
       )}
     </>

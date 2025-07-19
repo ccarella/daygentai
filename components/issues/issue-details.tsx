@@ -93,6 +93,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   const [isUpdatingType, setIsUpdatingType] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [previousIssueId, setPreviousIssueId] = useState<string | null>(null)
 
   // Handle ESC key to navigate back
   useEffect(() => {
@@ -108,6 +109,12 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
   }, [onBack, isEditModalOpen])
 
   useEffect(() => {
+    // If the issue ID changed, show loading immediately
+    if (previousIssueId !== issueId) {
+      setLoading(true)
+      setPreviousIssueId(issueId)
+    }
+    
     const fetchIssue = async () => {
       // Check cache first
       const cachedIssue = getIssue(issueId)
@@ -287,7 +294,10 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading issue...</div>
+        <div className="flex flex-col items-center space-y-3">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
+          <div className="text-gray-500">Loading issue...</div>
+        </div>
       </div>
     )
   }
