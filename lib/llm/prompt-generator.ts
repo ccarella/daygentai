@@ -29,16 +29,10 @@ function sanitizeInput(input: string): string {
   // Remove null bytes and other control characters except newlines and carriage returns
   let sanitized = input.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 
-  // Escape special characters that could be used for injection
+  // Escape special characters that could be used for template literal injection
   sanitized = sanitized
-    .replace(/`/g, '\\`')  // Escape backticks
-    .replace(/\$/g, '\\$') // Escape dollar signs
-    .replace(/</g, '&lt;')  // HTML encode less-than
-    .replace(/>/g, '&gt;')  // HTML encode greater-than
-    .replace(/&(?!(lt|gt|amp|quot|#39|#x27|#x2F);)/g, '&amp;') // HTML encode ampersands
-    .replace(/"/g, '&quot;') // HTML encode double quotes
-    .replace(/'/g, '&#39;')   // HTML encode single quotes
-    .replace(/\//g, '&#x2F;'); // HTML encode forward slashes
+    .replace(/`/g, '\\`')  // Escape backticks to prevent template literal injection
+    .replace(/\$/g, '\\$'); // Escape dollar signs to prevent template literal interpolation
 
   // Truncate to reasonable length to prevent DoS
   const maxLength = 10000;
