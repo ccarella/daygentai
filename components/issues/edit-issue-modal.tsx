@@ -41,6 +41,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
   const [priority, setPriority] = useState<Issue['priority']>('medium');
   const [status, setStatus] = useState<Issue['status']>('todo');
   const [createPrompt, setCreatePrompt] = useState(false);
+  const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
@@ -63,6 +64,11 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
   }, [issue, open, hasApiKey]);
 
   const handleSubmit = async () => {
+    // Prevent multiple submissions
+    if (isSubmitDisabled || isSubmitting) {
+      return;
+    }
+
     if (!title.trim()) {
       setError('Title is required');
       return;
@@ -74,6 +80,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
     }
 
     setIsSubmitting(true);
+    setIsSubmitDisabled(true);
     setError('');
 
     try {
@@ -88,19 +95,19 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
         setIsGeneratingPrompt(true);
         try {
           // Fetch workspace data including API key and agents content
-          const { data: workspace } = await supabase
+          const { data: workspaceData } = await supabase
             .from('workspaces')
             .select('api_key, api_provider, agents_content')
             .eq('id', issue.workspace_id)
             .single();
           
-          if (workspace?.api_key) {
+          if (workspaceData?.api_key) {
             const { prompt, error: promptError } = await generateIssuePrompt({
               title: title.trim(),
               description: description.trim(),
-              agentsContent: workspace.agents_content,
-              apiKey: workspace.api_key,
-              provider: workspace.api_provider || 'openai'
+              agentsContent: workspaceData.agents_content,
+              apiKey: workspaceData.api_key,
+              provider: workspaceData.api_provider || 'openai'
             });
             
             if (promptError) {
@@ -158,11 +165,15 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
       setError('An unexpected error occurred');
     } finally {
       setIsSubmitting(false);
+      // Re-enable submit after a short delay to prevent rapid clicks
+      setTimeout(() => {
+        setIsSubmitDisabled(false);
+      }, 500);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !isSubmitting && title.trim()) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !isSubmitting && !isSubmitDisabled && title.trim()) {
       e.preventDefault();
       handleSubmit();
     }
@@ -297,7 +308,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={isSubmitting || !title.trim()}
+            disabled={isSubmitting || isSubmitDisabled || !title.trim()}
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
             {isGeneratingPrompt ? 'Generating prompt...' : 'Save changes'}

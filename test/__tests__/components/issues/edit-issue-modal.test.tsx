@@ -158,6 +158,10 @@ describe('EditIssueModal - Prompt Generation', () => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
+      // The toggle is already checked for issues with existing prompts
+      const toggle = screen.getByRole('switch')
+      expect(toggle).toBeChecked()
+
       // Update title
       const titleInput = screen.getByLabelText('Issue title')
       await user.clear(titleInput)
@@ -332,9 +336,9 @@ describe('EditIssueModal - Prompt Generation', () => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
-      // Enable prompt and change content
+      // Toggle is already enabled by default
       const toggle = screen.getByRole('switch')
-      await user.click(toggle)
+      expect(toggle).toBeChecked()
       
       const titleInput = screen.getByLabelText('Issue title')
       await user.clear(titleInput)
@@ -439,7 +443,7 @@ describe('EditIssueModal - Prompt Generation', () => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
-      // The toggle is automatically enabled
+      // The toggle should be ON by default when workspace has API key and issue has no prompt
       const toggle = screen.getByRole('switch')
       expect(toggle).toBeChecked()
       
