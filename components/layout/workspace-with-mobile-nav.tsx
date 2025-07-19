@@ -6,7 +6,6 @@ import { Header } from './header'
 import { WorkspaceLayout } from './workspace-layout'
 import { useWorkspaceNavigation } from '@/hooks/use-workspace-navigation'
 import type { UserWorkspace } from '@/lib/supabase/workspaces'
-import type { WorkspaceMemberQueryResponse } from '@/types/supabase-helpers'
 
 interface WorkspaceWithMobileNavProps {
   workspace: {
@@ -68,22 +67,16 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
         console.error('Error fetching workspaces:', workspacesError)
       }
       
-      console.log('[WorkspaceWithMobileNav] Workspaces data:', {
-        workspacesData,
-        rawData: JSON.stringify(workspacesData, null, 2)
-      })
-      
       if (workspacesData) {
         const transformedWorkspaces = workspacesData
-          .map((item: any) => {
-            console.log('[WorkspaceWithMobileNav] Processing item:', {
-              item,
-              workspace: item.workspace,
-              isArray: Array.isArray(item.workspace)
-            })
-            
+          .map((item: { 
+            workspace: { id: string; name: string; slug: string; avatar_url: string | null } | 
+                      Array<{ id: string; name: string; slug: string; avatar_url: string | null }>;
+            role: string;
+            created_at: string;
+          }) => {
             // Handle both array and object formats for workspace
-            let workspace: any
+            let workspace: { id: string; name: string; slug: string; avatar_url: string | null } | undefined
             if (Array.isArray(item.workspace)) {
               workspace = item.workspace[0]
             } else {
@@ -102,7 +95,6 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
           })
           .filter((workspace): workspace is UserWorkspace => workspace !== null)
         
-        console.log('[WorkspaceWithMobileNav] Transformed workspaces:', transformedWorkspaces)
         setWorkspaces(transformedWorkspaces)
       }
     }
