@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { Search, FileText, Inbox, Plus, Filter, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle } from "lucide-react"
+import { Search, FileText, Inbox, Plus, Filter, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { emitIssueStatusUpdate } from "@/lib/events/issue-events"
 import {
@@ -62,6 +62,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   const [search, setSearch] = React.useState("")
   const [selectedIndex, setSelectedIndex] = React.useState(0)
   const inputRef = React.useRef<HTMLInputElement>(null)
+  const [isLoadingAction, setIsLoadingAction] = React.useState(false)
   
   // Next Issue Modal state
   const [nextIssueModalOpen, setNextIssueModalOpen] = React.useState(false)
@@ -118,30 +119,35 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
                      option.value === 'done' ? 'S then D' : undefined,
             action: async () => {
               setIsOpen(false)
+              setIsLoadingAction(true)
               const supabase = createClient()
               
-              const { error } = await supabase
-                .from('issues')
-                .update({ status: option.value })
-                .eq('id', currentIssue.id)
+              try {
+                const { error } = await supabase
+                  .from('issues')
+                  .update({ status: option.value })
+                  .eq('id', currentIssue.id)
 
-              if (!error) {
-                onIssueStatusChange(option.value)
-                // Also emit the event for other components
-                emitIssueStatusUpdate(currentIssue.id, option.value)
-                
-                // Show success toast
-                toast({
-                  title: "Status updated",
-                  description: `Issue status changed to ${option.label}`,
-                })
-              } else {
-                // Show error toast
-                toast({
-                  title: "Error updating status",
-                  description: error.message || "Failed to update issue status. Please try again.",
-                  variant: "destructive",
-                })
+                if (!error) {
+                  onIssueStatusChange(option.value)
+                  // Also emit the event for other components
+                  emitIssueStatusUpdate(currentIssue.id, option.value)
+                  
+                  // Show success toast
+                  toast({
+                    title: "Status updated",
+                    description: `Issue status changed to ${option.label}`,
+                  })
+                } else {
+                  // Show error toast
+                  toast({
+                    title: "Error updating status",
+                    description: error.message || "Failed to update issue status. Please try again.",
+                    variant: "destructive",
+                  })
+                }
+              } finally {
+                setIsLoadingAction(false)
               }
             },
             keywords: ["status", "change", option.label.toLowerCase(), option.value],
@@ -495,7 +501,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="p-0 max-w-2xl">
+        <DialogContent className="p-0 max-w-2xl relative">
           <DialogTitle className="sr-only">
             {mode === 'help' ? 'Keyboard Shortcuts & Help' : 'Command Palette'}
           </DialogTitle>
@@ -553,6 +559,16 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
                 )}
               </ScrollArea>
             </>
+          )}
+          
+          {/* Loading overlay */}
+          {isLoadingAction && (
+            <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center rounded-lg">
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-muted-foreground">Processing...</span>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
