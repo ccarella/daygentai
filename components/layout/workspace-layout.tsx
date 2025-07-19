@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Plus, ChevronLeft, ChevronRight, HelpCircle, Settings, Terminal, BookOpen } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { InboxBadge } from '@/components/inbox/inbox-badge'
 
 const CreateIssueModal = dynamic(
   () => import('@/components/issues/create-issue-modal').then(mod => ({ default: mod.CreateIssueModal })),
@@ -132,6 +133,7 @@ export function WorkspaceLayout({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
             <span>Inbox</span>
+            <InboxBadge workspaceId={workspace.id} />
           </button>
         ) : (
           <Link
@@ -147,6 +149,7 @@ export function WorkspaceLayout({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
             <span>Inbox</span>
+            <InboxBadge workspaceId={workspace.id} />
           </Link>
         )}
         

@@ -101,7 +101,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
       renderWithProvider(true)
 
       await waitFor(() => {
-        expect(screen.getByRole('switch', { name: 'Create a prompt' })).toBeInTheDocument()
+        expect(screen.getByRole('switch', { name: 'Generate AI prompt' })).toBeInTheDocument()
       })
     })
 
@@ -118,12 +118,12 @@ describe('CreateIssueModal - Prompt Generation', () => {
       renderWithProvider()
 
       await waitFor(() => {
-        const toggle = screen.getByRole('switch', { name: 'Create a prompt' })
+        const toggle = screen.getByRole('switch', { name: 'Generate AI prompt' })
         expect(toggle).toBeInTheDocument()
         expect(toggle).toHaveAttribute('aria-checked', 'true') // Default state when API key exists
       })
 
-      const toggle = screen.getByRole('switch', { name: 'Create a prompt' })
+      const toggle = screen.getByRole('switch', { name: 'Generate AI prompt' })
       await user.click(toggle)
       
       await waitFor(() => {
@@ -154,7 +154,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
       await user.type(descriptionTextarea, 'Users cannot login')
       
       // The toggle should be enabled by default when API key exists
-      const toggle = screen.getByRole('switch', { name: 'Create a prompt' })
+      const toggle = screen.getByRole('switch', { name: 'Generate AI prompt' })
       expect(toggle).toBeChecked() // Should already be checked
       // Don't click it - keep it enabled
 
@@ -189,7 +189,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
       })
 
       // The toggle should be enabled by default, so we need to disable it
-      const toggle = screen.getByRole('switch', { name: 'Create a prompt' })
+      const toggle = screen.getByRole('switch', { name: 'Generate AI prompt' })
       await waitFor(() => {
         expect(toggle).toBeChecked() // Should be checked by default
       })
@@ -236,7 +236,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
       await user.type(descriptionTextarea, 'Test description')
       
       // Verify toggle is enabled by default
-      const toggle = screen.getByRole('switch', { name: 'Create a prompt' })
+      const toggle = screen.getByRole('switch', { name: 'Generate AI prompt' })
       expect(toggle).toBeChecked()
 
       // Submit form
@@ -275,7 +275,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
       await user.type(descriptionTextarea, 'Test description')
       
       // Verify toggle is enabled by default
-      const toggle = screen.getByRole('switch', { name: 'Create a prompt' })
+      const toggle = screen.getByRole('switch', { name: 'Generate AI prompt' })
       expect(toggle).toBeChecked()
 
       // Submit form
@@ -330,7 +330,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
       await user.type(descriptionTextarea, 'Test description')
       
       // Verify toggle is enabled by default
-      const toggle = screen.getByRole('switch', { name: 'Create a prompt' })
+      const toggle = screen.getByRole('switch', { name: 'Generate AI prompt' })
       expect(toggle).toBeChecked()
 
       // Submit form
@@ -374,7 +374,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
       })
 
       // Enable prompt generation without filling title
-      const toggle = screen.getByRole('switch', { name: 'Create a prompt' })
+      const toggle = screen.getByRole('switch', { name: 'Generate AI prompt' })
       await user.click(toggle)
 
       // Try to submit
@@ -422,7 +422,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
 
       // Fill in form and enable prompt generation
       await user.type(screen.getByLabelText('Issue title'), 'Test issue')
-      const toggle = screen.getByRole('switch', { name: 'Create a prompt' })
+      const toggle = screen.getByRole('switch', { name: 'Generate AI prompt' })
       await user.click(toggle)
 
       // Close modal
@@ -462,7 +462,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
         // Note: Component currently doesn't reset state when closed
         expect(titleInput.value).toBe('Test issue')
         
-        const promptToggle = screen.getByRole('switch', { name: 'Create a prompt' })
+        const promptToggle = screen.getByRole('switch', { name: 'Generate AI prompt' })
         expect(promptToggle).toBeChecked()
       })
     })

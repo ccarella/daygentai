@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import {
   Dialog,
   DialogContent,
@@ -22,10 +21,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { Loader2 } from 'lucide-react'
-import { generateIssuePrompt } from '@/lib/llm/prompt-generator'
+import { Loader2, Sparkles, Info } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import { useWorkspace } from '@/contexts/workspace-context'
+import { createIssue } from '@/app/actions/create-issue'
 
 interface CreateIssueModalProps {
   open: boolean
@@ -49,7 +48,6 @@ export function CreateIssueModal({
   const [createPrompt, setCreatePrompt] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false)
   
   const hasApiKey = workspace?.hasApiKey || false
   
@@ -74,73 +72,19 @@ export function CreateIssueModal({
     setError('')
 
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "You must be logged in to create an issue",
-          variant: "destructive",
-        })
-        return
-      }
+      const result = await createIssue({
+        title,
+        description,
+        type,
+        priority,
+        workspaceId,
+        generatePrompt: createPrompt && hasApiKey
+      })
 
-      let generatedPrompt = null
-      
-      // Generate prompt if toggle is on and workspace has API key
-      if (createPrompt && hasApiKey) {
-        setIsGeneratingPrompt(true)
-        try {
-          // Fetch workspace data including API key and agents content
-          const { data: workspace } = await supabase
-            .from('workspaces')
-            .select('api_key, api_provider, agents_content')
-            .eq('id', workspaceId)
-            .single()
-          
-          if (workspace?.api_key) {
-            const { prompt, error: promptError } = await generateIssuePrompt({
-              title: title.trim(),
-              description: description.trim(),
-              agentsContent: workspace.agents_content,
-              apiKey: workspace.api_key,
-              provider: workspace.api_provider || 'openai'
-            })
-            
-            if (promptError) {
-              console.error('Error generating prompt:', promptError)
-              // Continue without prompt - don't block issue creation
-            } else {
-              generatedPrompt = prompt
-            }
-          }
-        } catch (error) {
-          console.error('Error generating prompt:', error)
-          // Continue without prompt
-        } finally {
-          setIsGeneratingPrompt(false)
-        }
-      }
-      
-      // Create the issue with or without generated prompt
-      const { error: insertError } = await supabase
-        .from('issues')
-        .insert({
-          title: title.trim(),
-          description: description.trim(),
-          type,
-          priority,
-          status: 'todo',
-          workspace_id: workspaceId,
-          created_by: user.id,
-          generated_prompt: generatedPrompt,
-        })
-
-      if (insertError) {
+      if (!result.success) {
         toast({
           title: "Failed to create issue",
-          description: insertError.message,
+          description: result.error,
           variant: "destructive",
         })
         return
@@ -156,11 +100,19 @@ export function CreateIssueModal({
       onOpenChange(false)
       onIssueCreated?.()
       
-      // Show success toast
-      toast({
-        title: "Issue created",
-        description: "Your new issue has been created successfully.",
-      })
+      // Show success toast with appropriate message
+      if (createPrompt && hasApiKey) {
+        toast({
+          title: "Issue created",
+          description: "Your issue has been created. The AI prompt will be generated in the background and appear in your inbox when ready.",
+          duration: 5000,
+        })
+      } else {
+        toast({
+          title: "Issue created",
+          description: "Your new issue has been created successfully.",
+        })
+      }
     } catch {
       toast({
         title: "Error",
@@ -247,23 +199,26 @@ export function CreateIssueModal({
             </div>
 
             <div className="flex items-center justify-between space-x-2 rounded-lg border p-3 md:p-4">
-              <div className="space-y-0.5">
-                <Label htmlFor="create-prompt" className="text-base">
-                  Create a prompt
-                </Label>
+              <div className="space-y-0.5 flex-1">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-purple-500" />
+                  <Label htmlFor="create-prompt" className="text-base">
+                    Generate AI prompt
+                  </Label>
+                </div>
                 <div className="text-sm text-gray-500">
                   {hasApiKey 
-                    ? 'Generate an AI prompt for development agents' 
+                    ? 'Generate an AI prompt for development agents in the background' 
                     : workspaceId 
                       ? 'API key required in workspace settings' 
                       : 'No workspace ID provided'}
-                  {/* Debug info */}
-                  {process.env.NODE_ENV === 'development' && (
-                    <div className="text-xs text-gray-400 mt-1">
-                      Debug: workspaceId={workspaceId ? workspaceId.substring(0, 8) + '...' : 'none'}
-                    </div>
-                  )}
                 </div>
+                {createPrompt && hasApiKey && (
+                  <div className="flex items-start gap-2 mt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                    <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                    <span>The prompt will be generated after issue creation and appear in your inbox when ready</span>
+                  </div>
+                )}
               </div>
               <Switch
                 id="create-prompt"
@@ -294,7 +249,7 @@ export function CreateIssueModal({
             disabled={isSubmitting || !title.trim()}
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isGeneratingPrompt ? 'Generating prompt...' : 'Create issue'}
+            Create issue
           </Button>
         </DialogFooter>
       </DialogContent>
