@@ -68,7 +68,7 @@ export async function middleware(request: NextRequest) {
       .limit(1)
 
 
-    const hasWorkspace = workspaceMemberships && workspaceMemberships.length > 0
+    const hasWorkspace = (workspaceMemberships?.length ?? 0) > 0
 
     // Redirect logic based on user's progress
     if (pathname === '/CreateUser' && profile) {
