@@ -45,12 +45,18 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
         return
       }
 
-      // Fetch workspace data
+      // Fetch workspace data - check if user is a member (owner or otherwise)
       const { data: workspace } = await supabase
         .from('workspaces')
-        .select('*')
+        .select(`
+          *,
+          workspace_members!inner (
+            user_id,
+            role
+          )
+        `)
         .eq('slug', resolvedParams.slug)
-        .eq('owner_id', user.id)
+        .eq('workspace_members.user_id', user.id)
         .single()
 
       if (!workspace) {

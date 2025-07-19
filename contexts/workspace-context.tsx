@@ -56,10 +56,25 @@ export function WorkspaceProvider({
         return
       }
       
+      // Check if user has access to workspace through membership
       const { data: workspaceData, error } = await supabase
         .from('workspaces')
-        .select('id, name, slug, avatar_url, owner_id, api_key, api_provider, agents_content')
+        .select(`
+          id, 
+          name, 
+          slug, 
+          avatar_url, 
+          owner_id, 
+          api_key, 
+          api_provider, 
+          agents_content,
+          workspace_members!inner (
+            user_id,
+            role
+          )
+        `)
         .eq('id', workspaceId)
+        .eq('workspace_members.user_id', session.user.id)
         .single()
       
       if (error || !workspaceData) {
@@ -97,10 +112,20 @@ export function WorkspaceProvider({
             return
           }
           
+          // Check if user has access to workspace through membership
           const { data: workspaceData, error } = await supabase
             .from('workspaces')
-            .select('api_key, api_provider, agents_content')
+            .select(`
+              api_key, 
+              api_provider, 
+              agents_content,
+              workspace_members!inner (
+                user_id,
+                role
+              )
+            `)
             .eq('id', workspaceId)
+            .eq('workspace_members.user_id', session.user.id)
             .single()
           
           if (!error && workspaceData) {

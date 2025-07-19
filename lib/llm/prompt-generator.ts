@@ -50,12 +50,23 @@ export async function generateIssuePrompt({
 }
 
 // Utility function to check if workspace has API key configured
-export async function hasApiKey(_workspaceId: string): Promise<boolean> {
+export async function hasApiKey(workspaceId: string): Promise<boolean> {
   try {
-    // This would typically check the database
-    // For now, returning false as we haven't implemented the database schema yet
-    // TODO: Implement actual database check using workspaceId
-    return false;
+    const response = await fetch('/api/workspace/has-api-key', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ workspaceId })
+    });
+
+    if (!response.ok) {
+      console.error('Failed to check API key:', response.status);
+      return false;
+    }
+
+    const data = await response.json();
+    return data.hasApiKey === true;
   } catch (error) {
     console.error('Error checking API key:', error);
     return false;
@@ -63,12 +74,23 @@ export async function hasApiKey(_workspaceId: string): Promise<boolean> {
 }
 
 // Utility function to get Agents.md content for a workspace
-export async function getAgentsContent(_workspaceId: string): Promise<string | null> {
+export async function getAgentsContent(workspaceId: string): Promise<string | null> {
   try {
-    // This would typically fetch from a storage service or database
-    // For now, returning null
-    // TODO: Implement actual fetch using workspaceId
-    return null;
+    const response = await fetch('/api/workspace/agents-content', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ workspaceId })
+    });
+
+    if (!response.ok) {
+      console.error('Failed to fetch agents content:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.agentsContent || null;
   } catch (error) {
     console.error('Error fetching Agents.md:', error);
     return null;

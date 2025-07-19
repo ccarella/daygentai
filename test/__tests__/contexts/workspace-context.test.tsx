@@ -3,6 +3,7 @@ import { render, screen, waitFor, act } from '@testing-library/react'
 import { WorkspaceProvider, useWorkspace } from '@/contexts/workspace-context'
 import { createClient } from '@/lib/supabase/client'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { createMockQueryBuilder, createMockSupabaseClient } from '@/test/utils/supabase-mock-helpers'
 
 // Mock the Supabase client
 vi.mock('@/lib/supabase/client', () => ({
@@ -23,15 +24,11 @@ function TestComponent() {
 }
 
 describe('WorkspaceContext', () => {
-  const mockSupabase = {
-    auth: {
-      getSession: vi.fn()
-    },
-    from: vi.fn()
-  }
+  let mockSupabase: any
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockSupabase = createMockSupabaseClient()
     ;(createClient as any).mockReturnValue(mockSupabase)
   })
 
@@ -41,15 +38,14 @@ describe('WorkspaceContext', () => {
       error: null
     })
 
+    const mockQuery = createMockQueryBuilder({ 
+      api_key: 'test-key', 
+      api_provider: 'openai', 
+      agents_content: null 
+    })
+    
     mockSupabase.from.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({
-            data: { api_key: 'test-key', api_provider: 'openai', agents_content: null },
-            error: null
-          })
-        })
-      })
+      select: vi.fn().mockReturnValue(mockQuery)
     })
 
     const initialWorkspace = {
@@ -85,15 +81,10 @@ describe('WorkspaceContext', () => {
       error: null
     })
 
+    const mockQuery = createMockQueryBuilder(mockWorkspaceData)
+    
     mockSupabase.from.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({
-            data: mockWorkspaceData,
-            error: null
-          })
-        })
-      })
+      select: vi.fn().mockReturnValue(mockQuery)
     })
 
     const initialWorkspace = {
@@ -132,15 +123,10 @@ describe('WorkspaceContext', () => {
       error: null
     })
 
+    const mockQuery = createMockQueryBuilder(mockWorkspaceData)
+    
     mockSupabase.from.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({
-            data: mockWorkspaceData,
-            error: null
-          })
-        })
-      })
+      select: vi.fn().mockReturnValue(mockQuery)
     })
 
     render(
