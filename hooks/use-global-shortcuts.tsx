@@ -19,6 +19,8 @@ interface GlobalShortcutsProps {
     status: string
   } | null
   onIssueStatusChange?: (newStatus: string) => void
+  onNavigateToIssues?: () => void
+  onNavigateToInbox?: () => void
 }
 
 export function useGlobalShortcuts({ 
@@ -27,7 +29,9 @@ export function useGlobalShortcuts({
   onShowHelp, 
   onToggleViewMode, 
   currentIssue, 
-  onIssueStatusChange 
+  onIssueStatusChange,
+  onNavigateToIssues,
+  onNavigateToInbox 
 }: GlobalShortcutsProps) {
   const router = useRouter()
   const nextIssueTimeoutRef = React.useRef<NodeJS.Timeout | undefined>(undefined)
@@ -173,14 +177,22 @@ export function useGlobalShortcuts({
       // Sequential shortcuts - Navigation
       'gi': {
         handler: () => {
-          router.push(`/${workspaceSlug}`)
+          if (onNavigateToIssues) {
+            onNavigateToIssues()
+          } else {
+            router.push(`/${workspaceSlug}`)
+          }
           return true
         },
         description: 'Go to issues',
       },
       'gn': {
         handler: () => {
-          router.push(`/${workspaceSlug}/inbox`)
+          if (onNavigateToInbox) {
+            onNavigateToInbox()
+          } else {
+            router.push(`/${workspaceSlug}/inbox`)
+          }
           return true
         },
         description: 'Go to inbox',
@@ -216,7 +228,7 @@ export function useGlobalShortcuts({
         description: 'Set status to Done',
       },
     },
-    deps: [workspaceSlug, onCreateIssue, onShowHelp, onToggleViewMode, currentIssue, onIssueStatusChange],
+    deps: [workspaceSlug, onCreateIssue, onShowHelp, onToggleViewMode, currentIssue, onIssueStatusChange, onNavigateToIssues, onNavigateToInbox],
   })
   
   // Cleanup on unmount
