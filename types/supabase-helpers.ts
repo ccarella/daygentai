@@ -13,7 +13,9 @@ export interface WorkspaceMemberWithWorkspace {
 export interface WorkspaceMemberWithSlug {
   workspace: {
     slug: string
-  }
+  } | Array<{
+    slug: string
+  }>
 }
 
 export interface WorkspaceMemberWithDetails {
@@ -21,7 +23,11 @@ export interface WorkspaceMemberWithDetails {
     name: string
     slug: string
     avatar_url: string | null
-  }
+  } | Array<{
+    name: string
+    slug: string
+    avatar_url: string | null
+  }>
 }
 
 // Raw query response types (what Supabase actually returns)
