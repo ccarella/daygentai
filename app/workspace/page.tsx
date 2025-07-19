@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import type { WorkspaceMemberSlugQueryResponse } from '@/types/supabase-helpers'
 
 export default async function WorkspaceLoadingPage() {
   const supabase = await createClient()
@@ -10,18 +11,38 @@ export default async function WorkspaceLoadingPage() {
     redirect('/')
   }
 
-  // Check user profile and workspace
-  const [profileResult, workspaceResult] = await Promise.all([
-    supabase.from('users').select('id').eq('id', user.id).single(),
-    supabase.from('workspaces').select('slug').eq('owner_id', user.id).single()
-  ])
+  // Check user profile
+  const { data: profile } = await supabase
+    .from('users')
+    .select('id')
+    .eq('id', user.id)
+    .single()
 
-  if (!profileResult.data) {
+  if (!profile) {
     redirect('/CreateUser')
-  } else if (!workspaceResult.data) {
+  }
+
+  // Get user's first workspace from workspace_members
+  const { data: workspaceMemberships } = await supabase
+    .from('workspace_members')
+    .select(`
+      workspace:workspaces!inner(
+        slug
+      )
+    `)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+
+
+  if (!workspaceMemberships || workspaceMemberships.length === 0) {
     redirect('/CreateWorkspace')
-  } else if (workspaceResult.data.slug) {
-    redirect(`/${workspaceResult.data.slug}`)
+  } else if (workspaceMemberships[0]) {
+    const membership = workspaceMemberships[0] as WorkspaceMemberSlugQueryResponse
+    const workspace = membership.workspace[0]
+    if (workspace) {
+      redirect(`/${workspace.slug}`)
+    }
   }
 
   // Fallback (should not reach here)

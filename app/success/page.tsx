@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import type { WorkspaceMemberDetailsQueryResponse } from '@/types/supabase-helpers'
 
 export default async function SuccessPage({
   searchParams,
@@ -28,12 +29,26 @@ export default async function SuccessPage({
     redirect('/CreateUser')
   }
 
-  // Fetch workspace data
-  const { data: workspace } = await supabase
-    .from('workspaces')
-    .select('name, slug, avatar_url')
-    .eq('owner_id', user.id)
-    .single()
+  // Fetch user's first workspace from workspace_members
+  const { data: workspaceMemberships } = await supabase
+    .from('workspace_members')
+    .select(`
+      workspace:workspaces(
+        name,
+        slug,
+        avatar_url
+      )
+    `)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+
+  if (!workspaceMemberships || workspaceMemberships.length === 0) {
+    redirect('/CreateWorkspace')
+  }
+
+  const membership = workspaceMemberships[0] as WorkspaceMemberDetailsQueryResponse
+  const workspace = membership.workspace[0]
 
   if (!workspace) {
     redirect('/CreateWorkspace')
