@@ -5,14 +5,17 @@ import { useRouter } from 'next/navigation'
 import { WorkspaceContentRef } from '@/components/workspace/workspace-content'
 
 interface UseAjaxNavigationProps {
-  workspaceSlug: string
+  workspaceSlug: string | null
   contentRef: React.RefObject<WorkspaceContentRef | null>
 }
 
 export function useAjaxNavigation({ workspaceSlug, contentRef }: UseAjaxNavigationProps) {
   const router = useRouter()
   
-  const navigateToIssue = useCallback(async (issueId: string) => {
+  const navigateToIssue = useCallback((issueId: string) => {
+    // Skip navigation if no workspace slug
+    if (!workspaceSlug) return
+    
     // If we have a content ref, use AJAX navigation
     if (contentRef.current) {
       contentRef.current.navigateToIssue(issueId)
@@ -23,6 +26,9 @@ export function useAjaxNavigation({ workspaceSlug, contentRef }: UseAjaxNavigati
   }, [workspaceSlug, contentRef, router])
 
   const navigateToIssues = useCallback(() => {
+    // Skip navigation if no workspace slug
+    if (!workspaceSlug) return
+    
     if (contentRef.current) {
       contentRef.current.navigateToIssuesList()
     } else {
@@ -31,6 +37,9 @@ export function useAjaxNavigation({ workspaceSlug, contentRef }: UseAjaxNavigati
   }, [workspaceSlug, contentRef, router])
 
   const navigateToInbox = useCallback(() => {
+    // Skip navigation if no workspace slug
+    if (!workspaceSlug) return
+    
     if (contentRef.current) {
       contentRef.current.navigateToInbox()
     } else {

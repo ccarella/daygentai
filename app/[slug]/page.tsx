@@ -69,9 +69,9 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
     setRefreshKey(prev => prev + 1)
   }
 
-  // Use AJAX navigation hook
+  // Use AJAX navigation hook with proper null handling
   const { navigateToIssue, navigateToIssues, navigateToInbox } = useAjaxNavigation({
-    workspaceSlug: workspace?.slug || '',
+    workspaceSlug: workspace?.slug || null,
     contentRef
   })
 
