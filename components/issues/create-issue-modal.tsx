@@ -24,6 +24,7 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Loader2 } from 'lucide-react'
 import { generateIssuePrompt } from '@/lib/llm/prompt-generator'
+import { useToast } from '@/components/ui/use-toast'
 
 interface CreateIssueModalProps {
   open: boolean
@@ -38,6 +39,7 @@ export function CreateIssueModal({
   workspaceId,
   onIssueCreated,
 }: CreateIssueModalProps) {
+  const { toast } = useToast()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [type, setType] = useState<'feature' | 'bug' | 'chore' | 'design' | 'non-technical'>('feature')
@@ -81,7 +83,7 @@ export function CreateIssueModal({
         
         setHasApiKey(hasKey)
         setCreatePrompt(hasKey) // Set default state based on API key presence
-      } catch (error) {
+      } catch {
         // Silent error handling
       }
     }
@@ -91,7 +93,11 @@ export function CreateIssueModal({
 
   const handleSubmit = async () => {
     if (!title.trim()) {
-      setError('Title is required')
+      toast({
+        title: "Validation error",
+        description: "Title is required",
+        variant: "destructive",
+      })
       return
     }
 
@@ -103,7 +109,11 @@ export function CreateIssueModal({
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
-        setError('You must be logged in to create an issue')
+        toast({
+          title: "Authentication required",
+          description: "You must be logged in to create an issue",
+          variant: "destructive",
+        })
         return
       }
 
@@ -159,7 +169,11 @@ export function CreateIssueModal({
         })
 
       if (insertError) {
-        setError('Failed to create issue: ' + insertError.message)
+        toast({
+          title: "Failed to create issue",
+          description: insertError.message,
+          variant: "destructive",
+        })
         return
       }
 
@@ -172,8 +186,18 @@ export function CreateIssueModal({
       
       onOpenChange(false)
       onIssueCreated?.()
+      
+      // Show success toast
+      toast({
+        title: "Issue created",
+        description: "Your new issue has been created successfully.",
+      })
     } catch {
-      setError('An unexpected error occurred')
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsSubmitting(false)
     }
