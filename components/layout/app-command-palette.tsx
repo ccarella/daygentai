@@ -74,7 +74,8 @@ export function AppCommandPalette({ workspace, onCreateIssue, onToggleViewMode, 
     currentIssue,
     onIssueStatusChange: handleIssueStatusChange,
     ...(onCreateIssue && { onCreateIssue }),
-    ...(onToggleViewMode && { onToggleViewMode })
+    ...(onToggleViewMode && { onToggleViewMode }),
+    ...(onToggleSearch && { onToggleSearch })
   })
 
   return (
