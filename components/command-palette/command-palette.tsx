@@ -19,6 +19,7 @@ import { useCommandPalette } from "@/hooks/use-command-palette"
 import { recommendNextIssueAction } from "@/app/actions/recommend-issue"
 import { NextIssueModal } from "@/components/issues/next-issue-modal"
 import { useToast } from "@/components/ui/use-toast"
+import { getPlatformShortcut, detectPlatform } from "@/lib/keyboard/platform-utils"
 
 interface Command {
   id: string
@@ -271,7 +272,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       id: "next-issue",
       title: "Next Issue",
       icon: <Sparkles className="w-4 h-4" />,
-      shortcut: "⌘N",
+      shortcut: getPlatformShortcut("⌘N", "Ctrl+N"),
       action: handleNextIssue,
       keywords: ["ai", "recommend", "suggestion", "next", "task", "priority"],
       group: "Quick Access"
@@ -303,7 +304,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
         id: "toggle-view",
         title: "Toggle List/Kanban View",
         icon: <LayoutGrid className="w-4 h-4" />,
-        shortcut: "⌘B",
+        shortcut: getPlatformShortcut("⌘B", "Ctrl+B"),
         action: handleToggleViewMode,
         keywords: ["view", "switch", "kanban", "list", "board", "toggle"],
         group: "View"
@@ -478,11 +479,14 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
 
   // Cheatsheet content
   const renderCheatsheet = () => {
+    const platform = detectPlatform()
+    const isMac = platform === 'mac'
+    
     const shortcutGroups = [
       {
         title: "General",
         shortcuts: [
-          { keys: ["⌘", "K"], description: "Open command palette" },
+          { keys: isMac ? ["⌘", "K"] : ["Ctrl", "K"], description: "Open command palette" },
           { keys: ["?"], description: "Show keyboard shortcuts" },
           ...(onToggleSearch ? [{ keys: ["/"], description: "Toggle search bar" }] : []),
           { keys: ["Esc"], description: "Close dialogs and cancel actions" },
@@ -492,7 +496,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
         title: "Quick Access",
         shortcuts: [
           { keys: ["C"], description: "Create new issue" },
-          { keys: ["⌘", "N"], description: "Get next issue recommendation" },
+          { keys: isMac ? ["⌘", "N"] : ["Ctrl", "N"], description: "Get next issue recommendation" },
           { keys: ["G", "then", "I"], description: "Go to Issues" },
           { keys: ["G", "then", "N"], description: "Go to Inbox" },
         ]
@@ -509,7 +513,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       ...(onToggleViewMode ? [{
         title: "View",
         shortcuts: [
-          { keys: ["⌘", "B"], description: "Toggle List/Kanban view" },
+          { keys: isMac ? ["⌘", "B"] : ["Ctrl", "B"], description: "Toggle List/Kanban view" },
         ]
       }] : []),
       {
