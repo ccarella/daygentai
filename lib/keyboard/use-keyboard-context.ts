@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useRef } from 'react'
 import { KeyboardManager } from './keyboard-manager'
 import { KeyboardContext, KeyboardPriority, ShortcutDefinition } from './types'
