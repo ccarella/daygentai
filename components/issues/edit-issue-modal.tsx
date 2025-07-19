@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Loader2 } from 'lucide-react';
 import { generateIssuePrompt } from '@/lib/llm/prompt-generator';
+import { useToast } from '@/components/ui/use-toast';
+import { useWorkspace } from '@/contexts/workspace-context';
 
 interface Issue {
   id: string;
@@ -31,6 +33,8 @@ interface EditIssueModalProps {
 }
 
 export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: EditIssueModalProps) {
+  const { toast } = useToast();
+  const { workspace } = useWorkspace();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<Issue['type']>('feature');
@@ -40,9 +44,9 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
   const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [hasApiKey, setHasApiKey] = useState(false);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  
+  const hasApiKey = workspace?.hasApiKey || false;
 
   // Initialize form with issue data when modal opens or issue changes
   useEffect(() => {
@@ -53,53 +57,11 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
       setPriority(issue.priority || 'medium');
       setStatus(issue.status || 'todo');
       setError('');
-      setWorkspaceId(issue.workspace_id);
       
-      // Don't automatically enable prompt generation
-      // User must explicitly choose to generate a prompt
-      setCreatePrompt(false);
+      // Check if the issue already has a prompt or enable by default if API key exists
+      setCreatePrompt(!!issue.generated_prompt || (hasApiKey && !issue.generated_prompt));
     }
-  }, [issue, open]);
-  
-  // Check if workspace has API key when modal opens
-  useEffect(() => {
-    const checkApiKey = async () => {
-      if (!open || !workspaceId) return;
-      
-      try {
-        const supabase = createClient();
-        
-        // First ensure we have a valid session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError || !session) {
-          return;
-        }
-        
-        // Now fetch workspace with api_key
-        const { data: workspace, error } = await supabase
-          .from('workspaces')
-          .select('id, name, api_key, api_provider')
-          .eq('id', workspaceId)
-          .single();
-        
-        if (error) {
-          return;
-        }
-        
-        // Check if api_key exists and is not empty
-        const hasKey = !!(workspace?.api_key && workspace.api_key.length > 0);
-        
-        setHasApiKey(hasKey);
-        
-        // Don't automatically enable prompt generation
-        // User must explicitly choose to generate a prompt
-      } catch (error) {
-        // Silent error handling
-      }
-    };
-    
-    checkApiKey();
-  }, [open, workspaceId, issue]);
+  }, [issue, open, hasApiKey]);
 
   const handleSubmit = async () => {
     // Prevent multiple submissions
@@ -133,19 +95,19 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
         setIsGeneratingPrompt(true);
         try {
           // Fetch workspace data including API key and agents content
-          const { data: workspace } = await supabase
+          const { data: workspaceData } = await supabase
             .from('workspaces')
             .select('api_key, api_provider, agents_content')
-            .eq('id', workspaceId)
+            .eq('id', issue.workspace_id)
             .single();
           
-          if (workspace?.api_key) {
+          if (workspaceData?.api_key) {
             const { prompt, error: promptError } = await generateIssuePrompt({
               title: title.trim(),
               description: description.trim(),
-              agentsContent: workspace.agents_content,
-              apiKey: workspace.api_key,
-              provider: workspace.api_provider || 'openai'
+              agentsContent: workspaceData.agents_content,
+              apiKey: workspaceData.api_key,
+              provider: workspaceData.api_provider || 'openai'
             });
             
             if (promptError) {
@@ -177,13 +139,29 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
         .eq('id', issue.id);
 
       if (updateError) {
+        console.error('Failed to update issue:', updateError);
+        toast({
+          title: "Failed to update issue",
+          description: updateError.message || "An error occurred while updating the issue.",
+          variant: "destructive",
+        });
         setError('Failed to update issue: ' + updateError.message);
         return;
       }
 
+      toast({
+        title: "Issue updated",
+        description: "Your changes have been saved successfully.",
+      });
       onOpenChange(false);
       onIssueUpdated?.();
-    } catch {
+    } catch (err) {
+      console.error('Unexpected error during issue update:', err);
+      toast({
+        title: "Unexpected error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
       setError('An unexpected error occurred');
     } finally {
       setIsSubmitting(false);

@@ -25,6 +25,7 @@ import { Switch } from '@/components/ui/switch'
 import { Loader2 } from 'lucide-react'
 import { generateIssuePrompt } from '@/lib/llm/prompt-generator'
 import { useToast } from '@/components/ui/use-toast'
+import { useWorkspace } from '@/contexts/workspace-context'
 
 interface CreateIssueModalProps {
   open: boolean
@@ -40,6 +41,7 @@ export function CreateIssueModal({
   onIssueCreated,
 }: CreateIssueModalProps) {
   const { toast } = useToast()
+  const { workspace } = useWorkspace()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [type, setType] = useState<'feature' | 'bug' | 'chore' | 'design' | 'non-technical'>('feature')
@@ -47,49 +49,16 @@ export function CreateIssueModal({
   const [createPrompt, setCreatePrompt] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const [hasApiKey, setHasApiKey] = useState(false)
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false)
   
+  const hasApiKey = workspace?.hasApiKey || false
   
-  // Check if workspace has API key when modal opens
+  // Set default createPrompt state when modal opens or API key status changes
   useEffect(() => {
-    const checkApiKey = async () => {
-      if (!open || !workspaceId) {
-        return
-      }
-      
-      try {
-        const supabase = createClient()
-        
-        // First ensure we have a valid session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        if (sessionError || !session) {
-          return
-        }
-        
-        // Now fetch workspace with api_key
-        const { data: workspace, error } = await supabase
-          .from('workspaces')
-          .select('id, name, api_key, api_provider')
-          .eq('id', workspaceId)
-          .single()
-        
-        if (error) {
-          return
-        }
-        
-        // Check if api_key exists and is not empty
-        const hasKey = !!(workspace?.api_key && workspace.api_key.length > 0)
-        
-        setHasApiKey(hasKey)
-        setCreatePrompt(hasKey) // Set default state based on API key presence
-      } catch {
-        // Silent error handling
-      }
+    if (open) {
+      setCreatePrompt(hasApiKey)
     }
-    
-    checkApiKey()
-  }, [open, workspaceId])
+  }, [open, hasApiKey])
 
   const handleSubmit = async () => {
     if (!title.trim()) {

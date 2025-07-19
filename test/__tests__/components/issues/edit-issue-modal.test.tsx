@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { EditIssueModal } from '@/components/issues/edit-issue-modal'
+import { WorkspaceProvider } from '@/contexts/workspace-context'
 import { createClient } from '@/lib/supabase/client'
 import * as promptGenerator from '@/lib/llm/prompt-generator'
 
@@ -56,6 +57,28 @@ describe('EditIssueModal - Prompt Generation', () => {
     onIssueUpdated: vi.fn()
   }
 
+  // Helper function to render with WorkspaceProvider
+  const renderWithProvider = (hasApiKey = true, customProps = {}) => {
+    const initialWorkspace = {
+      id: 'test-workspace',
+      name: 'Test Workspace',
+      slug: 'test-workspace',
+      avatar_url: null,
+      owner_id: 'test-user',
+      hasApiKey,
+      apiProvider: hasApiKey ? 'openai' : null,
+      agentsContent: null
+    }
+
+    const props = { ...defaultProps, ...customProps }
+
+    return render(
+      <WorkspaceProvider workspaceId="test-workspace" initialWorkspace={initialWorkspace}>
+        <EditIssueModal {...props} />
+      </WorkspaceProvider>
+    )
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
     
@@ -83,7 +106,7 @@ describe('EditIssueModal - Prompt Generation', () => {
 
   describe('prompt generation toggle display', () => {
     it('should show "Generate" text when issue has no prompt', async () => {
-      render(<EditIssueModal {...defaultProps} />)
+      renderWithProvider()
 
       await waitFor(() => {
         expect(screen.getByText('Generate an AI prompt for development agents')).toBeInTheDocument()
@@ -97,31 +120,31 @@ describe('EditIssueModal - Prompt Generation', () => {
         workspace_id: 'test-workspace'
       }
 
-      render(<EditIssueModal {...defaultProps} issue={issueWithPrompt} />)
+      renderWithProvider(true, { issue: issueWithPrompt })
 
       await waitFor(() => {
         expect(screen.getByText('Update AI prompt for development agents')).toBeInTheDocument()
       })
     })
 
-    it('should have toggle unchecked by default regardless of existing prompt', async () => {
+    it('should have toggle checked when issue has prompt', async () => {
       const issueWithPrompt = {
         ...defaultIssue,
         generated_prompt: 'Existing prompt',
         workspace_id: 'test-workspace'
       }
 
-      render(<EditIssueModal {...defaultProps} issue={issueWithPrompt} />)
+      renderWithProvider(true, { issue: issueWithPrompt })
 
       await waitFor(() => {
         const toggle = screen.getByRole('switch')
-        expect(toggle).not.toBeChecked()
+        expect(toggle).toBeChecked()
       })
     })
   })
 
   describe('prompt update behavior', () => {
-    it('should generate new prompt only when manually enabled and content changes', async () => {
+    it('should generate new prompt only when content changes', async () => {
       const user = userEvent.setup()
       const issueWithPrompt = {
         ...defaultIssue,
@@ -129,16 +152,14 @@ describe('EditIssueModal - Prompt Generation', () => {
         workspace_id: 'test-workspace'
       }
 
-      render(<EditIssueModal {...defaultProps} issue={issueWithPrompt} />)
+      renderWithProvider(true, { issue: issueWithPrompt })
 
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
-      // Manually enable the toggle
+      // The toggle is already checked for issues with existing prompts
       const toggle = screen.getByRole('switch')
-      expect(toggle).not.toBeChecked()
-      await user.click(toggle)
       expect(toggle).toBeChecked()
 
       // Update title
@@ -175,7 +196,7 @@ describe('EditIssueModal - Prompt Generation', () => {
         workspace_id: 'test-workspace'
       }
 
-      render(<EditIssueModal {...defaultProps} issue={issueWithPrompt} />)
+      renderWithProvider(true, { issue: issueWithPrompt })
 
       await waitFor(() => {
         expect(screen.getByLabelText('Priority')).toBeInTheDocument()
@@ -207,7 +228,7 @@ describe('EditIssueModal - Prompt Generation', () => {
         workspace_id: 'test-workspace'
       }
 
-      render(<EditIssueModal {...defaultProps} issue={issueWithPrompt} />)
+      renderWithProvider(true, { issue: issueWithPrompt })
 
       await waitFor(() => {
         expect(screen.getByRole('switch')).toBeInTheDocument()
@@ -231,20 +252,16 @@ describe('EditIssueModal - Prompt Generation', () => {
       })
     })
 
-    it('should generate prompt for issue without prompt when manually enabled', async () => {
+    it('should generate prompt for issue without prompt when enabled', async () => {
       const user = userEvent.setup()
-      render(<EditIssueModal {...defaultProps} />)
+      renderWithProvider()
 
       await waitFor(() => {
         expect(screen.getByRole('switch')).toBeInTheDocument()
       })
 
-      // The toggle starts unchecked and must be manually enabled
+      // The toggle is automatically enabled when workspace has API key and issue has no prompt
       const toggle = screen.getByRole('switch')
-      expect(toggle).not.toBeChecked()
-      
-      // Manually enable the toggle
-      await user.click(toggle)
       expect(toggle).toBeChecked()
 
       // Submit form
@@ -272,16 +289,14 @@ describe('EditIssueModal - Prompt Generation', () => {
         () => new Promise(resolve => setTimeout(() => resolve({ prompt: 'Test prompt' }), 100))
       )
 
-      render(<EditIssueModal {...defaultProps} />)
+      renderWithProvider()
 
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
-      // Manually enable the toggle since it starts unchecked
+      // The toggle should be ON by default when workspace has API key and issue has no prompt
       const toggle = screen.getByRole('switch')
-      expect(toggle).not.toBeChecked()
-      await user.click(toggle)
       expect(toggle).toBeChecked()
       
       const titleInput = screen.getByLabelText('Issue title')
@@ -315,15 +330,15 @@ describe('EditIssueModal - Prompt Generation', () => {
         error: 'API error occurred'
       })
 
-      render(<EditIssueModal {...defaultProps} />)
+      renderWithProvider()
 
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
-      // Enable prompt and change content
+      // Toggle is already enabled by default
       const toggle = screen.getByRole('switch')
-      await user.click(toggle)
+      expect(toggle).toBeChecked()
       
       const titleInput = screen.getByLabelText('Issue title')
       await user.clear(titleInput)
@@ -380,7 +395,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       
       vi.mocked(createClient).mockReturnValue(errorSupabase as any)
 
-      render(<EditIssueModal {...defaultProps} />)
+      renderWithProvider()
 
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
@@ -422,16 +437,14 @@ describe('EditIssueModal - Prompt Generation', () => {
         }))
       })
 
-      render(<EditIssueModal {...defaultProps} />)
+      renderWithProvider()
 
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
-      // Manually enable the toggle since it starts unchecked
+      // The toggle should be ON by default when workspace has API key and issue has no prompt
       const toggle = screen.getByRole('switch')
-      expect(toggle).not.toBeChecked()
-      await user.click(toggle)
       expect(toggle).toBeChecked()
       
       const titleInput = screen.getByLabelText('Issue title')
@@ -462,7 +475,7 @@ describe('EditIssueModal - Prompt Generation', () => {
         }))
       } as any)
 
-      render(<EditIssueModal {...defaultProps} />)
+      renderWithProvider(false)
 
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()

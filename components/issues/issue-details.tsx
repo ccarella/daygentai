@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select'
 import { EditIssueModal } from './edit-issue-modal'
 import { PromptDisplay } from './prompt-display'
+import { useToast } from '@/components/ui/use-toast'
 
 interface Issue {
   id: string
@@ -82,6 +83,7 @@ const typeOptions = [
 ]
 
 export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) {
+  const { toast } = useToast()
   const { getIssue } = useIssueCache()
   const [issue, setIssue] = useState<Issue | null>(null)
   const [loading, setLoading] = useState(true)
@@ -213,9 +215,22 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
       .update({ status: newStatus })
       .eq('id', issue.id)
 
-    if (!error) {
-      setIssue({ ...issue, status: newStatus as Issue['status'] })
+    if (error) {
+      console.error('Failed to update issue status:', error)
+      toast({
+        title: "Failed to update status",
+        description: error.message || "An error occurred while updating the issue status.",
+        variant: "destructive",
+      })
+      setIsUpdatingStatus(false)
+      return
     }
+    
+    setIssue({ ...issue, status: newStatus as Issue['status'] })
+    toast({
+      title: "Status updated",
+      description: `Issue status changed to ${newStatus.toLowerCase().replace('_', ' ')}.`,
+    })
     
     setIsUpdatingStatus(false)
   }
@@ -231,9 +246,22 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
       .update({ type: newType })
       .eq('id', issue.id)
 
-    if (!error) {
-      setIssue({ ...issue, type: newType as Issue['type'] })
+    if (error) {
+      console.error('Failed to update issue type:', error)
+      toast({
+        title: "Failed to update type",
+        description: error.message || "An error occurred while updating the issue type.",
+        variant: "destructive",
+      })
+      setIsUpdatingType(false)
+      return
     }
+    
+    setIssue({ ...issue, type: newType as Issue['type'] })
+    toast({
+      title: "Type updated",
+      description: `Issue type changed to ${newType.toLowerCase()}.`,
+    })
     
     setIsUpdatingType(false)
   }
