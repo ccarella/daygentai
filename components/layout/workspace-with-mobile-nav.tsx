@@ -68,10 +68,28 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
         console.error('Error fetching workspaces:', workspacesError)
       }
       
+      console.log('[WorkspaceWithMobileNav] Workspaces data:', {
+        workspacesData,
+        rawData: JSON.stringify(workspacesData, null, 2)
+      })
+      
       if (workspacesData) {
         const transformedWorkspaces = workspacesData
-          .map((item: WorkspaceMemberQueryResponse) => {
-            const workspace = item.workspace[0]
+          .map((item: any) => {
+            console.log('[WorkspaceWithMobileNav] Processing item:', {
+              item,
+              workspace: item.workspace,
+              isArray: Array.isArray(item.workspace)
+            })
+            
+            // Handle both array and object formats for workspace
+            let workspace: any
+            if (Array.isArray(item.workspace)) {
+              workspace = item.workspace[0]
+            } else {
+              workspace = item.workspace
+            }
+            
             if (!workspace) return null
             return {
               id: workspace.id,
@@ -83,6 +101,8 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
             }
           })
           .filter((workspace): workspace is UserWorkspace => workspace !== null)
+        
+        console.log('[WorkspaceWithMobileNav] Transformed workspaces:', transformedWorkspaces)
         setWorkspaces(transformedWorkspaces)
       }
     }
