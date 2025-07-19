@@ -24,6 +24,8 @@ export function useGlobalShortcuts({ workspaceSlug, onCreateIssue, onShowHelp, o
   const { setIsOpen: setCommandPaletteOpen } = useCommandPalette()
   const [keySequence, setKeySequence] = React.useState<string[]>([])
   const sequenceTimeoutRef = React.useRef<NodeJS.Timeout | undefined>(undefined)
+  const nextIssueTimeoutRef = React.useRef<NodeJS.Timeout | undefined>(undefined)
+  const isExecutingNextIssue = React.useRef(false)
 
   const handleStatusChange = async (newStatus: string) => {
     console.log('Attempting status change:', { currentIssue, newStatus })
@@ -75,14 +77,30 @@ export function useGlobalShortcuts({ workspaceSlug, onCreateIssue, onShowHelp, o
       // Handle Cmd/Ctrl + N for Next Issue recommendation
       if ((e.metaKey || e.ctrlKey) && e.key === "n") {
         e.preventDefault()
+        
+        // Prevent multiple simultaneous executions
+        if (isExecutingNextIssue.current) {
+          return
+        }
+        
+        // Clear any existing timeout
+        if (nextIssueTimeoutRef.current) {
+          clearTimeout(nextIssueTimeoutRef.current)
+        }
+        
+        isExecutingNextIssue.current = true
+        
         // Trigger command palette with Next Issue command
         setCommandPaletteOpen(true)
-        // After a small delay, trigger the Next Issue command
-        setTimeout(() => {
+        
+        // Use a ref to store the timeout so we can clean it up
+        nextIssueTimeoutRef.current = setTimeout(() => {
           const nextIssueButton = document.querySelector('[data-command-id="next-issue"]') as HTMLElement
           if (nextIssueButton) {
             nextIssueButton.click()
           }
+          isExecutingNextIssue.current = false
+          nextIssueTimeoutRef.current = undefined
         }, 100)
         return
       }
@@ -199,6 +217,9 @@ export function useGlobalShortcuts({ workspaceSlug, onCreateIssue, onShowHelp, o
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
       clearTimeout(sequenceTimeoutRef.current)
+      if (nextIssueTimeoutRef.current) {
+        clearTimeout(nextIssueTimeoutRef.current)
+      }
     }
   }, [workspaceSlug, router, onCreateIssue, onShowHelp, onToggleViewMode, setCommandPaletteOpen, keySequence, currentIssue, handleStatusChange])
 

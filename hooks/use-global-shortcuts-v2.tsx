@@ -1,5 +1,6 @@
 'use client'
 
+import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useCommandPalette } from '@/hooks/use-command-palette'
 import { createClient } from '@/lib/supabase/client'
@@ -28,6 +29,8 @@ export function useGlobalShortcuts({
   onIssueStatusChange 
 }: GlobalShortcutsProps) {
   const router = useRouter()
+  const nextIssueTimeoutRef = React.useRef<NodeJS.Timeout | undefined>(undefined)
+  const isExecutingNextIssue = React.useRef(false)
   const { setIsOpen: setCommandPaletteOpen } = useCommandPalette()
 
   const handleStatusChange = async (newStatus: string) => {
@@ -87,12 +90,26 @@ export function useGlobalShortcuts({
       },
       'cmd+n': {
         handler: () => {
+          // Prevent multiple simultaneous executions
+          if (isExecutingNextIssue.current) {
+            return true
+          }
+          
+          // Clear any existing timeout
+          if (nextIssueTimeoutRef.current) {
+            clearTimeout(nextIssueTimeoutRef.current)
+          }
+          
+          isExecutingNextIssue.current = true
           setCommandPaletteOpen(true)
-          setTimeout(() => {
+          
+          nextIssueTimeoutRef.current = setTimeout(() => {
             const nextIssueButton = document.querySelector('[data-command-id="next-issue"]') as HTMLElement
             if (nextIssueButton) {
               nextIssueButton.click()
             }
+            isExecutingNextIssue.current = false
+            nextIssueTimeoutRef.current = undefined
           }, 100)
           return true
         },
@@ -100,12 +117,26 @@ export function useGlobalShortcuts({
       },
       'ctrl+n': {
         handler: () => {
+          // Prevent multiple simultaneous executions
+          if (isExecutingNextIssue.current) {
+            return true
+          }
+          
+          // Clear any existing timeout
+          if (nextIssueTimeoutRef.current) {
+            clearTimeout(nextIssueTimeoutRef.current)
+          }
+          
+          isExecutingNextIssue.current = true
           setCommandPaletteOpen(true)
-          setTimeout(() => {
+          
+          nextIssueTimeoutRef.current = setTimeout(() => {
             const nextIssueButton = document.querySelector('[data-command-id="next-issue"]') as HTMLElement
             if (nextIssueButton) {
               nextIssueButton.click()
             }
+            isExecutingNextIssue.current = false
+            nextIssueTimeoutRef.current = undefined
           }, 100)
           return true
         },
@@ -176,4 +207,13 @@ export function useGlobalShortcuts({
     },
     deps: [workspaceSlug, onCreateIssue, onShowHelp, onToggleViewMode, currentIssue, onIssueStatusChange],
   })
+  
+  // Cleanup on unmount
+  React.useEffect(() => {
+    return () => {
+      if (nextIssueTimeoutRef.current) {
+        clearTimeout(nextIssueTimeoutRef.current)
+      }
+    }
+  }, [])
 }

@@ -74,6 +74,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
     error?: string
   }>({})
   const [isLoadingNextIssue, setIsLoadingNextIssue] = React.useState(false)
+  const nextIssueRequestRef = React.useRef<boolean>(false)
 
   // Debug effect to see when currentIssue changes
   React.useEffect(() => {
@@ -81,6 +82,14 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
     console.log(`CommandPalette [${location}] mounted/updated - currentIssue:`, currentIssue)
     console.log(`CommandPalette [${location}] - onIssueStatusChange defined:`, !!onIssueStatusChange)
   }, [currentIssue, onIssueStatusChange])
+  
+  // Cleanup effect to cancel pending requests
+  React.useEffect(() => {
+    return () => {
+      // Cancel any pending next issue request when component unmounts
+      nextIssueRequestRef.current = false
+    }
+  }, [])
 
   const commands: Command[] = React.useMemo(() => {
     const baseCommands: Command[] = []
@@ -162,12 +171,24 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       icon: <Sparkles className="w-4 h-4" />,
       shortcut: "⌘N",
       action: async () => {
+        // Prevent concurrent requests
+        if (nextIssueRequestRef.current) {
+          return
+        }
+        
         setIsOpen(false)
         setIsLoadingNextIssue(true)
         setNextIssueModalOpen(true)
+        nextIssueRequestRef.current = true
         
         try {
           const result = await recommendNextIssueAction(workspaceId)
+          
+          // Check if component is still mounted and request wasn't cancelled
+          if (!nextIssueRequestRef.current) {
+            return
+          }
+          
           if (result.error && result.retryCount !== undefined && result.retryCount >= 3) {
             // If we failed after retries, provide a more detailed error message
             setNextIssueData({
@@ -179,11 +200,14 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
           }
         } catch (error) {
           console.error('Error getting AI recommendation:', error)
-          setNextIssueData({
-            error: 'Failed to get recommendation. Please try again.'
-          })
+          if (nextIssueRequestRef.current) {
+            setNextIssueData({
+              error: 'Failed to get recommendation. Please try again.'
+            })
+          }
         } finally {
           setIsLoadingNextIssue(false)
+          nextIssueRequestRef.current = false
         }
       },
       keywords: ["ai", "recommend", "suggestion", "next", "task", "priority"],
