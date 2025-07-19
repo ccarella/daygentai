@@ -156,6 +156,8 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
           onToggleSearch={handleToggleSearch}
           onSetStatusFilter={handleSetStatusFilter}
           getCurrentView={getCurrentView}
+          onNavigateToIssues={handleNavigateToIssues}
+          onNavigateToInbox={handleNavigateToInbox}
         />
       )}
     </>
