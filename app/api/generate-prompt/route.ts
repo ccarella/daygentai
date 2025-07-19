@@ -185,11 +185,22 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Check if user has access to workspace (either as owner or member)
     const { data: workspace, error: workspaceError } = await supabase
       .from('workspaces')
-      .select('id, owner_id, api_key, api_provider, agents_content')
+      .select(`
+        id, 
+        owner_id, 
+        api_key, 
+        api_provider, 
+        agents_content,
+        workspace_members!inner (
+          user_id,
+          role
+        )
+      `)
       .eq('id', workspaceId)
-      .eq('owner_id', profile.id)
+      .eq('workspace_members.user_id', user.id)
       .single()
 
     if (workspaceError || !workspace) {
