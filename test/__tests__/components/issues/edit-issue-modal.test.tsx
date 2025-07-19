@@ -30,7 +30,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
           single: vi.fn(() => Promise.resolve({ 
-            data: { id: 'test-workspace', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
+            data: { id: 'test-workspace-id', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
             error: null 
           }))
         }))
@@ -47,7 +47,7 @@ describe('EditIssueModal - Prompt Generation', () => {
     status: 'todo' as const,
     assigned_to: null,
     generated_prompt: null,
-    workspace_id: 'test-workspace'
+    workspace_id: 'test-workspace-id'
   }
 
   const defaultProps = {
@@ -90,7 +90,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
           single: vi.fn(() => Promise.resolve({ 
-            data: { id: 'test-workspace', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
+            data: { id: 'test-workspace-id', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
             error: null 
           }))
         }))
@@ -117,7 +117,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       const issueWithPrompt = {
         ...defaultIssue,
         generated_prompt: 'Existing prompt',
-        workspace_id: 'test-workspace'
+        workspace_id: 'test-workspace-id'
       }
 
       renderWithProvider(true, { issue: issueWithPrompt })
@@ -131,7 +131,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       const issueWithPrompt = {
         ...defaultIssue,
         generated_prompt: 'Existing prompt',
-        workspace_id: 'test-workspace'
+        workspace_id: 'test-workspace-id'
       }
 
       renderWithProvider(true, { issue: issueWithPrompt })
@@ -149,7 +149,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       const issueWithPrompt = {
         ...defaultIssue,
         generated_prompt: 'Existing prompt',
-        workspace_id: 'test-workspace'
+        workspace_id: 'test-workspace-id'
       }
 
       renderWithProvider(true, { issue: issueWithPrompt })
@@ -191,7 +191,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       const issueWithPrompt = {
         ...defaultIssue,
         generated_prompt: 'Existing prompt',
-        workspace_id: 'test-workspace'
+        workspace_id: 'test-workspace-id'
       }
 
       renderWithProvider(true, { issue: issueWithPrompt })
@@ -223,7 +223,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       const issueWithPrompt = {
         ...defaultIssue,
         generated_prompt: 'Existing prompt',
-        workspace_id: 'test-workspace'
+        workspace_id: 'test-workspace-id'
       }
 
       renderWithProvider(true, { issue: issueWithPrompt })
@@ -368,7 +368,7 @@ describe('EditIssueModal - Prompt Generation', () => {
               select: vi.fn(() => ({
                 eq: vi.fn(() => ({
                   single: vi.fn(() => Promise.resolve({ 
-                    data: { id: 'test-workspace', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
+                    data: { id: 'test-workspace-id', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
                     error: null 
                   }))
                 }))
