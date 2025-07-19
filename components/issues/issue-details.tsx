@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { MoreHorizontal, Trash2, Edit3 } from 'lucide-react'
+import { MoreHorizontal, Trash2, Edit3, AlertCircle, Loader2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { useIssueCache } from '@/contexts/issue-cache-context'
 import ReactMarkdown from 'react-markdown'
@@ -37,6 +37,8 @@ interface Issue {
   assignee_id: string | null
   workspace_id: string
   generated_prompt?: string | null
+  prompt_generation_status?: 'pending' | 'completed' | 'failed' | null
+  prompt_generation_error?: string | null
 }
 
 interface IssueDetailsProps {
@@ -185,6 +187,37 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
 
     return unsubscribe
   }, [issue])
+
+  // Subscribe to real-time updates for prompt generation
+  useEffect(() => {
+    if (!issue?.id) return
+
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`issue-${issue.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'issues',
+          filter: `id=eq.${issue.id}`
+        },
+        (payload) => {
+          if (payload.new) {
+            setIssue(prev => ({
+              ...prev!,
+              ...payload.new,
+            }))
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [issue?.id])
 
   const handleDelete = async () => {
     if (!issue) return
@@ -408,6 +441,34 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
           </div>
 
           {/* AI Generated Prompt */}
+          {issue.prompt_generation_status === 'pending' && (
+            <div className="mt-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-5 w-5 text-purple-600 animate-spin" />
+                <div>
+                  <p className="font-medium text-purple-900">Generating AI Prompt...</p>
+                  <p className="text-sm text-purple-700 mt-1">
+                    The AI is creating a development prompt for this issue. It will appear here when ready.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {issue.prompt_generation_status === 'failed' && (
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-red-900">Prompt Generation Failed</p>
+                  <p className="text-sm text-red-700 mt-1">
+                    {issue.prompt_generation_error || 'Unable to generate AI prompt. Please check your API settings.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {issue.generated_prompt && (
             <PromptDisplay prompt={issue.generated_prompt} className="mt-6" />
           )}
