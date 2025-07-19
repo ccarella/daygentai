@@ -67,10 +67,30 @@ const mockIssues = [
 vi.mock('@/lib/supabase/client', () => ({
   createClient: vi.fn(() => ({
     auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user: { email: 'test@example.com' } } })
+      getUser: vi.fn().mockResolvedValue({ data: { user: { email: 'test@example.com' } } }),
+      getSession: vi.fn().mockResolvedValue({ 
+        data: { session: { user: { id: 'test-user' } } }, 
+        error: null 
+      })
     },
-    from: vi.fn(() => ({
-      select: vi.fn().mockImplementation(function(this: any, _columns: string, options?: any) {
+    from: vi.fn((table: string) => {
+      if (table === 'workspaces') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({ 
+            data: { 
+              api_key: 'test-key', 
+              api_provider: 'openai', 
+              agents_content: null 
+            }, 
+            error: null 
+          })
+        }
+      }
+      // Default behavior for other tables
+      return {
+        select: vi.fn().mockImplementation(function(this: any, _columns: string, options?: any) {
         if (options?.count === 'exact' && options?.head) {
           // Count query
           return {
@@ -96,7 +116,8 @@ vi.mock('@/lib/supabase/client', () => ({
       update: vi.fn().mockReturnThis(),
       delete: vi.fn().mockReturnThis(),
       single: vi.fn().mockResolvedValue({ data: { id: 'new-issue-id' }, error: null })
-    }))
+      }
+    })
   }))
 }))
 
@@ -175,9 +196,29 @@ describe('Issue Management', () => {
       const { createClient } = await import('@/lib/supabase/client')
       vi.mocked(createClient).mockReturnValue({
         auth: {
-          getUser: vi.fn().mockResolvedValue({ data: { user: { email: 'test@example.com' } } })
+          getUser: vi.fn().mockResolvedValue({ data: { user: { email: 'test@example.com' } } }),
+          getSession: vi.fn().mockResolvedValue({ 
+            data: { session: { user: { id: 'test-user' } } }, 
+            error: null 
+          })
         },
-        from: vi.fn(() => ({
+        from: vi.fn((table: string) => {
+          if (table === 'workspaces') {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              single: vi.fn().mockResolvedValue({ 
+                data: { 
+                  api_key: 'test-key', 
+                  api_provider: 'openai', 
+                  agents_content: null 
+                }, 
+                error: null 
+              })
+            }
+          }
+          // Default behavior for other tables
+          return {
           select: vi.fn().mockImplementation(function(_columns: string, options?: any) {
             if (options?.count === 'exact' && options?.head) {
               return {
@@ -198,7 +239,8 @@ describe('Issue Management', () => {
               })
             }
           })
-        }))
+          }
+        })
       } as any)
 
       render(
@@ -225,9 +267,29 @@ describe('Issue Management', () => {
       const { createClient } = await import('@/lib/supabase/client')
       vi.mocked(createClient).mockReturnValue({
         auth: {
-          getUser: vi.fn().mockResolvedValue({ data: { user: { email: 'test@example.com' } } })
+          getUser: vi.fn().mockResolvedValue({ data: { user: { email: 'test@example.com' } } }),
+          getSession: vi.fn().mockResolvedValue({ 
+            data: { session: { user: { id: 'test-user' } } }, 
+            error: null 
+          })
         },
-        from: vi.fn(() => ({
+        from: vi.fn((table: string) => {
+          if (table === 'workspaces') {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              single: vi.fn().mockResolvedValue({ 
+                data: { 
+                  api_key: 'test-key', 
+                  api_provider: 'openai', 
+                  agents_content: null 
+                }, 
+                error: null 
+              })
+            }
+          }
+          // Default behavior for other tables
+          return {
           select: vi.fn().mockImplementation(function(_columns: string, options?: any) {
             if (options?.count === 'exact' && options?.head) {
               return {
@@ -248,7 +310,8 @@ describe('Issue Management', () => {
               })
             }
           })
-        }))
+          }
+        })
       } as any)
 
       render(
@@ -315,11 +378,32 @@ describe('Issue Management', () => {
         auth: {
           getUser: vi.fn().mockResolvedValue({ 
             data: { user: { id: 'user-123', email: 'test@example.com' } } 
+          }),
+          getSession: vi.fn().mockResolvedValue({ 
+            data: { session: { user: { id: 'test-user' } } }, 
+            error: null 
           })
         },
-        from: vi.fn(() => ({
-          insert: vi.fn().mockResolvedValue({ error: null })
-        }))
+        from: vi.fn((table: string) => {
+          if (table === 'workspaces') {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              single: vi.fn().mockResolvedValue({ 
+                data: { 
+                  api_key: 'test-key', 
+                  api_provider: 'openai', 
+                  agents_content: null 
+                }, 
+                error: null 
+              })
+            }
+          }
+          // Default behavior for other tables
+          return {
+            insert: vi.fn().mockResolvedValue({ error: null })
+          }
+        })
       } as any)
 
       render(
@@ -362,9 +446,29 @@ describe('Issue Management', () => {
       const { createClient } = await import('@/lib/supabase/client')
       vi.mocked(createClient).mockReturnValue({
         auth: {
-          getUser: vi.fn().mockResolvedValue({ data: { user: { email: 'test@example.com' } } })
+          getUser: vi.fn().mockResolvedValue({ data: { user: { email: 'test@example.com' } } }),
+          getSession: vi.fn().mockResolvedValue({ 
+            data: { session: { user: { id: 'test-user' } } }, 
+            error: null 
+          })
         },
-        from: vi.fn(() => ({
+        from: vi.fn((table: string) => {
+          if (table === 'workspaces') {
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              single: vi.fn().mockResolvedValue({ 
+                data: { 
+                  api_key: 'test-key', 
+                  api_provider: 'openai', 
+                  agents_content: null 
+                }, 
+                error: null 
+              })
+            }
+          }
+          // Default behavior for other tables
+          return {
           select: vi.fn().mockImplementation(function(_columns: string, options?: any) {
             if (options?.count === 'exact' && options?.head) {
               return {
@@ -385,7 +489,8 @@ describe('Issue Management', () => {
               })
             }
           })
-        }))
+          }
+        })
       } as any)
 
       const startTime = performance.now()

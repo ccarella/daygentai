@@ -572,7 +572,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="p-0 max-w-2xl relative">
+        <DialogContent className="p-0 max-w-2xl">
           <DialogTitle className="sr-only">
             {mode === 'help' ? 'Keyboard Shortcuts & Help' : 'Command Palette'}
           </DialogTitle>

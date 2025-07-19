@@ -35,7 +35,11 @@ describe('CreateWorkspaceForm', () => {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       single: vi.fn().mockResolvedValue({ data: null, error: null }),
-      insert: vi.fn().mockResolvedValue({ error: null }),
+      insert: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: createMockWorkspace(), error: null })
+        })
+      }),
     }
     
     mockSupabase.from.mockImplementation((table: string) => {
@@ -46,7 +50,11 @@ describe('CreateWorkspaceForm', () => {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: null, error: null }),
-        insert: vi.fn().mockResolvedValue({ error: null }),
+        insert: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: createMockWorkspace(), error: null })
+        })
+      }),
       }
     })
   })
@@ -288,7 +296,11 @@ describe('CreateWorkspaceForm', () => {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
             single: vi.fn().mockImplementation(() => new Promise(resolve => { checkResolve = resolve })),
-            insert: vi.fn().mockImplementation(() => new Promise(resolve => { insertResolve = resolve })),
+            insert: vi.fn().mockImplementation(() => ({
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockImplementation(() => new Promise(resolve => { insertResolve = resolve }))
+              })
+            })),
           }
         }
         return mockSupabase.from(table)
@@ -372,7 +384,9 @@ describe('CreateWorkspaceForm', () => {
               data: createMockWorkspace(), 
               error: null 
             }),
-            insert: vi.fn(),
+            insert: vi.fn().mockReturnValue({
+              select: vi.fn().mockResolvedValue({ error: null })
+            }),
           }
         }
         return mockSupabase.from(table)
@@ -401,7 +415,11 @@ describe('CreateWorkspaceForm', () => {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
             single: vi.fn().mockResolvedValue({ data: null, error: null }),
-            insert: vi.fn().mockResolvedValue({ error: new Error(errorMessage) }),
+            insert: vi.fn().mockReturnValue({
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({ data: null, error: new Error(errorMessage) })
+              })
+            }),
           }
         }
         return mockSupabase.from(table)
@@ -427,7 +445,11 @@ describe('CreateWorkspaceForm', () => {
             select: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
             single: vi.fn().mockResolvedValue({ data: null, error: null }),
-            insert: vi.fn().mockRejectedValue('String error'),
+            insert: vi.fn().mockReturnValue({
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockRejectedValue('String error')
+              })
+            }),
           }
         }
         return mockSupabase.from(table)
@@ -469,9 +491,17 @@ describe('CreateWorkspaceForm', () => {
             insert: vi.fn().mockImplementation(() => {
               if (!insertCalled) {
                 insertCalled = true
-                return new Promise(resolve => { insertResolve = resolve })
+                return {
+                  select: vi.fn().mockReturnValue({
+                    single: vi.fn().mockImplementation(() => new Promise(resolve => { insertResolve = resolve }))
+                  })
+                }
               }
-              return Promise.resolve({ error: null })
+              return {
+                select: vi.fn().mockReturnValue({
+                  single: vi.fn().mockResolvedValue({ data: createMockWorkspace(), error: null })
+                })
+              }
             }),
           }
         }
