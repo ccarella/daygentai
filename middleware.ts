@@ -60,16 +60,20 @@ export async function middleware(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    const { data: workspace } = await supabase
-      .from('workspaces')
-      .select('id')
-      .eq('owner_id', user.id)
-      .single()
+    // Check if user has any workspaces through workspace_members
+    const { data: workspaceMemberships } = await supabase
+      .from('workspace_members')
+      .select('workspace_id')
+      .eq('user_id', user.id)
+      .limit(1)
+
+
+    const hasWorkspace = (workspaceMemberships?.length ?? 0) > 0
 
     // Redirect logic based on user's progress
     if (pathname === '/CreateUser' && profile) {
       // User already has profile, send to workspace creation or success
-      return NextResponse.redirect(new URL(workspace ? '/success' : '/CreateWorkspace', request.url))
+      return NextResponse.redirect(new URL(hasWorkspace ? '/success' : '/CreateWorkspace', request.url))
     }
 
     if (pathname === '/CreateWorkspace') {
@@ -78,7 +82,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/CreateUser', request.url))
       }
       // If already has workspace, redirect to success
-      if (workspace) {
+      if (hasWorkspace) {
         return NextResponse.redirect(new URL('/success', request.url))
       }
     }
@@ -88,7 +92,7 @@ export async function middleware(request: NextRequest) {
       if (!profile) {
         return NextResponse.redirect(new URL('/CreateUser', request.url))
       }
-      if (!workspace) {
+      if (!hasWorkspace) {
         return NextResponse.redirect(new URL('/CreateWorkspace', request.url))
       }
     }

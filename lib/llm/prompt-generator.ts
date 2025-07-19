@@ -19,6 +19,64 @@ Format the response as follows:
 
 Keep the prompt concise and actionable.`;
 
+
+// Function to sanitize user input
+function sanitizeInput(input: string): string {
+  if (!input || typeof input !== 'string') {
+    return '';
+  }
+
+  // Remove null bytes and other control characters except newlines and carriage returns
+  let sanitized = input.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+
+  // Escape special characters that could be used for template literal injection
+  sanitized = sanitized
+    .replace(/`/g, '\\`')  // Escape backticks to prevent template literal injection
+    .replace(/\$/g, '\\$'); // Escape dollar signs to prevent template literal interpolation
+
+  // Truncate to reasonable length to prevent DoS
+  const maxLength = 10000;
+  if (sanitized.length > maxLength) {
+    sanitized = sanitized.substring(0, maxLength) + '...';
+  }
+
+  return sanitized;
+}
+
+// Function to validate input against whitelist
+function validateInput(input: string): { isValid: boolean; error?: string } {
+  if (!input || typeof input !== 'string') {
+    return { isValid: false, error: 'Input must be a non-empty string' };
+  }
+
+  // Check length
+  if (input.length > 10000) {
+    return { isValid: false, error: 'Input exceeds maximum length of 10000 characters' };
+  }
+
+  // Check for suspicious patterns that might indicate injection attempts
+  const suspiciousPatterns = [
+    /<script/i,
+    /<iframe/i,
+    /javascript:/i,
+    /on\w+\s*=/i, // Event handlers like onclick=
+    /eval\s*\(/i,
+    /new\s+Function/i,
+    /import\s*\(/i,
+    /require\s*\(/i,
+    /__proto__/i,
+    /constructor\s*\[/i,
+  ];
+
+  for (const pattern of suspiciousPatterns) {
+    if (pattern.test(input)) {
+      return { isValid: false, error: 'Input contains potentially malicious content' };
+    }
+  }
+
+  return { isValid: true };
+}
+
 export async function generateIssuePrompt({
   title,
   description,
@@ -27,14 +85,46 @@ export async function generateIssuePrompt({
   provider = 'openai'
 }: GeneratePromptParams): Promise<GeneratedPrompt> {
   try {
-    // Construct the user prompt
+    // Validate inputs
+    const titleValidation = validateInput(title);
+    if (!titleValidation.isValid) {
+      return {
+        prompt: '',
+        error: `Invalid title: ${titleValidation.error}`
+      };
+    }
+
+    const descriptionValidation = validateInput(description);
+    if (!descriptionValidation.isValid) {
+      return {
+        prompt: '',
+        error: `Invalid description: ${descriptionValidation.error}`
+      };
+    }
+
+    if (agentsContent) {
+      const agentsValidation = validateInput(agentsContent);
+      if (!agentsValidation.isValid) {
+        return {
+          prompt: '',
+          error: `Invalid agents content: ${agentsValidation.error}`
+        };
+      }
+    }
+
+    // Sanitize inputs
+    const sanitizedTitle = sanitizeInput(title);
+    const sanitizedDescription = sanitizeInput(description);
+    const sanitizedAgentsContent = agentsContent ? sanitizeInput(agentsContent) : undefined;
+
+    // Construct the user prompt with sanitized inputs
     const userPrompt = `Convert this to a prompt for an LLM-based software development agent.
 
-Issue Title: ${title}
-Issue Description: ${description}
+Issue Title: ${sanitizedTitle}
+Issue Description: ${sanitizedDescription}
 
-${agentsContent ? `Additional context from Agents.md:
-${agentsContent}` : ''}`;
+${sanitizedAgentsContent ? `Additional context from Agents.md:
+${sanitizedAgentsContent}` : ''}`;
 
     // For now, we'll implement OpenAI integration
     // This can be extended to support other providers

@@ -9,6 +9,7 @@ import { IssueCacheProvider } from '@/contexts/issue-cache-context'
 import { WorkspaceProvider } from '@/contexts/workspace-context'
 import { CommandPaletteProvider } from '@/hooks/use-command-palette'
 import dynamic from 'next/dynamic'
+import { WorkspacePageSkeleton } from '@/components/workspace/workspace-skeleton'
 
 const AppCommandPalette = dynamic(
   () => import('@/components/layout/app-command-palette').then(mod => ({ default: mod.AppCommandPalette })),
@@ -103,6 +104,16 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
     contentRef.current?.toggleSearch()
   }
 
+  // Handler to set status filter
+  const handleSetStatusFilter = (status: string) => {
+    contentRef.current?.setStatusFilter(status)
+  }
+
+  // Handler to get current view
+  const getCurrentView = () => {
+    return contentRef.current?.getCurrentView() || 'list'
+  }
+
   const handleAvatarUpdate = (newAvatar: string) => {
     setUserAvatar(newAvatar)
   }
@@ -110,11 +121,7 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
   // Global shortcuts are now handled by AppCommandPalette
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
-      </div>
-    )
+    return <WorkspacePageSkeleton />
   }
 
   if (!workspace) return null
@@ -147,6 +154,8 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
           onCreateIssue={handleCreateIssue}
           onToggleViewMode={handleToggleViewMode}
           onToggleSearch={handleToggleSearch}
+          onSetStatusFilter={handleSetStatusFilter}
+          getCurrentView={getCurrentView}
         />
       )}
     </>

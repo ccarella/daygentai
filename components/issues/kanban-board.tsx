@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useIssueCache } from '@/contexts/issue-cache-context'
 import { formatDistanceToNow } from 'date-fns'
-import { Loader2 } from 'lucide-react'
+import { KanbanBoardSkeleton } from './kanban-skeleton'
 // Navigation is now handled by useWorkspaceNavigation in the parent component
 
 interface Issue {
@@ -230,11 +230,7 @@ export function KanbanBoard({
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
-      </div>
-    )
+    return <KanbanBoardSkeleton />
   }
 
   return (

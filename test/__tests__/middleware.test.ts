@@ -58,6 +58,7 @@ describe('middleware', () => {
       from: vi.fn((_table: string) => ({
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: null, error: null }),
       })),
     }
@@ -171,11 +172,30 @@ describe('middleware', () => {
 
     describe('no profile, no workspace', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation((_table: string) => ({
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          single: vi.fn().mockResolvedValue({ data: null, error: null }),
-        }))
+        mockSupabase.from.mockImplementation((table: string) => {
+          if (table === 'workspace_members') {
+            // workspace_members query doesn't use .single()
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              limit: vi.fn().mockResolvedValue({ 
+                data: [], // No workspaces
+                error: null 
+              }),
+            }
+          } else {
+            // users table query uses .single()
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              limit: vi.fn().mockReturnThis(),
+              single: vi.fn().mockResolvedValue({ 
+                data: null, // No profile
+                error: null 
+              }),
+            }
+          }
+        })
       })
 
       it('allows access to /CreateUser', async () => {
@@ -230,14 +250,30 @@ describe('middleware', () => {
 
     describe('has profile, no workspace', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation((_table: string) => ({
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          single: vi.fn().mockResolvedValue({ 
-            data: _table === 'users' ? { id: mockUser.id } : null, 
-            error: null 
-          }),
-        }))
+        mockSupabase.from.mockImplementation((table: string) => {
+          if (table === 'workspace_members') {
+            // workspace_members query doesn't use .single()
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              limit: vi.fn().mockResolvedValue({ 
+                data: [], // No workspaces
+                error: null 
+              }),
+            }
+          } else {
+            // users table query uses .single()
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              limit: vi.fn().mockReturnThis(),
+              single: vi.fn().mockResolvedValue({ 
+                data: table === 'users' ? { id: mockUser.id } : null, 
+                error: null 
+              }),
+            }
+          }
+        })
       })
 
       it('redirects from /CreateUser to /CreateWorkspace', async () => {
@@ -282,16 +318,30 @@ describe('middleware', () => {
 
     describe('has profile and workspace', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation((_table: string) => ({
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          single: vi.fn().mockResolvedValue({ 
-            data: _table === 'users' 
-              ? { id: mockUser.id } 
-              : { id: 'workspace-123', owner_id: mockUser.id }, 
-            error: null 
-          }),
-        }))
+        mockSupabase.from.mockImplementation((table: string) => {
+          if (table === 'workspace_members') {
+            // workspace_members query doesn't use .single()
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              limit: vi.fn().mockResolvedValue({ 
+                data: [{ workspace_id: 'workspace-123' }], 
+                error: null 
+              }),
+            }
+          } else {
+            // users table query uses .single()
+            return {
+              select: vi.fn().mockReturnThis(),
+              eq: vi.fn().mockReturnThis(),
+              limit: vi.fn().mockReturnThis(),
+              single: vi.fn().mockResolvedValue({ 
+                data: table === 'users' ? { id: mockUser.id } : null, 
+                error: null 
+              }),
+            }
+          }
+        })
       })
 
       it('redirects from /CreateUser to /success', async () => {

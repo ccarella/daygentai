@@ -6,19 +6,29 @@ import { IssuesList } from '@/components/issues/issues-list'
 import dynamic from 'next/dynamic'
 import { useDebounce } from '@/hooks/use-debounce'
 import { useKeyboardContext, KeyboardPriority } from '@/lib/keyboard'
+import { KanbanBoardSkeleton } from '@/components/issues/kanban-skeleton'
+import { IssueDetailsSkeleton } from '@/components/issues/issue-skeleton'
+import { ContentSkeleton } from '@/components/ui/content-skeleton'
+import { ProfileSettingsSkeleton } from '@/components/settings/settings-skeleton'
 
 const KanbanBoard = dynamic(
   () => import('@/components/issues/kanban-board').then(mod => ({ default: mod.KanbanBoard })),
   { 
     ssr: false,
-    loading: () => <div className="flex h-full items-center justify-center"><div className="text-gray-500">Loading Kanban view...</div></div>
+    loading: () => <KanbanBoardSkeleton />
   }
 )
 const IssueDetails = dynamic(
   () => import('@/components/issues/issue-details').then(mod => ({ default: mod.IssueDetails })),
   { 
     ssr: false,
-    loading: () => <div className="flex h-full items-center justify-center"><div className="text-gray-500">Loading issue...</div></div>
+    loading: () => (
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-4xl mx-auto p-4 sm:p-6">
+          <IssueDetailsSkeleton />
+        </div>
+      </div>
+    )
   }
 )
 import { Inbox } from '@/components/inbox/inbox'
@@ -26,14 +36,14 @@ const Cookbook = dynamic(
   () => import('@/components/cookbook/cookbook').then(mod => ({ default: mod.Cookbook })),
   { 
     ssr: false,
-    loading: () => <div className="flex h-full items-center justify-center"><div className="text-gray-500">Loading cookbook...</div></div>
+    loading: () => <ContentSkeleton />
   }
 )
 const ProfileSettings = dynamic(
   () => import('@/components/settings/profile-settings').then(mod => ({ default: mod.ProfileSettings })),
   { 
     ssr: false,
-    loading: () => <div className="flex h-full items-center justify-center"><div className="text-gray-500">Loading settings...</div></div>
+    loading: () => <ProfileSettingsSkeleton />
   }
 )
 import {
@@ -68,6 +78,8 @@ export interface WorkspaceContentRef {
   getCurrentViewMode: () => 'list' | 'kanban'
   toggleSearch: () => void
   isSearchVisible: () => boolean
+  setStatusFilter: (status: string) => void
+  getCurrentView: () => 'list' | 'issue' | 'inbox' | 'cookbook' | 'settings'
 }
 
 const statusOptions = [
@@ -248,7 +260,9 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     toggleViewMode: handleToggleViewMode,
     getCurrentViewMode: () => issuesViewMode,
     toggleSearch: () => setIsSearchVisible(prev => !prev),
-    isSearchVisible: () => isSearchVisible
+    isSearchVisible: () => isSearchVisible,
+    setStatusFilter: (status: string) => setStatusFilter(status),
+    getCurrentView: () => currentView
   }))
 
   const handleIssueDeleted = () => {
