@@ -94,27 +94,16 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
           description.trim() !== (issue.description || ''))) {
         setIsGeneratingPrompt(true);
         try {
-          // Fetch workspace data including API key and agents content
-          const { data: workspaceData } = await supabase
-            .from('workspaces')
-            .select('api_key, api_provider, agents_content')
-            .eq('id', issue.workspace_id)
-            .single();
+          const { prompt, error: promptError } = await generateIssuePrompt({
+            title: title.trim(),
+            description: description.trim(),
+            workspaceId: issue.workspace_id
+          });
           
-          if (workspaceData?.api_key) {
-            const { prompt, error: promptError } = await generateIssuePrompt({
-              title: title.trim(),
-              description: description.trim(),
-              agentsContent: workspaceData.agents_content,
-              apiKey: workspaceData.api_key,
-              provider: workspaceData.api_provider || 'openai'
-            });
-            
-            if (promptError) {
-              // Continue without updating prompt
-            } else {
-              generatedPrompt = prompt;
-            }
+          if (promptError) {
+            // Continue without updating prompt
+          } else {
+            generatedPrompt = prompt;
           }
         } catch (error) {
           // Continue without updating prompt
