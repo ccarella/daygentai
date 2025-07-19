@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import type { UserWorkspaceRPCResponse } from '@/types/supabase-helpers'
 
 export default async function WorkspaceLoadingPage() {
   const supabase = await createClient()
@@ -20,41 +21,18 @@ export default async function WorkspaceLoadingPage() {
     redirect('/CreateUser')
   }
 
-  // Get user's first workspace from workspace_members
-  const { data: workspaceMemberships } = await supabase
-    .from('workspace_members')
-    .select(`
-      workspace:workspaces!inner(
-        slug
-      )
-    `)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: true })
-    .limit(1)
+  // Get user's first workspace using RPC function to bypass RLS recursion
+  const { data: workspaces } = await supabase.rpc('get_user_first_workspace', {
+    p_user_id: user.id
+  })
 
-  if (!workspaceMemberships || workspaceMemberships.length === 0) {
-    redirect('/CreateWorkspace')
-  }
-
-  // The query returns an object with a 'workspace' property
-  const membership = workspaceMemberships[0] as { workspace?: { slug: string } | Array<{ slug: string }> }
-
-  // Handle both array and object formats for workspace
-  let workspaceSlug: string | undefined
-  if (membership?.workspace) {
-    if (Array.isArray(membership.workspace) && membership.workspace[0]?.slug) {
-      // Handle array format (some queries return workspace as array)
-      workspaceSlug = membership.workspace[0].slug
-    } else if (!Array.isArray(membership.workspace) && membership.workspace.slug) {
-      // Handle object format (most queries return workspace as object)  
-      workspaceSlug = membership.workspace.slug
+  if (workspaces && workspaces.length > 0) {
+    const firstWorkspace = workspaces[0] as UserWorkspaceRPCResponse
+    if (firstWorkspace?.slug) {
+      redirect(`/${firstWorkspace.slug}`)
     }
   }
 
-  if (workspaceSlug) {
-    redirect(`/${workspaceSlug}`)
-  }
-
-  // Fallback - redirect to create workspace if we can't find a valid workspace
+  // No workspaces found - redirect to create one
   redirect('/CreateWorkspace')
 }
