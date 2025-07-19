@@ -21,6 +21,7 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(initialProfile || null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const settingsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -55,6 +56,10 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      // Clear timeout on unmount
+      if (settingsTimeoutRef.current) {
+        clearTimeout(settingsTimeoutRef.current)
+      }
     }
   }, [])
 
@@ -130,6 +135,10 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
                 <button
                   onClick={() => {
                     setIsDropdownOpen(false)
+                    // Clear any existing timeout
+                    if (settingsTimeoutRef.current) {
+                      clearTimeout(settingsTimeoutRef.current)
+                    }
                     // Get the workspace slug from the current URL
                     const pathSegments = window.location.pathname.split('/')
                     const workspaceSlug = pathSegments[1]

@@ -92,28 +92,17 @@ export function CreateIssueModal({
       if (createPrompt && hasApiKey) {
         setIsGeneratingPrompt(true)
         try {
-          // Fetch workspace data including API key and agents content
-          const { data: workspace } = await supabase
-            .from('workspaces')
-            .select('api_key, api_provider, agents_content')
-            .eq('id', workspaceId)
-            .single()
+          const { prompt, error: promptError } = await generateIssuePrompt({
+            title: title.trim(),
+            description: description.trim(),
+            workspaceId: workspaceId
+          })
           
-          if (workspace?.api_key) {
-            const { prompt, error: promptError } = await generateIssuePrompt({
-              title: title.trim(),
-              description: description.trim(),
-              agentsContent: workspace.agents_content,
-              apiKey: workspace.api_key,
-              provider: workspace.api_provider || 'openai'
-            })
-            
-            if (promptError) {
-              console.error('Error generating prompt:', promptError)
-              // Continue without prompt - don't block issue creation
-            } else {
-              generatedPrompt = prompt
-            }
+          if (promptError) {
+            console.error('Error generating prompt:', promptError)
+            // Continue without prompt - don't block issue creation
+          } else {
+            generatedPrompt = prompt
           }
         } catch (error) {
           console.error('Error generating prompt:', error)
@@ -182,7 +171,7 @@ export function CreateIssueModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="sm:max-w-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh]"
+        className="sm:max-w-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh] relative"
         onKeyDown={handleKeyDown}
       >
         <DialogHeader className="shrink-0">
@@ -297,6 +286,18 @@ export function CreateIssueModal({
             {isGeneratingPrompt ? 'Generating prompt...' : 'Create issue'}
           </Button>
         </DialogFooter>
+        
+        {/* Loading overlay */}
+        {(isSubmitting || isGeneratingPrompt) && (
+          <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center rounded-lg z-50">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">
+                {isGeneratingPrompt ? 'Generating AI prompt...' : 'Creating issue...'}
+              </span>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )

@@ -166,9 +166,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
         expect(promptGenerator.generateIssuePrompt).toHaveBeenCalledWith({
           title: 'Fix login bug',
           description: 'Users cannot login',
-          apiKey: 'test-key',
-          provider: 'openai',
-          agentsContent: undefined
+          workspaceId: 'test-workspace'
         })
       })
 

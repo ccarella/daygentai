@@ -86,6 +86,7 @@ export function IssuesList({
   const observerRef = useRef<IntersectionObserver | null>(null)
   const preloadedIssuesRef = useRef<Set<string>>(new Set())
   const listContainerRef = useRef<HTMLDivElement>(null)
+  const preloadTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const fetchIssues = useCallback(async (pageNum: number, append = false) => {
     if (isLoadingRef.current) return { issues: [], hasMore: false, totalCount: 0 }
@@ -206,14 +207,19 @@ export function IssuesList({
 
     // Only preload if we have issues and not appending
     if (newIssues.length > 0 && !append) {
+      // Clear any existing timeout
+      if (preloadTimeoutRef.current) {
+        clearTimeout(preloadTimeoutRef.current)
+      }
       // Preload visible issues based on viewport
       // Assuming approximately 10 issues fit in a typical viewport
-      setTimeout(() => {
+      preloadTimeoutRef.current = setTimeout(() => {
         const visibleCount = Math.min(10, newIssues.length)
         const issuesToPreload = newIssues.slice(0, visibleCount).map(issue => issue.id)
         if (issuesToPreload.length > 0) {
           preloadIssues(issuesToPreload)
         }
+        preloadTimeoutRef.current = null
       }, 500)
     }
 
@@ -251,6 +257,10 @@ export function IssuesList({
     return () => {
       cancelled = true
       isLoadingRef.current = false
+      // Clear preload timeout
+      if (preloadTimeoutRef.current) {
+        clearTimeout(preloadTimeoutRef.current)
+      }
     }
   }, [workspaceId, statusFilter, priorityFilter, typeFilter, searchQuery]) // Added searchQuery dependency
 
@@ -285,6 +295,16 @@ export function IssuesList({
       }
     }
   }, [preloadIssues])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Clear any pending preload timeout on unmount
+      if (preloadTimeoutRef.current) {
+        clearTimeout(preloadTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // Load more issues handler
   const handleLoadMore = async () => {
