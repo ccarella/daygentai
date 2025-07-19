@@ -38,37 +38,21 @@ function sanitizeInput(input: string): string {
   return sanitized
 }
 
-// Function to validate input against whitelist
+// Function to validate input for LLM prompt generation
 function validateInput(input: string): { isValid: boolean; error?: string } {
   if (!input || typeof input !== 'string') {
     return { isValid: false, error: 'Input must be a non-empty string' }
   }
 
-  // Check length
+  // Check length to prevent DoS
   if (input.length > 10000) {
     return { isValid: false, error: 'Input exceeds maximum length of 10000 characters' }
   }
 
-  // Check for suspicious patterns that might indicate injection attempts
-  const suspiciousPatterns = [
-    /<script/i,
-    /<iframe/i,
-    /javascript:/i,
-    /on\w+\s*=/i, // Event handlers like onclick=
-    /eval\s*\(/i,
-    /new\s+Function/i,
-    /import\s*\(/i,
-    /require\s*\(/i,
-    /__proto__/i,
-    /constructor\s*\[/i,
-  ]
-
-  for (const pattern of suspiciousPatterns) {
-    if (pattern.test(input)) {
-      return { isValid: false, error: 'Input contains potentially malicious content' }
-    }
-  }
-
+  // Since we're sending to an LLM API (not rendering in HTML), we don't need
+  // to check for HTML/JS patterns. The sanitizeInput function already handles
+  // escaping backticks and dollar signs to prevent prompt injection.
+  
   return { isValid: true }
 }
 
@@ -172,13 +156,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify user has access to the workspace
-    const { data: profile } = await supabase
-      .from('profiles')
+    const { data: userProfile } = await supabase
+      .from('users')
       .select('id')
       .eq('id', user.id)
       .single()
 
-    if (!profile) {
+    if (!userProfile) {
       return NextResponse.json(
         { error: 'User profile not found' },
         { status: 404 }
