@@ -55,3 +55,11 @@ export interface WorkspaceMemberDetailsQueryResponse {
     avatar_url: string | null
   }>
 }
+
+export interface UserWorkspaceRPCResponse {
+  id: string
+  name: string
+  slug: string
+  avatar_url: string | null
+  created_at: string
+}
