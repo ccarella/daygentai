@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ApiSettings } from '@/components/settings/api-settings'
+import { WorkspaceProvider } from '@/contexts/workspace-context'
 import { createClient } from '@/lib/supabase/client'
 
 // Mock Supabase client
@@ -18,6 +19,26 @@ describe('ApiSettings', () => {
     })
   }
 
+  // Helper function to render with WorkspaceProvider
+  const renderWithProvider = (workspaceId: string, initialSettings?: any) => {
+    const initialWorkspace = {
+      id: workspaceId,
+      name: 'Test Workspace',
+      slug: 'test-workspace',
+      avatar_url: null,
+      owner_id: 'test-user',
+      hasApiKey: !!initialSettings?.api_key,
+      apiProvider: initialSettings?.api_provider || null,
+      agentsContent: initialSettings?.agents_content || null
+    }
+
+    return render(
+      <WorkspaceProvider workspaceId={workspaceId} initialWorkspace={initialWorkspace}>
+        <ApiSettings workspaceId={workspaceId} initialSettings={initialSettings} />
+      </WorkspaceProvider>
+    )
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(createClient).mockReturnValue(mockSupabase as any)
@@ -25,7 +46,7 @@ describe('ApiSettings', () => {
 
   describe('rendering', () => {
     it('should render with default values', () => {
-      render(<ApiSettings workspaceId="test-workspace" />)
+      renderWithProvider("test-workspace")
 
       expect(screen.getByText('AI Integration Settings')).toBeInTheDocument()
       expect(screen.getByText('Configure AI features for issue recommendations and prompt generation')).toBeInTheDocument()
@@ -42,12 +63,7 @@ describe('ApiSettings', () => {
         agents_content: 'Test content'
       }
 
-      render(
-        <ApiSettings 
-          workspaceId="test-workspace" 
-          initialSettings={initialSettings}
-        />
-      )
+      renderWithProvider("test-workspace", initialSettings)
 
       // Select shows text content, not value
       const providerSelect = screen.getByLabelText('AI Provider')
@@ -63,7 +79,7 @@ describe('ApiSettings', () => {
   describe('user interactions', () => {
     it('should update API key on input', async () => {
       const user = userEvent.setup()
-      render(<ApiSettings workspaceId="test-workspace" />)
+      renderWithProvider("test-workspace")
 
       const apiKeyInput = screen.getByLabelText('API Key')
       await user.clear(apiKeyInput)
@@ -73,7 +89,7 @@ describe('ApiSettings', () => {
     })
 
     it('should update provider on selection', async () => {
-      render(<ApiSettings workspaceId="test-workspace" />)
+      renderWithProvider("test-workspace")
 
       const providerSelect = screen.getByLabelText('AI Provider')
       
@@ -88,7 +104,7 @@ describe('ApiSettings', () => {
 
     it('should update agents content on input', async () => {
       const user = userEvent.setup()
-      render(<ApiSettings workspaceId="test-workspace" />)
+      renderWithProvider("test-workspace")
 
       const agentsTextarea = screen.getByLabelText('Agents.md Content (Optional)')
       await user.clear(agentsTextarea)
@@ -101,7 +117,7 @@ describe('ApiSettings', () => {
   describe('saving settings', () => {
     it('should save settings successfully', async () => {
       const user = userEvent.setup()
-      render(<ApiSettings workspaceId="test-workspace" />)
+      renderWithProvider("test-workspace")
 
       // Fill in the form
       const apiKeyInput = screen.getByLabelText('API Key')
@@ -145,7 +161,7 @@ describe('ApiSettings', () => {
       }
       vi.mocked(createClient).mockReturnValue(errorSupabase as any)
 
-      render(<ApiSettings workspaceId="test-workspace" />)
+      renderWithProvider("test-workspace")
 
       const saveButton = screen.getByText('Save API Settings')
       await user.click(saveButton)
@@ -168,7 +184,7 @@ describe('ApiSettings', () => {
       }
       vi.mocked(createClient).mockReturnValue(slowSupabase as any)
 
-      render(<ApiSettings workspaceId="test-workspace" />)
+      renderWithProvider("test-workspace")
 
       const saveButton = screen.getByText('Save API Settings')
       await user.click(saveButton)
@@ -187,7 +203,7 @@ describe('ApiSettings', () => {
       const user = userEvent.setup()
       const workspaceId = 'specific-workspace-id'
       
-      render(<ApiSettings workspaceId={workspaceId} />)
+      renderWithProvider(workspaceId)
 
       const saveButton = screen.getByText('Save API Settings')
       await user.click(saveButton)
@@ -206,14 +222,14 @@ describe('ApiSettings', () => {
 
   describe('password field behavior', () => {
     it('should render API key input as password field', () => {
-      render(<ApiSettings workspaceId="test-workspace" />)
+      renderWithProvider("test-workspace")
       
       const apiKeyInput = screen.getByLabelText('API Key') as HTMLInputElement
       expect(apiKeyInput.type).toBe('password')
     })
 
     it('should have correct placeholder', () => {
-      render(<ApiSettings workspaceId="test-workspace" />)
+      renderWithProvider("test-workspace")
       
       const apiKeyInput = screen.getByLabelText('API Key')
       expect(apiKeyInput).toHaveAttribute('placeholder', 'sk-...')
@@ -234,7 +250,7 @@ describe('ApiSettings', () => {
       }
       vi.mocked(createClient).mockReturnValue(errorSupabase as any)
 
-      render(<ApiSettings workspaceId="test-workspace" />)
+      renderWithProvider("test-workspace")
       
       const saveButton = screen.getByText('Save API Settings')
       await user.click(saveButton)
