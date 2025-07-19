@@ -476,8 +476,8 @@ export function IssuesList({
                     </div>
                   )}
                   
-                  {/* Created Date */}
-                  <span className="text-gray-400 ml-2">
+                  {/* Created Date - Hidden on mobile */}
+                  <span className="hidden sm:inline text-gray-400 ml-2">
                     {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
                   </span>
                 </div>
