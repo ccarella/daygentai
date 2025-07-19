@@ -5,9 +5,17 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Plus, ChevronLeft, ChevronRight, HelpCircle, Settings, Terminal, BookOpen } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import type { UserWorkspace } from '@/lib/supabase/workspaces'
 
 const CreateIssueModal = dynamic(
   () => import('@/components/issues/create-issue-modal').then(mod => ({ default: mod.CreateIssueModal })),
+  { 
+    ssr: false,
+    loading: () => null
+  }
+)
+const WorkspaceSwitcher = dynamic(
+  () => import('@/components/workspace/workspace-switcher').then(mod => ({ default: mod.WorkspaceSwitcher })),
   { 
     ssr: false,
     loading: () => null
@@ -23,6 +31,7 @@ interface WorkspaceLayoutProps {
     avatar_url: string | null
     owner_id: string
   }
+  workspaces?: UserWorkspace[]
   children: React.ReactNode
   onIssueCreated?: () => void
   onNavigateToIssues?: () => void
@@ -36,6 +45,7 @@ interface WorkspaceLayoutProps {
 
 export function WorkspaceLayout({ 
   workspace, 
+  workspaces = [],
   children, 
   onIssueCreated, 
   onNavigateToIssues,
@@ -92,10 +102,11 @@ export function WorkspaceLayout({
       {/* Workspace Header */}
       <div className="p-3 md:p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
-          <Link href={`/${workspace.slug}`} className="flex items-center space-x-3">
-            <div className="text-2xl">{workspace.avatar_url || '🏢'}</div>
-            <span className="font-semibold text-gray-900">{workspace.name}</span>
-          </Link>
+          <WorkspaceSwitcher 
+            currentWorkspace={workspace} 
+            workspaces={workspaces}
+            collapsed={false}
+          />
           <button 
             className="hidden md:flex min-h-[40px] min-w-[40px] p-2 md:p-1 hover:bg-gray-100 rounded items-center justify-center"
             onClick={() => setCreateIssueOpen(true)}
@@ -290,9 +301,13 @@ export function WorkspaceLayout({
           {/* Collapsed State Icons */}
           {isSidebarCollapsed && (
             <div className="flex flex-col items-center py-4">
-              <Link href={`/${workspace.slug}`} className="p-2 hover:bg-gray-100 rounded mb-4">
-                <div className="text-2xl">{workspace.avatar_url || '🏢'}</div>
-              </Link>
+              <div className="mb-4">
+                <WorkspaceSwitcher 
+                  currentWorkspace={workspace} 
+                  workspaces={workspaces}
+                  collapsed={true}
+                />
+              </div>
               <button 
                 className="p-2 hover:bg-gray-100 rounded mb-2"
                 onClick={() => setCreateIssueOpen(true)}

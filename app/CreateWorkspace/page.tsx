@@ -21,15 +21,20 @@ export default async function CreateWorkspacePage() {
     redirect('/CreateUser')
   }
 
-  // Check if user already has a workspace
-  const { data: existingWorkspace } = await supabase
-    .from('workspaces')
-    .select('slug')
-    .eq('owner_id', user.id)
-    .single()
+  // Check if user already has any workspaces
+  const { data: existingWorkspaces } = await supabase
+    .from('workspace_members')
+    .select(`
+      workspace:workspaces!inner(
+        slug
+      )
+    `)
+    .eq('user_id', user.id)
+    .limit(1)
 
-  if (existingWorkspace) {
-    redirect(`/${existingWorkspace.slug}`)
+  if (existingWorkspaces && existingWorkspaces.length > 0 && existingWorkspaces[0]) {
+    const workspace: any = existingWorkspaces[0]
+    redirect(`/${workspace.workspace.slug}`)
   }
 
   return (

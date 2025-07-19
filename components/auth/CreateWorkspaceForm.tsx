@@ -79,7 +79,8 @@ export default function CreateWorkspaceForm() {
         return
       }
 
-      const { error: insertError } = await supabase
+      // Create workspace
+      const { data: newWorkspace, error: insertError } = await supabase
         .from('workspaces')
         .insert({
           name: name,
@@ -87,9 +88,25 @@ export default function CreateWorkspaceForm() {
           avatar_url: selectedAvatar || '🏢',
           owner_id: user.id
         })
+        .select()
+        .single()
 
       if (insertError) {
         throw insertError
+      }
+
+      // Add user as owner in workspace_members
+      const { error: memberError } = await supabase
+        .from('workspace_members')
+        .insert({
+          workspace_id: newWorkspace.id,
+          user_id: user.id,
+          role: 'owner'
+        })
+
+      if (memberError) {
+        console.error('Error adding user to workspace_members:', memberError)
+        // Don't throw here as workspace is already created
       }
 
       router.push(`/${slug}`)

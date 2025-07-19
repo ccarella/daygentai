@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Header } from './header'
 import { WorkspaceLayout } from './workspace-layout'
 import { useWorkspaceNavigation } from '@/hooks/use-workspace-navigation'
+import type { UserWorkspace } from '@/lib/supabase/workspaces'
 
 interface WorkspaceWithMobileNavProps {
   workspace: {
@@ -25,17 +26,19 @@ interface WorkspaceWithMobileNavProps {
 
 export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, onNavigateToIssues, onNavigateToInbox, onNavigateToCookbook, onNavigateToSettings, userAvatar }: WorkspaceWithMobileNavProps) {
   const [profile, setProfile] = useState<{ name: string; avatar_url: string | null } | null>(null)
+  const [workspaces, setWorkspaces] = useState<UserWorkspace[]>([])
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
   const mainContentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) return
       
+      // Fetch profile
       const { data: profile } = await supabase
         .from('users')
         .select('name, avatar_url')
@@ -43,9 +46,41 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
         .single()
       
       setProfile(profile)
+      
+      // Fetch workspaces
+      const { data: workspacesData, error: workspacesError } = await supabase
+        .from('workspace_members')
+        .select(`
+          role,
+          created_at,
+          workspace:workspaces!inner(
+            id,
+            name,
+            slug,
+            avatar_url
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true })
+      
+      if (workspacesError) {
+        console.error('Error fetching workspaces:', workspacesError)
+      }
+      
+      if (workspacesData) {
+        const transformedWorkspaces = workspacesData.map((item: any) => ({
+          id: item.workspace.id,
+          name: item.workspace.name,
+          slug: item.workspace.slug,
+          avatar_url: item.workspace.avatar_url,
+          role: item.role,
+          created_at: item.created_at
+        }))
+        setWorkspaces(transformedWorkspaces)
+      }
     }
 
-    fetchProfile()
+    fetchData()
   }, [])
 
   const handleMenuToggle = () => {
@@ -77,7 +112,8 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
       )}
       <div className="pt-11">
         <WorkspaceLayout 
-          workspace={workspace} 
+          workspace={workspace}
+          workspaces={workspaces}
           {...(onIssueCreated && { onIssueCreated })}
           {...(onNavigateToIssues && { onNavigateToIssues })}
           {...(onNavigateToInbox && { onNavigateToInbox })}

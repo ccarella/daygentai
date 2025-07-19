@@ -28,16 +28,26 @@ export default async function SuccessPage({
     redirect('/CreateUser')
   }
 
-  // Fetch workspace data
-  const { data: workspace } = await supabase
-    .from('workspaces')
-    .select('name, slug, avatar_url')
-    .eq('owner_id', user.id)
-    .single()
+  // Fetch user's first workspace from workspace_members
+  const { data: workspaceMemberships } = await supabase
+    .from('workspace_members')
+    .select(`
+      workspace:workspaces!inner(
+        name,
+        slug,
+        avatar_url
+      )
+    `)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
 
-  if (!workspace) {
+  if (!workspaceMemberships || workspaceMemberships.length === 0) {
     redirect('/CreateWorkspace')
   }
+
+  const membership: any = workspaceMemberships[0]
+  const workspace = membership.workspace
 
   // If user has a workspace and not in debug mode, redirect to workspace
   if (!isDebugMode) {
