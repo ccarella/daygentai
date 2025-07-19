@@ -2,7 +2,9 @@
 
 import { WorkspaceWithMobileNav } from '@/components/layout/workspace-with-mobile-nav'
 import { ApiSettings } from '@/components/settings/api-settings'
+import { ProfileSettings } from '@/components/settings/profile-settings'
 import { CommandPaletteProvider } from '@/hooks/use-command-palette'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import dynamic from 'next/dynamic'
 
 const AppCommandPalette = dynamic(
@@ -37,14 +39,27 @@ export function SettingsPageContent({ workspace, initialSettings }: SettingsPage
       <WorkspaceWithMobileNav workspace={workspace}>
         <div className="max-w-4xl mx-auto p-6">
           <div className="mb-8">
-            <h1 className="text-2xl font-bold mb-2">Workspace Settings</h1>
-            <p className="text-gray-600">Manage your workspace configuration and integrations</p>
+            <h1 className="text-2xl font-bold mb-2">Settings</h1>
+            <p className="text-gray-600">Manage your profile and workspace configuration</p>
           </div>
           
-          <ApiSettings 
-            workspaceId={workspace.id}
-            initialSettings={settings}
-          />
+          <Tabs defaultValue="profile" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="workspace">Workspace</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="profile" className="mt-6">
+              <ProfileSettings />
+            </TabsContent>
+            
+            <TabsContent value="workspace" className="mt-6">
+              <ApiSettings 
+                workspaceId={workspace.id}
+                initialSettings={settings}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       </WorkspaceWithMobileNav>
       {workspace && <AppCommandPalette workspace={workspace} />}

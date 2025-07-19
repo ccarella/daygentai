@@ -112,6 +112,14 @@ export function ProfileSettings({ onAvatarUpdate }: ProfileSettingsProps) {
         onAvatarUpdate(avatarEmoji)
       }
 
+      // Dispatch a custom event to notify the header about profile update
+      window.dispatchEvent(new CustomEvent('profileUpdated', { 
+        detail: { 
+          name: name.trim(), 
+          avatar_url: avatarEmoji 
+        } 
+      }))
+
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (error) {

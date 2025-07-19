@@ -58,6 +58,23 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
     }
   }, [])
 
+  // Listen for profile updates
+  useEffect(() => {
+    const handleProfileUpdate = (event: CustomEvent) => {
+      if (event.detail) {
+        setUserProfile({
+          name: event.detail.name,
+          avatar_url: event.detail.avatar_url
+        })
+      }
+    }
+
+    window.addEventListener('profileUpdated', handleProfileUpdate as EventListener)
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener)
+    }
+  }, [])
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/')
@@ -113,20 +130,16 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
                 <button
                   onClick={() => {
                     setIsDropdownOpen(false)
-                    // Click the settings button in the sidebar after a small delay to ensure dropdown closes
-                    setTimeout(() => {
-                      const settingsButtons = document.querySelectorAll('[data-sidebar-item]')
-                      settingsButtons.forEach(button => {
-                        const span = button.querySelector('span')
-                        if (span && span.textContent === 'Settings') {
-                          (button as HTMLElement).click()
-                        }
-                      })
-                    }, 100)
+                    // Get the workspace slug from the current URL
+                    const pathSegments = window.location.pathname.split('/')
+                    const workspaceSlug = pathSegments[1]
+                    if (workspaceSlug) {
+                      router.push(`/${workspaceSlug}/settings`)
+                    }
                   }}
                   className="block w-full text-left px-4 py-3 md:px-4 md:py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
-                  Profile Settings
+                  Profile
                 </button>
                 
                 <button

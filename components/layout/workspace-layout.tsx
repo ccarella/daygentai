@@ -243,7 +243,7 @@ export function WorkspaceLayout({
             }`}
           >
             <Settings className="w-5 h-5" />
-            <span>Settings</span>
+            <span>Workspace Settings</span>
           </button>
         ) : (
           <Link
@@ -256,7 +256,7 @@ export function WorkspaceLayout({
             }`}
           >
             <Settings className="w-5 h-5" />
-            <span>Settings</span>
+            <span>Workspace Settings</span>
           </Link>
         )}
       </nav>
@@ -408,6 +408,7 @@ export function WorkspaceLayout({
                       ? 'bg-gray-100' 
                       : 'hover:bg-gray-100'
                   }`}
+                  title="Workspace Settings"
                 >
                   <Settings className="w-5 h-5 text-gray-600" />
                 </button>
@@ -419,6 +420,7 @@ export function WorkspaceLayout({
                       ? 'bg-gray-100' 
                       : 'hover:bg-gray-100'
                   }`}
+                  title="Workspace Settings"
                 >
                   <Settings className="w-5 h-5 text-gray-600" />
                 </Link>
