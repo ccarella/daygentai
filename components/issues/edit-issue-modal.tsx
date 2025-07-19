@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Loader2 } from 'lucide-react';
 import { generateIssuePrompt } from '@/lib/llm/prompt-generator';
+import { useToast } from '@/components/ui/use-toast';
 import { useWorkspace } from '@/contexts/workspace-context';
 
 interface Issue {
@@ -32,6 +33,7 @@ interface EditIssueModalProps {
 }
 
 export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: EditIssueModalProps) {
+  const { toast } = useToast();
   const { workspace } = useWorkspace();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -130,13 +132,29 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
         .eq('id', issue.id);
 
       if (updateError) {
+        console.error('Failed to update issue:', updateError);
+        toast({
+          title: "Failed to update issue",
+          description: updateError.message || "An error occurred while updating the issue.",
+          variant: "destructive",
+        });
         setError('Failed to update issue: ' + updateError.message);
         return;
       }
 
+      toast({
+        title: "Issue updated",
+        description: "Your changes have been saved successfully.",
+      });
       onOpenChange(false);
       onIssueUpdated?.();
-    } catch {
+    } catch (err) {
+      console.error('Unexpected error during issue update:', err);
+      toast({
+        title: "Unexpected error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
       setError('An unexpected error occurred');
     } finally {
       setIsSubmitting(false);

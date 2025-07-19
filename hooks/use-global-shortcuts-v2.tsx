@@ -5,6 +5,7 @@ import { useCommandPalette } from '@/hooks/use-command-palette'
 import { createClient } from '@/lib/supabase/client'
 import { emitIssueStatusUpdate } from '@/lib/events/issue-events'
 import { useKeyboardContext, KeyboardPriority } from '@/lib/keyboard'
+import { useToast } from '@/components/ui/use-toast'
 
 interface GlobalShortcutsProps {
   workspaceSlug: string
@@ -29,6 +30,7 @@ export function useGlobalShortcuts({
 }: GlobalShortcutsProps) {
   const router = useRouter()
   const { setIsOpen: setCommandPaletteOpen } = useCommandPalette()
+  const { toast } = useToast()
 
   const handleStatusChange = async (newStatus: string) => {
     console.log('Attempting status change:', { currentIssue, newStatus })
@@ -45,8 +47,17 @@ export function useGlobalShortcuts({
       onIssueStatusChange(newStatus)
       console.log('Status changed successfully to:', newStatus)
       emitIssueStatusUpdate(currentIssue.id, newStatus)
+      toast({
+        title: "Status updated",
+        description: `Issue status changed to ${newStatus.toLowerCase().replace('_', ' ')}.`,
+      })
     } else {
       console.error('Error changing status:', error)
+      toast({
+        title: "Failed to update status",
+        description: error.message || "An error occurred while updating the issue status.",
+        variant: "destructive",
+      })
     }
   }
 
