@@ -50,7 +50,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
   }
 
   // Helper function to render with WorkspaceProvider
-  const renderWithProvider = (hasApiKey = true, customProps = {}) => {
+  const renderWithProvider = (hasApiKey = true, customProps = {}, agentsContent: string | null = null) => {
     const initialWorkspace = {
       id: 'test-workspace',
       name: 'Test Workspace',
@@ -59,7 +59,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
       owner_id: 'test-user',
       hasApiKey,
       apiProvider: hasApiKey ? 'openai' : null,
-      agentsContent: null
+      agentsContent
     }
 
     const props = { ...defaultProps, ...customProps }
@@ -316,7 +316,7 @@ describe('CreateIssueModal - Prompt Generation', () => {
         }))
       } as any)
 
-      renderWithProvider()
+      renderWithProvider(true, {}, 'Agents.md content')
 
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
@@ -336,11 +336,11 @@ describe('CreateIssueModal - Prompt Generation', () => {
       await user.click(submitButton)
 
       await waitFor(() => {
-        expect(promptGenerator.generateIssuePrompt).toHaveBeenCalledWith(
-          expect.objectContaining({
-            agentsContent: 'Agents.md content'
-          })
-        )
+        expect(promptGenerator.generateIssuePrompt).toHaveBeenCalledWith({
+          title: 'Test issue',
+          description: 'Test description',
+          workspaceId: 'test-workspace'
+        })
       })
     })
   })

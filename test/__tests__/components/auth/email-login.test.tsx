@@ -9,6 +9,12 @@ import { createMockSupabaseClient, createMockRouter } from '@/test/utils/mock-fa
 vi.mock('@/lib/supabase/client')
 vi.mock('next/navigation')
 
+// Mock the toast hook
+const mockToast = vi.fn()
+vi.mock('@/components/ui/use-toast', () => ({
+  useToast: () => ({ toast: mockToast })
+}))
+
 describe('EmailLogin', () => {
   const mockSupabase = createMockSupabaseClient()
   const mockRouter = createMockRouter()
@@ -180,15 +186,11 @@ describe('EmailLogin', () => {
       await user.click(submitButton)
       
       await waitFor(() => {
-        const errorElement = screen.getByText(errorMessage)
-        expect(errorElement).toBeInTheDocument()
-        // The error message is in a div with error styling
-        const errorContainer = errorElement.closest('div')
-        expect(errorContainer).toHaveClass('p-2', 'md:p-3', 'rounded-md', 'text-sm')
-        // Check if it has the error styling classes
-        const classNames = errorContainer?.className || ''
-        expect(classNames).toContain('bg-red-100')
-        expect(classNames).toContain('text-red-800')
+        expect(mockToast).toHaveBeenCalledWith({
+          title: "Login failed",
+          description: errorMessage,
+          variant: "destructive"
+        })
       })
     })
 
@@ -204,7 +206,11 @@ describe('EmailLogin', () => {
       await user.click(submitButton)
       
       await waitFor(() => {
-        expect(screen.getByText('Something went wrong!')).toBeInTheDocument()
+        expect(mockToast).toHaveBeenCalledWith({
+          title: "Login failed",
+          description: 'Something went wrong!',
+          variant: "destructive"
+        })
       })
     })
 
@@ -224,7 +230,11 @@ describe('EmailLogin', () => {
       await user.click(submitButton)
       
       await waitFor(() => {
-        expect(screen.getByText('Network error')).toBeInTheDocument()
+        expect(mockToast).toHaveBeenCalledWith({
+          title: "Login failed",
+          description: 'Network error',
+          variant: "destructive"
+        })
       })
 
       // Second submission succeeds
@@ -238,7 +248,11 @@ describe('EmailLogin', () => {
       await user.click(submitButton)
       
       await waitFor(() => {
-        expect(screen.queryByText('Network error')).not.toBeInTheDocument()
+        // Should have shown success toast on second submission
+        expect(mockToast).toHaveBeenLastCalledWith({
+          title: "Check your email",
+          description: "We've sent you a login link. Please check your inbox."
+        })
         expect(mockRouter.push).toHaveBeenCalledWith(
           '/checkemail?email=test2%40example.com'
         )

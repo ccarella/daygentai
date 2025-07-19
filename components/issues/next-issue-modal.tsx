@@ -50,7 +50,7 @@ export function NextIssueModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl sm:!top-[50%] sm:!translate-y-[-50%]">
         <DialogHeader>
           <DialogTitle>AI Issue Recommendation</DialogTitle>
           {!error && (

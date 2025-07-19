@@ -193,7 +193,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="sm:max-w-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh]" 
+        className="sm:max-w-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh] sm:!top-[50%] sm:!translate-y-[-50%]" 
         onKeyDown={handleKeyDown}
       >
         <DialogHeader className="shrink-0">

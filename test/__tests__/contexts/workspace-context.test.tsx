@@ -155,7 +155,7 @@ describe('WorkspaceContext', () => {
     })
   })
 
-  it('should update API key status when updateApiKeyStatus is called', () => {
+  it('should update API key status when updateApiKeyStatus is called', async () => {
     const TestComponentWithUpdate = () => {
       const { workspace, updateApiKeyStatus } = useWorkspace()
       
@@ -178,11 +178,22 @@ describe('WorkspaceContext', () => {
       hasApiKey: false
     }
 
-    const { getByTestId, getByText } = render(
-      <WorkspaceProvider workspaceId="test-id" initialWorkspace={initialWorkspace}>
-        <TestComponentWithUpdate />
-      </WorkspaceProvider>
-    )
+    let getByTestId: any, getByText: any
+    
+    await act(async () => {
+      const result = render(
+        <WorkspaceProvider workspaceId="test-id" initialWorkspace={initialWorkspace}>
+          <TestComponentWithUpdate />
+        </WorkspaceProvider>
+      )
+      getByTestId = result.getByTestId
+      getByText = result.getByText
+    })
+    
+    // Wait for initial render effects to complete
+    await waitFor(() => {
+      expect(getByTestId('hasApiKey')).toBeInTheDocument()
+    })
 
     expect(getByTestId('hasApiKey')).toHaveTextContent('no')
 
