@@ -7,13 +7,13 @@ import { createMockUser } from '@/test/fixtures/users'
 // Mock Next.js server components
 vi.mock('next/server', () => ({
   NextResponse: {
-    next: vi.fn((init?: any) => ({
+    next: vi.fn((init) => ({
       cookies: {
         set: vi.fn(),
       },
       ...init,
     })),
-    redirect: vi.fn((url: URL) => ({
+    redirect: vi.fn((url) => ({
       type: 'redirect',
       url: url.toString(),
     })),
@@ -28,9 +28,9 @@ vi.mock('@supabase/ssr', () => ({
 
 describe('middleware', () => {
   const mockUser = createMockUser()
-  let mockRequest: any
-  let mockSupabase: any
-  let mockCookies: any
+  let mockRequest
+  let mockSupabase
+  let mockCookies
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -55,7 +55,7 @@ describe('middleware', () => {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
       },
-      from: vi.fn((_table: string) => ({
+      from: vi.fn((_table) => ({
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         limit: vi.fn().mockReturnThis(),
@@ -63,14 +63,14 @@ describe('middleware', () => {
       })),
     }
     
-    ;(createServerClient as any).mockReturnValue(mockSupabase)
+    ;(createServerClient).mockReturnValue(mockSupabase)
   })
 
   describe('public routes', () => {
     it('allows access to home page without authentication', async () => {
       mockRequest.nextUrl.pathname = '/'
       
-      const response = await middleware(mockRequest as NextRequest)
+      const response = await middleware(mockRequest)
       
       expect(NextResponse.redirect).not.toHaveBeenCalled()
       expect(response).toBeDefined()
@@ -79,7 +79,7 @@ describe('middleware', () => {
     it('allows access to auth callback without authentication', async () => {
       mockRequest.nextUrl.pathname = '/auth/callback'
       
-      const response = await middleware(mockRequest as NextRequest)
+      const response = await middleware(mockRequest)
       
       expect(NextResponse.redirect).not.toHaveBeenCalled()
       expect(response).toBeDefined()
@@ -88,7 +88,7 @@ describe('middleware', () => {
     it('allows access to check email page without authentication', async () => {
       mockRequest.nextUrl.pathname = '/checkemail'
       
-      const response = await middleware(mockRequest as NextRequest)
+      const response = await middleware(mockRequest)
       
       expect(NextResponse.redirect).not.toHaveBeenCalled()
       expect(response).toBeDefined()
@@ -105,7 +105,7 @@ describe('middleware', () => {
 
       for (const path of staticPaths) {
         mockRequest.nextUrl.pathname = path
-        await middleware(mockRequest as NextRequest)
+        await middleware(mockRequest)
         expect(NextResponse.redirect).not.toHaveBeenCalled()
       }
     })
@@ -119,7 +119,7 @@ describe('middleware', () => {
     it('redirects to home when accessing /CreateUser without auth', async () => {
       mockRequest.nextUrl.pathname = '/CreateUser'
       
-      await middleware(mockRequest as NextRequest)
+      await middleware(mockRequest)
       
       expect(NextResponse.redirect).toHaveBeenCalledWith(
         new URL('/', mockRequest.url)
@@ -129,7 +129,7 @@ describe('middleware', () => {
     it('redirects to home when accessing /CreateWorkspace without auth', async () => {
       mockRequest.nextUrl.pathname = '/CreateWorkspace'
       
-      await middleware(mockRequest as NextRequest)
+      await middleware(mockRequest)
       
       expect(NextResponse.redirect).toHaveBeenCalledWith(
         new URL('/', mockRequest.url)
@@ -139,7 +139,7 @@ describe('middleware', () => {
     it('redirects to home when accessing /success without auth', async () => {
       mockRequest.nextUrl.pathname = '/success'
       
-      await middleware(mockRequest as NextRequest)
+      await middleware(mockRequest)
       
       expect(NextResponse.redirect).toHaveBeenCalledWith(
         new URL('/', mockRequest.url)
@@ -153,7 +153,7 @@ describe('middleware', () => {
         vi.clearAllMocks()
         mockRequest.nextUrl.pathname = route
         
-        await middleware(mockRequest as NextRequest)
+        await middleware(mockRequest)
         
         expect(NextResponse.redirect).toHaveBeenCalledWith(
           new URL('/', mockRequest.url)
@@ -172,7 +172,7 @@ describe('middleware', () => {
 
     describe('no profile, no workspace', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation((table: string) => {
+        mockSupabase.from.mockImplementation((table) => {
           if (table === 'workspace_members') {
             // workspace_members query doesn't use .single()
             return {
@@ -201,7 +201,7 @@ describe('middleware', () => {
       it('allows access to /CreateUser', async () => {
         mockRequest.nextUrl.pathname = '/CreateUser'
         
-        const response = await middleware(mockRequest as NextRequest)
+        const response = await middleware(mockRequest)
         
         expect(NextResponse.redirect).not.toHaveBeenCalled()
         expect(response).toBeDefined()
@@ -210,7 +210,7 @@ describe('middleware', () => {
       it('redirects from /CreateWorkspace to /CreateUser', async () => {
         mockRequest.nextUrl.pathname = '/CreateWorkspace'
         
-        await middleware(mockRequest as NextRequest)
+        await middleware(mockRequest)
         
         expect(NextResponse.redirect).toHaveBeenCalledWith(
           new URL('/CreateUser', mockRequest.url)
@@ -220,7 +220,7 @@ describe('middleware', () => {
       it('redirects from /success to /CreateUser', async () => {
         mockRequest.nextUrl.pathname = '/success'
         
-        await middleware(mockRequest as NextRequest)
+        await middleware(mockRequest)
         
         expect(NextResponse.redirect).toHaveBeenCalledWith(
           new URL('/CreateUser', mockRequest.url)
@@ -230,7 +230,7 @@ describe('middleware', () => {
       it('redirects from workspace routes to /CreateUser', async () => {
         mockRequest.nextUrl.pathname = '/test-workspace'
         
-        await middleware(mockRequest as NextRequest)
+        await middleware(mockRequest)
         
         expect(NextResponse.redirect).toHaveBeenCalledWith(
           new URL('/CreateUser', mockRequest.url)
@@ -240,7 +240,7 @@ describe('middleware', () => {
       it('redirects from home to /workspace', async () => {
         mockRequest.nextUrl.pathname = '/'
         
-        await middleware(mockRequest as NextRequest)
+        await middleware(mockRequest)
         
         expect(NextResponse.redirect).toHaveBeenCalledWith(
           new URL('/workspace', mockRequest.url)
@@ -250,7 +250,7 @@ describe('middleware', () => {
 
     describe('has profile, no workspace', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation((table: string) => {
+        mockSupabase.from.mockImplementation((table) => {
           if (table === 'workspace_members') {
             // workspace_members query doesn't use .single()
             return {
@@ -279,7 +279,7 @@ describe('middleware', () => {
       it('redirects from /CreateUser to /CreateWorkspace', async () => {
         mockRequest.nextUrl.pathname = '/CreateUser'
         
-        await middleware(mockRequest as NextRequest)
+        await middleware(mockRequest)
         
         expect(NextResponse.redirect).toHaveBeenCalledWith(
           new URL('/CreateWorkspace', mockRequest.url)
@@ -289,7 +289,7 @@ describe('middleware', () => {
       it('allows access to /CreateWorkspace', async () => {
         mockRequest.nextUrl.pathname = '/CreateWorkspace'
         
-        const response = await middleware(mockRequest as NextRequest)
+        const response = await middleware(mockRequest)
         
         expect(NextResponse.redirect).not.toHaveBeenCalled()
         expect(response).toBeDefined()
@@ -298,7 +298,7 @@ describe('middleware', () => {
       it('redirects from /success to /CreateWorkspace', async () => {
         mockRequest.nextUrl.pathname = '/success'
         
-        await middleware(mockRequest as NextRequest)
+        await middleware(mockRequest)
         
         expect(NextResponse.redirect).toHaveBeenCalledWith(
           new URL('/CreateWorkspace', mockRequest.url)
@@ -308,7 +308,7 @@ describe('middleware', () => {
       it('allows access to workspace routes when user has profile', async () => {
         mockRequest.nextUrl.pathname = '/test-workspace'
         
-        const response = await middleware(mockRequest as NextRequest)
+        const response = await middleware(mockRequest)
         
         // Middleware doesn't redirect when user has profile (workspace access is checked in page components)
         expect(NextResponse.redirect).not.toHaveBeenCalled()
@@ -318,7 +318,7 @@ describe('middleware', () => {
 
     describe('has profile and workspace', () => {
       beforeEach(() => {
-        mockSupabase.from.mockImplementation((table: string) => {
+        mockSupabase.from.mockImplementation((table) => {
           if (table === 'workspace_members') {
             // workspace_members query doesn't use .single()
             return {
@@ -347,7 +347,7 @@ describe('middleware', () => {
       it('redirects from /CreateUser to /success', async () => {
         mockRequest.nextUrl.pathname = '/CreateUser'
         
-        await middleware(mockRequest as NextRequest)
+        await middleware(mockRequest)
         
         expect(NextResponse.redirect).toHaveBeenCalledWith(
           new URL('/success', mockRequest.url)
@@ -357,7 +357,7 @@ describe('middleware', () => {
       it('redirects from /CreateWorkspace to /success', async () => {
         mockRequest.nextUrl.pathname = '/CreateWorkspace'
         
-        await middleware(mockRequest as NextRequest)
+        await middleware(mockRequest)
         
         expect(NextResponse.redirect).toHaveBeenCalledWith(
           new URL('/success', mockRequest.url)
@@ -367,7 +367,7 @@ describe('middleware', () => {
       it('allows access to /success', async () => {
         mockRequest.nextUrl.pathname = '/success'
         
-        const response = await middleware(mockRequest as NextRequest)
+        const response = await middleware(mockRequest)
         
         expect(NextResponse.redirect).not.toHaveBeenCalled()
         expect(response).toBeDefined()
@@ -376,7 +376,7 @@ describe('middleware', () => {
       it('allows access to workspace routes', async () => {
         mockRequest.nextUrl.pathname = '/test-workspace'
         
-        const response = await middleware(mockRequest as NextRequest)
+        const response = await middleware(mockRequest)
         
         expect(NextResponse.redirect).not.toHaveBeenCalled()
         expect(response).toBeDefined()
@@ -385,7 +385,7 @@ describe('middleware', () => {
       it('redirects from home to /workspace', async () => {
         mockRequest.nextUrl.pathname = '/'
         
-        await middleware(mockRequest as NextRequest)
+        await middleware(mockRequest)
         
         expect(NextResponse.redirect).toHaveBeenCalledWith(
           new URL('/workspace', mockRequest.url)
@@ -396,16 +396,16 @@ describe('middleware', () => {
 
   describe('cookie management', () => {
     it('provides cookie methods to Supabase client', async () => {
-      let capturedCookieOptions: any = null
+      let capturedCookieOptions = null
       
-      ;(createServerClient as any).mockImplementation((_url: string, _key: string, options: any) => {
+      ;(createServerClient).mockImplementation((_url, _key, options) => {
         capturedCookieOptions = options.cookies
         return mockSupabase
       })
       
       mockRequest.nextUrl.pathname = '/'
       
-      await middleware(mockRequest as NextRequest)
+      await middleware(mockRequest)
       
       // Verify cookie methods were provided
       expect(capturedCookieOptions).toBeDefined()
@@ -435,7 +435,7 @@ describe('middleware', () => {
       mockRequest.nextUrl.pathname = '/CreateUser'
       
       // Should still redirect unauthenticated users
-      await middleware(mockRequest as NextRequest)
+      await middleware(mockRequest)
       
       expect(NextResponse.redirect).toHaveBeenCalledWith(
         new URL('/', mockRequest.url)
@@ -457,7 +457,7 @@ describe('middleware', () => {
       mockRequest.nextUrl.pathname = '/success'
       
       // Should handle the error and not crash
-      await expect(middleware(mockRequest as NextRequest)).rejects.toThrow('Database error')
+      await expect(middleware(mockRequest)).rejects.toThrow('Database error')
     })
   })
 
@@ -465,7 +465,7 @@ describe('middleware', () => {
     it('handles trailing slashes correctly', async () => {
       mockRequest.nextUrl.pathname = '/CreateUser/'
       
-      await middleware(mockRequest as NextRequest)
+      await middleware(mockRequest)
       
       expect(NextResponse.redirect).toHaveBeenCalledWith(
         new URL('/', mockRequest.url)
@@ -476,7 +476,7 @@ describe('middleware', () => {
       mockRequest.url = 'http://localhost:3000/CreateUser?ref=email'
       mockRequest.nextUrl.pathname = '/CreateUser'
       
-      await middleware(mockRequest as NextRequest)
+      await middleware(mockRequest)
       
       expect(NextResponse.redirect).toHaveBeenCalledWith(
         new URL('/', mockRequest.url)
@@ -486,7 +486,7 @@ describe('middleware', () => {
     it('handles deep workspace routes', async () => {
       mockRequest.nextUrl.pathname = '/test-workspace/issues/123'
       
-      await middleware(mockRequest as NextRequest)
+      await middleware(mockRequest)
       
       expect(NextResponse.redirect).toHaveBeenCalledWith(
         new URL('/', mockRequest.url)
