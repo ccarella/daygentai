@@ -23,19 +23,41 @@ describe('EditIssueModal - Prompt Generation', () => {
         error: null
       }))
     },
-    from: vi.fn(() => ({
-      update: vi.fn(() => ({
-        eq: vi.fn(() => Promise.resolve({ error: null }))
-      })),
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn(() => Promise.resolve({ 
-            data: { id: 'test-workspace-id', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
-            error: null 
+    from: vi.fn((table) => {
+      if (table === 'issue_tags') {
+        return {
+          delete: vi.fn(() => ({
+            eq: vi.fn(() => Promise.resolve({ error: null }))
+          })),
+          insert: vi.fn(() => Promise.resolve({ error: null })),
+          select: vi.fn(() => ({
+            eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
+          }))
+        }
+      }
+      if (table === 'tags') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              order: vi.fn(() => Promise.resolve({ data: [], error: null }))
+            }))
+          }))
+        }
+      }
+      return {
+        update: vi.fn(() => ({
+          eq: vi.fn(() => Promise.resolve({ error: null }))
+        })),
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: vi.fn(() => Promise.resolve({ 
+              data: { id: 'test-workspace-id', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
+              error: null 
+            }))
           }))
         }))
-      }))
-    }))
+      }
+    })
   }
 
   const defaultIssue = {
@@ -82,19 +104,41 @@ describe('EditIssueModal - Prompt Generation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     
-    // Reset the mock to return API key by default
-    mockSupabase.from.mockReturnValue({
-      update: vi.fn(() => ({
-        eq: vi.fn(() => Promise.resolve({ error: null }))
-      })),
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn(() => Promise.resolve({ 
-            data: { id: 'test-workspace-id', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
-            error: null 
+    // Reset the mock implementation but preserve the tag-related functionality
+    mockSupabase.from.mockImplementation((table) => {
+      if (table === 'issue_tags') {
+        return {
+          delete: vi.fn(() => ({
+            eq: vi.fn(() => Promise.resolve({ error: null }))
+          })),
+          insert: vi.fn(() => Promise.resolve({ error: null })),
+          select: vi.fn(() => ({
+            eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
+          }))
+        }
+      }
+      if (table === 'tags') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              order: vi.fn(() => Promise.resolve({ data: [], error: null }))
+            }))
+          }))
+        }
+      }
+      return {
+        update: vi.fn(() => ({
+          eq: vi.fn(() => Promise.resolve({ error: null }))
+        })),
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: vi.fn(() => Promise.resolve({ 
+              data: { id: 'test-workspace-id', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
+              error: null 
+            }))
           }))
         }))
-      }))
+      }
     })
     
     vi.mocked(createClient).mockReturnValue(mockSupabase as any)
@@ -382,6 +426,26 @@ describe('EditIssueModal - Prompt Generation', () => {
               }))
             }
           }
+          if (table === 'issue_tags') {
+            return {
+              delete: vi.fn(() => ({
+                eq: vi.fn(() => Promise.resolve({ error: null }))
+              })),
+              insert: vi.fn(() => Promise.resolve({ error: null })),
+              select: vi.fn(() => ({
+                eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
+              }))
+            }
+          }
+          if (table === 'tags') {
+            return {
+              select: vi.fn(() => ({
+                eq: vi.fn(() => ({
+                  order: vi.fn(() => Promise.resolve({ data: [], error: null }))
+                }))
+              }))
+            }
+          }
           return {
             select: vi.fn(() => ({ eq: vi.fn() })),
             update: vi.fn(() => ({ eq: vi.fn() }))
@@ -413,24 +477,46 @@ describe('EditIssueModal - Prompt Generation', () => {
       const user = userEvent.setup()
       
       // Mock workspace with agents_content
-      mockSupabase.from.mockReturnValue({
-        update: vi.fn(() => ({
-          eq: vi.fn(() => Promise.resolve({ error: null }))
-        })),
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            single: vi.fn(() => Promise.resolve({ 
-              data: { 
-                id: 'test-workspace', 
-                name: 'Test Workspace', 
-                api_key: 'test-key', 
-                api_provider: 'openai',
-                agents_content: 'Agents.md content here'
-              }, 
-              error: null 
+      mockSupabase.from.mockImplementation((table) => {
+        if (table === 'issue_tags') {
+          return {
+            delete: vi.fn(() => ({
+              eq: vi.fn(() => Promise.resolve({ error: null }))
+            })),
+            insert: vi.fn(() => Promise.resolve({ error: null })),
+            select: vi.fn(() => ({
+              eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
+            }))
+          }
+        }
+        if (table === 'tags') {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                order: vi.fn(() => Promise.resolve({ data: [], error: null }))
+              }))
+            }))
+          }
+        }
+        return {
+          update: vi.fn(() => ({
+            eq: vi.fn(() => Promise.resolve({ error: null }))
+          })),
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn(() => Promise.resolve({ 
+                data: { 
+                  id: 'test-workspace', 
+                  name: 'Test Workspace', 
+                  api_key: 'test-key', 
+                  api_provider: 'openai',
+                  agents_content: 'Agents.md content here'
+                }, 
+                error: null 
+              }))
             }))
           }))
-        }))
+        }
       })
 
       renderWithProvider()
@@ -463,13 +549,44 @@ describe('EditIssueModal - Prompt Generation', () => {
 
   describe('API key handling', () => {
     it('should hide prompt toggle when no API key is configured', async () => {
-      mockSupabase.from.mockReturnValueOnce({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            single: vi.fn(() => Promise.resolve({ data: null, error: null }))
+      // Mock workspace query to return no data (no API key)
+      mockSupabase.from.mockImplementation(((table: string) => {
+        if (table === 'workspaces') {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn(() => Promise.resolve({ data: null, error: null }))
+              }))
+            }))
+          }
+        }
+        // Return default mocks for other tables
+        if (table === 'issue_tags') {
+          return {
+            delete: vi.fn(() => ({
+              eq: vi.fn(() => Promise.resolve({ error: null }))
+            })),
+            insert: vi.fn(() => Promise.resolve({ error: null })),
+            select: vi.fn(() => ({
+              eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
+            }))
+          }
+        }
+        if (table === 'tags') {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                order: vi.fn(() => Promise.resolve({ data: [], error: null }))
+              }))
+            }))
+          }
+        }
+        return {
+          update: vi.fn(() => ({
+            eq: vi.fn(() => Promise.resolve({ error: null }))
           }))
-        }))
-      } as any)
+        }
+      }) as any)
 
       renderWithProvider(false)
 

@@ -5,7 +5,14 @@ import { createClient } from '@/lib/supabase/client'
 import { useIssueCache } from '@/contexts/issue-cache-context'
 import { formatDistanceToNow } from 'date-fns'
 import { KanbanBoardSkeleton } from './kanban-skeleton'
+import { Tag as TagComponent } from '@/components/ui/tag'
 // Navigation is now handled by useWorkspaceNavigation in the parent component
+
+interface TagData {
+  id: string
+  name: string
+  color?: string
+}
 
 interface Issue {
   id: string
@@ -21,6 +28,7 @@ interface Issue {
   creator?: {
     full_name: string | null
   }
+  issue_tags?: Array<{ tags: TagData }>
 }
 
 interface KanbanBoardProps {
@@ -29,6 +37,7 @@ interface KanbanBoardProps {
   statusFilter?: string
   priorityFilter?: string
   typeFilter?: string
+  tagFilter?: string
   searchQuery?: string
 }
 
@@ -68,6 +77,7 @@ export function KanbanBoard({
   statusFilter = 'all',
   priorityFilter = 'all',
   typeFilter = 'all',
+  tagFilter = 'all',
   searchQuery = ''
 }: KanbanBoardProps) {
   const [issues, setIssues] = useState<Issue[]>([])
@@ -124,6 +134,12 @@ export function KanbanBoard({
           }
         }
         
+        if (tagFilter !== 'all') {
+          filteredData = filteredData.filter(issue => 
+            issue.issue_tags && issue.issue_tags.some(({ tags }) => tags.id === tagFilter)
+          )
+        }
+        
         // Apply pagination on filtered results
         data = filteredData.slice(from, to + 1)
       }
@@ -131,7 +147,16 @@ export function KanbanBoard({
       // Original query logic for non-search cases
       let query = supabase
         .from('issues')
-        .select('*')
+        .select(`
+          *,
+          issue_tags (
+            tags (
+              id,
+              name,
+              color
+            )
+          )
+        `)
         .eq('workspace_id', workspaceId)
         .order('created_at', { ascending: false })
         .range(from, to)
@@ -169,7 +194,14 @@ export function KanbanBoard({
       return
     }
 
-    const newIssues = data || []
+    let newIssues = data || []
+    
+    // Apply tag filter on the client side for non-search queries
+    if (tagFilter !== 'all' && !searchQuery) {
+      newIssues = newIssues.filter((issue: Issue) => 
+        issue.issue_tags && issue.issue_tags.some(({ tags }) => tags.id === tagFilter)
+      )
+    }
     
     if (append) {
       setIssues(prev => [...prev, ...newIssues])
@@ -186,14 +218,14 @@ export function KanbanBoard({
       const issueIds = newIssues.map(issue => issue.id)
       preloadIssues(issueIds)
     }
-  }, [workspaceId, statusFilter, priorityFilter, typeFilter, searchQuery, preloadIssues])
+  }, [workspaceId, statusFilter, priorityFilter, typeFilter, tagFilter, searchQuery, preloadIssues])
 
   useEffect(() => {
     setLoading(true)
     setPage(0)
     fetchIssues(0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, priorityFilter, typeFilter, searchQuery, workspaceId])
+  }, [statusFilter, priorityFilter, typeFilter, tagFilter, searchQuery, workspaceId])
 
   const loadMore = () => {
     const nextPage = page + 1
@@ -289,7 +321,7 @@ export function KanbanBoard({
                         {issue.title}
                       </h4>
                       
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <span className={`text-xs px-2 py-1 rounded-md font-medium ${typeColors[issue.type]}`}>
                           {typeLabels[issue.type]}
                         </span>
@@ -297,6 +329,20 @@ export function KanbanBoard({
                           {issue.priority}
                         </span>
                       </div>
+                      
+                      {issue.issue_tags && issue.issue_tags.length > 0 && (
+                        <div className="flex items-center gap-1 flex-wrap mb-2">
+                          {issue.issue_tags.map(({ tags }) => (
+                            <TagComponent
+                              key={tags.id}
+                              color={tags.color}
+                              className="text-xs"
+                            >
+                              {tags.name}
+                            </TagComponent>
+                          ))}
+                        </div>
+                      )}
                       
                       {issue.description && (
                         <p className="text-sm text-gray-600 line-clamp-2 mb-2">

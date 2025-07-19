@@ -7,7 +7,14 @@ import { useRouter } from 'next/navigation'
 import { useIssueCache } from '@/contexts/issue-cache-context'
 import { stripMarkdown } from '@/lib/markdown-utils'
 import { IssueListSkeleton } from './issue-skeleton'
+import { Tag as TagComponent } from '@/components/ui/tag'
 // Navigation is now handled by useWorkspaceNavigation in the parent component
+
+interface TagData {
+  id: string
+  name: string
+  color?: string
+}
 
 interface Issue {
   id: string
@@ -19,6 +26,7 @@ interface Issue {
   created_at: string
   created_by: string
   assignee_id: string | null
+  issue_tags?: Array<{ tags: TagData }>
 }
 
 interface IssuesListProps {
@@ -28,6 +36,7 @@ interface IssuesListProps {
   statusFilter?: string
   priorityFilter?: string
   typeFilter?: string
+  tagFilter?: string
   searchQuery?: string
   onSearchResultsChange?: (count: number) => void
 }
@@ -71,6 +80,7 @@ export function IssuesList({
   statusFilter = 'exclude_done',
   priorityFilter = 'all',
   typeFilter = 'all',
+  tagFilter = 'all',
   searchQuery = '',
   onSearchResultsChange
 }: IssuesListProps) {
@@ -130,6 +140,12 @@ export function IssuesList({
         filteredResults = filteredResults.filter((issue: Issue) => issue.type === typeFilter)
       }
 
+      if (tagFilter !== 'all') {
+        filteredResults = filteredResults.filter((issue: Issue) => 
+          issue.issue_tags && issue.issue_tags.some(({ tags }) => tags.id === tagFilter)
+        )
+      }
+
       // Apply pagination to filtered results
       const start = pageNum * ISSUES_PER_PAGE
       const paginatedResults = filteredResults.slice(start, start + ISSUES_PER_PAGE)
@@ -165,7 +181,16 @@ export function IssuesList({
     // Now fetch the actual data
     let query = supabase
       .from('issues')
-      .select('*')
+      .select(`
+        *,
+        issue_tags (
+          tags (
+            id,
+            name,
+            color
+          )
+        )
+      `)
       .eq('workspace_id', workspaceId)
 
     // Apply filters
@@ -200,7 +225,15 @@ export function IssuesList({
       return { issues: [], hasMore: false, totalCount: 0 }
     }
 
-    const newIssues = data || []
+    let newIssues = data || []
+    
+    // Apply tag filter on the client side
+    if (tagFilter !== 'all') {
+      newIssues = newIssues.filter((issue: Issue) => 
+        issue.issue_tags && issue.issue_tags.some(({ tags }) => tags.id === tagFilter)
+      )
+    }
+    
     const totalCount = totalFilteredCount || 0
     const hasMorePages = (pageNum + 1) * ISSUES_PER_PAGE < totalCount
     
@@ -224,7 +257,7 @@ export function IssuesList({
     }
 
     return { issues: newIssues, hasMore: hasMorePages, totalCount }
-  }, [workspaceId, statusFilter, priorityFilter, typeFilter, searchQuery, preloadIssues, onSearchResultsChange])
+  }, [workspaceId, statusFilter, priorityFilter, typeFilter, tagFilter, searchQuery, preloadIssues, onSearchResultsChange])
 
   // Initial load when component mounts or filters change
   useEffect(() => {
@@ -262,7 +295,7 @@ export function IssuesList({
         clearTimeout(preloadTimeoutRef.current)
       }
     }
-  }, [workspaceId, statusFilter, priorityFilter, typeFilter, searchQuery]) // Added searchQuery dependency
+  }, [workspaceId, statusFilter, priorityFilter, typeFilter, tagFilter, searchQuery]) // Added searchQuery dependency
 
   // Setup IntersectionObserver for viewport-based preloading
   useEffect(() => {
@@ -354,7 +387,7 @@ export function IssuesList({
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No issues found</h3>
           <p className="text-sm text-gray-500">
-            {statusFilter !== 'all' || priorityFilter !== 'all' || typeFilter !== 'all' 
+            {statusFilter !== 'all' || priorityFilter !== 'all' || typeFilter !== 'all' || tagFilter !== 'all'
               ? 'Try adjusting your filters' 
               : 'Create your first issue to get started'}
           </p>
@@ -427,6 +460,21 @@ export function IssuesList({
                   <span className="text-gray-500 capitalize ml-2">
                     {issue.status.replace('_', ' ')}
                   </span>
+                  
+                  {/* Tags */}
+                  {issue.issue_tags && issue.issue_tags.length > 0 && (
+                    <div className="flex items-center gap-1 ml-2">
+                      {issue.issue_tags.map(({ tags }) => (
+                        <TagComponent
+                          key={tags.id}
+                          color={tags.color}
+                          className="text-xs"
+                        >
+                          {tags.name}
+                        </TagComponent>
+                      ))}
+                    </div>
+                  )}
                   
                   {/* Created Date */}
                   <span className="text-gray-400 ml-2">

@@ -55,6 +55,8 @@ import {
 } from '@/components/ui/select'
 import { LayoutGrid, List, Filter, X } from 'lucide-react'
 import { SearchBar, SearchBarRef } from '@/components/workspace/search-bar'
+import { getWorkspaceTags } from '@/lib/tags'
+import { Tag as TagComponent } from '@/components/ui/tag'
 
 interface WorkspaceContentProps {
   workspace: {
@@ -138,15 +140,26 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   const [statusFilter, setStatusFilter] = useState<string>('exclude_done')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [tagFilter, setTagFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false)
   const [isFiltersVisible, setIsFiltersVisible] = useState<boolean>(false)
   const [isSearching, setIsSearching] = useState<boolean>(false)
   const [searchResultCount, setSearchResultCount] = useState<number>(0)
   const searchInputRef = useRef<SearchBarRef>(null)
+  const [availableTags, setAvailableTags] = useState<Array<{id: string, name: string, color?: string | undefined}>>([])
   
   // Debounce search query for better performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
+  
+  // Fetch available tags
+  useEffect(() => {
+    const loadTags = async () => {
+      const tags = await getWorkspaceTags(workspace.id)
+      setAvailableTags(tags)
+    }
+    loadTags()
+  }, [workspace.id])
   
   // Handle browser back/forward navigation
   useEffect(() => {
@@ -397,6 +410,27 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                     ))}
                   </SelectContent>
                 </Select>
+                
+                {/* Tag Filter */}
+                {availableTags.length > 0 && (
+                  <Select value={tagFilter} onValueChange={setTagFilter}>
+                    <SelectTrigger className="w-[140px] h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Tags</SelectItem>
+                      {availableTags.map((tag) => (
+                        <SelectItem key={tag.id} value={tag.id}>
+                          <div className="flex items-center gap-2">
+                            <TagComponent color={tag.color} className="text-xs">
+                              {tag.name}
+                            </TagComponent>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
             
@@ -498,6 +532,30 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                   </SelectContent>
                 </Select>
               </div>
+              
+              {/* Tag Filter */}
+              {availableTags.length > 0 && (
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Tag</label>
+                  <Select value={tagFilter} onValueChange={setTagFilter}>
+                    <SelectTrigger className="w-full h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Tags</SelectItem>
+                      {availableTags.map((tag) => (
+                        <SelectItem key={tag.id} value={tag.id}>
+                          <div className="flex items-center gap-2">
+                            <TagComponent color={tag.color} className="text-xs">
+                              {tag.name}
+                            </TagComponent>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -514,6 +572,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
             statusFilter={statusFilter}
             priorityFilter={priorityFilter}
             typeFilter={typeFilter}
+            tagFilter={tagFilter}
             searchQuery={debouncedSearchQuery}
             onSearchResultsChange={setSearchResultCount}
           />
@@ -525,6 +584,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
             statusFilter={statusFilter}
             priorityFilter={priorityFilter}
             typeFilter={typeFilter}
+            tagFilter={tagFilter}
             searchQuery={debouncedSearchQuery}
           />
         )

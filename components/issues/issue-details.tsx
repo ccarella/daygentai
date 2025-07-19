@@ -25,6 +25,13 @@ import { EditIssueModal } from './edit-issue-modal'
 import { PromptDisplay } from './prompt-display'
 import { useToast } from '@/components/ui/use-toast'
 import { IssueDetailsSkeleton } from './issue-skeleton'
+import { Tag as TagComponent } from '@/components/ui/tag'
+
+interface TagData {
+  id: string
+  name: string
+  color?: string
+}
 
 interface Issue {
   id: string
@@ -38,6 +45,7 @@ interface Issue {
   assignee_id: string | null
   workspace_id: string
   generated_prompt?: string | null
+  issue_tags?: Array<{ tags: TagData }>
 }
 
 interface IssueDetailsProps {
@@ -143,7 +151,16 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
       // Fetch issue data
       const { data: issue, error } = await supabase
         .from('issues')
-        .select('*')
+        .select(`
+          *,
+          issue_tags (
+            tags (
+              id,
+              name,
+              color
+            )
+          )
+        `)
         .eq('id', issueId)
         .single()
 
@@ -276,7 +293,16 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
     const supabase = createClient()
     const { data: updatedIssue } = await supabase
       .from('issues')
-      .select('*')
+      .select(`
+        *,
+        issue_tags (
+          tags (
+            id,
+            name,
+            color
+          )
+        )
+      `)
       .eq('id', issueId)
       .single()
     
@@ -408,6 +434,22 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
                 </Select>
               </div>
             </div>
+            
+            {/* Tags */}
+            {issue.issue_tags && issue.issue_tags.length > 0 && (
+              <div className="flex items-center flex-wrap gap-2 mt-3">
+                <span className="text-gray-500 text-sm">Tags:</span>
+                {issue.issue_tags.map(({ tags }) => (
+                  <TagComponent
+                    key={tags.id}
+                    color={tags.color}
+                    className="text-xs"
+                  >
+                    {tags.name}
+                  </TagComponent>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* AI Generated Prompt */}
