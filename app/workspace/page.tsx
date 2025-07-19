@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import type { WorkspaceMemberSlugQueryResponse } from '@/types/supabase-helpers'
 
 export default async function WorkspaceLoadingPage() {
   const supabase = await createClient()
@@ -37,8 +38,11 @@ export default async function WorkspaceLoadingPage() {
   if (!workspaceMemberships || workspaceMemberships.length === 0) {
     redirect('/CreateWorkspace')
   } else if (workspaceMemberships[0]) {
-    const workspace: any = workspaceMemberships[0]
-    redirect(`/${workspace.workspace.slug}`)
+    const membership = workspaceMemberships[0] as WorkspaceMemberSlugQueryResponse
+    const workspace = membership.workspace[0]
+    if (workspace) {
+      redirect(`/${workspace.slug}`)
+    }
   }
 
   // Fallback (should not reach here)

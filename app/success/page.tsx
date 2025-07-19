@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import type { WorkspaceMemberDetailsQueryResponse } from '@/types/supabase-helpers'
 
 export default async function SuccessPage({
   searchParams,
@@ -32,7 +33,7 @@ export default async function SuccessPage({
   const { data: workspaceMemberships } = await supabase
     .from('workspace_members')
     .select(`
-      workspace:workspaces!inner(
+      workspace:workspaces(
         name,
         slug,
         avatar_url
@@ -46,8 +47,12 @@ export default async function SuccessPage({
     redirect('/CreateWorkspace')
   }
 
-  const membership: any = workspaceMemberships[0]
-  const workspace = membership.workspace
+  const membership = workspaceMemberships[0] as WorkspaceMemberDetailsQueryResponse
+  const workspace = membership.workspace[0]
+
+  if (!workspace) {
+    redirect('/CreateWorkspace')
+  }
 
   // If user has a workspace and not in debug mode, redirect to workspace
   if (!isDebugMode) {

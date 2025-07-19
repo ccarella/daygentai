@@ -1,6 +1,7 @@
 import CreateWorkspaceForm from '@/components/auth/CreateWorkspaceForm'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import type { WorkspaceMemberSlugQueryResponse } from '@/types/supabase-helpers'
 
 export default async function CreateWorkspacePage() {
   const supabase = await createClient()
@@ -33,8 +34,11 @@ export default async function CreateWorkspacePage() {
     .limit(1)
 
   if (existingWorkspaces && existingWorkspaces.length > 0 && existingWorkspaces[0]) {
-    const workspace: any = existingWorkspaces[0]
-    redirect(`/${workspace.workspace.slug}`)
+    const membership = existingWorkspaces[0] as WorkspaceMemberSlugQueryResponse
+    const workspace = membership.workspace[0]
+    if (workspace) {
+      redirect(`/${workspace.slug}`)
+    }
   }
 
   return (
