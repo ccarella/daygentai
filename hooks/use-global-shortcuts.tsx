@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useCommandPalette } from "./use-command-palette"
 import { createClient } from "@/lib/supabase/client"
 import { emitIssueStatusUpdate } from "@/lib/events/issue-events"
+import { useToast } from "@/components/ui/use-toast"
 
 interface GlobalShortcutsProps {
   workspaceSlug: string
@@ -22,6 +23,7 @@ interface GlobalShortcutsProps {
 export function useGlobalShortcuts({ workspaceSlug, onCreateIssue, onShowHelp, onToggleViewMode, currentIssue, onIssueStatusChange }: GlobalShortcutsProps) {
   const router = useRouter()
   const { setIsOpen: setCommandPaletteOpen } = useCommandPalette()
+  const { toast } = useToast()
   const [keySequence, setKeySequence] = React.useState<string[]>([])
   const sequenceTimeoutRef = React.useRef<NodeJS.Timeout | undefined>(undefined)
 
@@ -41,8 +43,17 @@ export function useGlobalShortcuts({ workspaceSlug, onCreateIssue, onShowHelp, o
       console.log('Status changed successfully to:', newStatus)
       // Emit event for other components
       emitIssueStatusUpdate(currentIssue.id, newStatus)
+      toast({
+        title: "Status updated",
+        description: `Issue status changed to ${newStatus.toLowerCase().replace('_', ' ')}.`,
+      })
     } else {
       console.error('Error changing status:', error)
+      toast({
+        title: "Failed to update status",
+        description: error.message || "An error occurred while updating the issue status.",
+        variant: "destructive",
+      })
     }
   }
 
