@@ -103,6 +103,16 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
     contentRef.current?.toggleSearch()
   }
 
+  // Handler to set status filter
+  const handleSetStatusFilter = (status: string) => {
+    contentRef.current?.setStatusFilter(status)
+  }
+
+  // Handler to get current view
+  const getCurrentView = () => {
+    return contentRef.current?.getCurrentView() || 'list'
+  }
+
   const handleAvatarUpdate = (newAvatar: string) => {
     setUserAvatar(newAvatar)
   }
@@ -147,6 +157,8 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
           onCreateIssue={handleCreateIssue}
           onToggleViewMode={handleToggleViewMode}
           onToggleSearch={handleToggleSearch}
+          onSetStatusFilter={handleSetStatusFilter}
+          getCurrentView={getCurrentView}
         />
       )}
     </>
