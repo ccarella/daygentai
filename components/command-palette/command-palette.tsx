@@ -18,6 +18,7 @@ import { CommandItem } from "./command-item"
 import { useCommandPalette } from "@/hooks/use-command-palette"
 import { recommendNextIssueAction } from "@/app/actions/recommend-issue"
 import { NextIssueModal } from "@/components/issues/next-issue-modal"
+import { useToast } from "@/components/ui/use-toast"
 
 interface Command {
   id: string
@@ -57,6 +58,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   }, [])
   const router = useRouter()
   const { isOpen, setIsOpen, mode } = useCommandPalette()
+  const { toast } = useToast()
   const [search, setSearch] = React.useState("")
   const [selectedIndex, setSelectedIndex] = React.useState(0)
   const inputRef = React.useRef<HTMLInputElement>(null)
@@ -118,6 +120,19 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
                 onIssueStatusChange(option.value)
                 // Also emit the event for other components
                 emitIssueStatusUpdate(currentIssue.id, option.value)
+                
+                // Show success toast
+                toast({
+                  title: "Status updated",
+                  description: `Issue status changed to ${option.label}`,
+                })
+              } else {
+                // Show error toast
+                toast({
+                  title: "Error updating status",
+                  description: error.message || "Failed to update issue status. Please try again.",
+                  variant: "destructive",
+                })
               }
             },
             keywords: ["status", "change", option.label.toLowerCase(), option.value],

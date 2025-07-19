@@ -3,17 +3,17 @@
 import { useState } from 'react'
 import { signInWithMagicLink } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/components/ui/use-toast'
 
 export function EmailLogin() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const router = useRouter()
+  const { toast } = useToast()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setMessage(null)
 
     try {
       // Use window.location.origin to get the current deployment URL
@@ -22,12 +22,19 @@ export function EmailLogin() {
 
       if (error) throw error
 
+      // Show success toast
+      toast({
+        title: "Check your email",
+        description: "We've sent you a login link. Please check your inbox.",
+      })
+
       // Redirect to the check email page with the email as a parameter
       router.push(`/checkemail?email=${encodeURIComponent(email)}`)
     } catch (error) {
-      setMessage({
-        type: 'error',
-        text: error instanceof Error ? error.message : 'Something went wrong!'
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : 'Something went wrong!',
+        variant: "destructive",
       })
     } finally {
       setLoading(false)
@@ -71,18 +78,6 @@ export function EmailLogin() {
         >
           {loading ? 'Sending...' : 'Send login link'}
         </button>
-
-        {message && (
-          <div
-            className={`p-2 md:p-3 rounded-md text-sm ${
-              message.type === 'success' 
-                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' 
-                : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
       </form>
     </div>
   )
