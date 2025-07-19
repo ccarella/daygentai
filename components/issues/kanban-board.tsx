@@ -350,7 +350,7 @@ export function KanbanBoard({
                         </p>
                       )}
                       
-                      <div className="flex items-center justify-end text-xs text-gray-500">
+                      <div className="hidden sm:flex items-center justify-end text-xs text-gray-500">
                         <span>{formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}</span>
                       </div>
                     </div>
