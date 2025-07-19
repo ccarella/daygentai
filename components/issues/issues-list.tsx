@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { useIssueCache } from '@/contexts/issue-cache-context'
 import { stripMarkdown } from '@/lib/markdown-utils'
+import { IssueListSkeleton } from './issue-skeleton'
 // Navigation is now handled by useWorkspaceNavigation in the parent component
 
 interface Issue {
@@ -312,11 +313,7 @@ export function IssuesList({
   }
 
   if (initialLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading issues...</div>
-      </div>
-    )
+    return <IssueListSkeleton count={5} />
   }
 
   if (issues.length === 0 && !initialLoading) {
