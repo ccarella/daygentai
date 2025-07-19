@@ -175,9 +175,7 @@ describe('EditIssueModal - Prompt Generation', () => {
         expect(promptGenerator.generateIssuePrompt).toHaveBeenCalledWith({
           title: 'Updated title',
           description: 'Original description',
-          apiKey: 'test-key',
-          provider: 'openai',
-          agentsContent: undefined
+          workspaceId: 'test-workspace-id'
         })
       })
 
@@ -272,9 +270,7 @@ describe('EditIssueModal - Prompt Generation', () => {
         expect(promptGenerator.generateIssuePrompt).toHaveBeenCalledWith({
           title: 'Original title',
           description: 'Original description',
-          apiKey: 'test-key',
-          provider: 'openai',
-          agentsContent: undefined
+          workspaceId: 'test-workspace-id'
         })
       })
     })
@@ -458,7 +454,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       await waitFor(() => {
         expect(promptGenerator.generateIssuePrompt).toHaveBeenCalledWith(
           expect.objectContaining({
-            agentsContent: 'Agents.md content here'
+            workspaceId: 'test-workspace-id'
           })
         )
       })

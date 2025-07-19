@@ -92,28 +92,17 @@ export function CreateIssueModal({
       if (createPrompt && hasApiKey) {
         setIsGeneratingPrompt(true)
         try {
-          // Fetch workspace data including API key and agents content
-          const { data: workspace } = await supabase
-            .from('workspaces')
-            .select('api_key, api_provider, agents_content')
-            .eq('id', workspaceId)
-            .single()
+          const { prompt, error: promptError } = await generateIssuePrompt({
+            title: title.trim(),
+            description: description.trim(),
+            workspaceId: workspaceId
+          })
           
-          if (workspace?.api_key) {
-            const { prompt, error: promptError } = await generateIssuePrompt({
-              title: title.trim(),
-              description: description.trim(),
-              agentsContent: workspace.agents_content,
-              apiKey: workspace.api_key,
-              provider: workspace.api_provider || 'openai'
-            })
-            
-            if (promptError) {
-              console.error('Error generating prompt:', promptError)
-              // Continue without prompt - don't block issue creation
-            } else {
-              generatedPrompt = prompt
-            }
+          if (promptError) {
+            console.error('Error generating prompt:', promptError)
+            // Continue without prompt - don't block issue creation
+          } else {
+            generatedPrompt = prompt
           }
         } catch (error) {
           console.error('Error generating prompt:', error)
