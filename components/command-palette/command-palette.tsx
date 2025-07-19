@@ -55,13 +55,57 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       currentIssue,
       hasOnIssueStatusChange: !!onIssueStatusChange
     })
-  }, [])
+  }, [workspaceSlug, workspaceId, currentIssue, onIssueStatusChange])
   const router = useRouter()
   const { isOpen, setIsOpen, mode } = useCommandPalette()
   const { toast } = useToast()
   const [search, setSearch] = React.useState("")
   const [selectedIndex, setSelectedIndex] = React.useState(0)
   const inputRef = React.useRef<HTMLInputElement>(null)
+  
+  // Memoize callbacks to prevent recreating functions
+  const handleCreateIssue = React.useCallback(() => {
+    setIsOpen(false)
+    onCreateIssue?.()
+  }, [setIsOpen, onCreateIssue])
+  
+  const handleToggleViewMode = React.useCallback(() => {
+    setIsOpen(false)
+    onToggleViewMode?.()
+  }, [setIsOpen, onToggleViewMode])
+  
+  const handleToggleSearch = React.useCallback(() => {
+    setIsOpen(false)
+    onToggleSearch?.()
+  }, [setIsOpen, onToggleSearch])
+  
+  const handleNavigateToIssues = React.useCallback(() => {
+    router.push(`/${workspaceSlug}`)
+  }, [router, workspaceSlug])
+  
+  const handleNavigateToInbox = React.useCallback(() => {
+    router.push(`/${workspaceSlug}/inbox`)
+  }, [router, workspaceSlug])
+  
+  // Placeholder handlers for filter actions - memoized
+  const handleFilterByStatus = React.useCallback(() => {
+    // TODO: Implement filter functionality
+    console.log("Filter by status")
+  }, [])
+  
+  const handleShowRecentIssues = React.useCallback(() => {
+    // TODO: Implement recent issues
+    console.log("Show recent issues")
+  }, [])
+  
+  // Memoize the modal close handler
+  const handleNextIssueModalChange = React.useCallback((open: boolean) => {
+    setNextIssueModalOpen(open)
+    if (!open) {
+      // Reset data when modal is closed
+      setNextIssueData({})
+    }
+  }, [])
   
   // Next Issue Modal state
   const [nextIssueModalOpen, setNextIssueModalOpen] = React.useState(false)
@@ -90,7 +134,92 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       nextIssueRequestRef.current = false
     }
   }, [])
+  
+  // Memoize the next issue handler
+  const handleNextIssue = React.useCallback(async () => {
+    // Prevent concurrent requests
+    if (nextIssueRequestRef.current) {
+      return
+    }
+    
+    setIsOpen(false)
+    setIsLoadingNextIssue(true)
+    setNextIssueModalOpen(true)
+    nextIssueRequestRef.current = true
+    
+    try {
+      const result = await recommendNextIssueAction(workspaceId)
+      
+      // Check if component is still mounted and request wasn't cancelled
+      if (!nextIssueRequestRef.current) {
+        return
+      }
+      
+      if (result.error && result.retryCount !== undefined && result.retryCount >= 3) {
+        // If we failed after retries, provide a more detailed error message
+        setNextIssueData({
+          ...result,
+          error: `${result.error} (Attempted ${result.retryCount} times with different prompting strategies)`
+        })
+      } else {
+        setNextIssueData(result)
+      }
+    } catch (error) {
+      console.error('Error getting AI recommendation:', error)
+      if (nextIssueRequestRef.current) {
+        setNextIssueData({
+          error: 'Failed to get recommendation. Please try again.'
+        })
+      }
+    } finally {
+      setIsLoadingNextIssue(false)
+      nextIssueRequestRef.current = false
+    }
+  }, [workspaceId, setIsOpen])
 
+  // Memoize status change handlers
+  const statusChangeHandlers = React.useMemo(() => {
+    if (!currentIssue || !onIssueStatusChange) return {}
+    
+    const handlers: Record<string, () => Promise<void>> = {}
+    const statusOptions = [
+      { value: 'todo', label: 'Todo' },
+      { value: 'in_progress', label: 'In Progress' },
+      { value: 'in_review', label: 'In Review' },
+      { value: 'done', label: 'Done' },
+    ]
+    
+    statusOptions.forEach(option => {
+      handlers[option.value] = async () => {
+        setIsOpen(false)
+        const supabase = createClient()
+        
+        const { error } = await supabase
+          .from('issues')
+          .update({ status: option.value })
+          .eq('id', currentIssue.id)
+
+        if (!error) {
+          onIssueStatusChange(option.value)
+          emitIssueStatusUpdate(currentIssue.id, option.value)
+          
+          toast({
+            title: "Status updated",
+            description: `Issue status changed to ${option.label}`,
+          })
+        } else {
+          toast({
+            title: "Error updating status",
+            description: error.message || "Failed to update issue status. Please try again.",
+            variant: "destructive",
+          })
+        }
+      }
+    })
+    
+    return handlers
+  }, [currentIssue?.id, onIssueStatusChange, setIsOpen, toast, currentIssue])
+  
   const commands: Command[] = React.useMemo(() => {
     const baseCommands: Command[] = []
 
@@ -116,34 +245,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
                      option.value === 'in_progress' ? 'S then P' :
                      option.value === 'in_review' ? 'S then R' :
                      option.value === 'done' ? 'S then D' : undefined,
-            action: async () => {
-              setIsOpen(false)
-              const supabase = createClient()
-              
-              const { error } = await supabase
-                .from('issues')
-                .update({ status: option.value })
-                .eq('id', currentIssue.id)
-
-              if (!error) {
-                onIssueStatusChange(option.value)
-                // Also emit the event for other components
-                emitIssueStatusUpdate(currentIssue.id, option.value)
-                
-                // Show success toast
-                toast({
-                  title: "Status updated",
-                  description: `Issue status changed to ${option.label}`,
-                })
-              } else {
-                // Show error toast
-                toast({
-                  title: "Error updating status",
-                  description: error.message || "Failed to update issue status. Please try again.",
-                  variant: "destructive",
-                })
-              }
-            },
+            action: statusChangeHandlers[option.value]!,
             keywords: ["status", "change", option.label.toLowerCase(), option.value],
             group: "Issue Actions"
           })
@@ -157,10 +259,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       title: "New Issue",
       icon: <Plus className="w-4 h-4" />,
       shortcut: "C",
-      action: () => {
-        setIsOpen(false)
-        onCreateIssue?.()
-      },
+      action: handleCreateIssue,
       keywords: ["new", "add", "make", "create"],
       group: "Quick Access"
     })
@@ -170,46 +269,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       title: "Next Issue",
       icon: <Sparkles className="w-4 h-4" />,
       shortcut: "⌘N",
-      action: async () => {
-        // Prevent concurrent requests
-        if (nextIssueRequestRef.current) {
-          return
-        }
-        
-        setIsOpen(false)
-        setIsLoadingNextIssue(true)
-        setNextIssueModalOpen(true)
-        nextIssueRequestRef.current = true
-        
-        try {
-          const result = await recommendNextIssueAction(workspaceId)
-          
-          // Check if component is still mounted and request wasn't cancelled
-          if (!nextIssueRequestRef.current) {
-            return
-          }
-          
-          if (result.error && result.retryCount !== undefined && result.retryCount >= 3) {
-            // If we failed after retries, provide a more detailed error message
-            setNextIssueData({
-              ...result,
-              error: `${result.error} (Attempted ${result.retryCount} times with different prompting strategies)`
-            })
-          } else {
-            setNextIssueData(result)
-          }
-        } catch (error) {
-          console.error('Error getting AI recommendation:', error)
-          if (nextIssueRequestRef.current) {
-            setNextIssueData({
-              error: 'Failed to get recommendation. Please try again.'
-            })
-          }
-        } finally {
-          setIsLoadingNextIssue(false)
-          nextIssueRequestRef.current = false
-        }
-      },
+      action: handleNextIssue,
       keywords: ["ai", "recommend", "suggestion", "next", "task", "priority"],
       group: "Quick Access"
     })
@@ -219,7 +279,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       title: "Go to Issues",
       icon: <FileText className="w-4 h-4" />,
       shortcut: "G then I",
-      action: () => router.push(`/${workspaceSlug}`),
+      action: handleNavigateToIssues,
       keywords: ["navigate", "view", "list", "issues"],
       group: "Quick Access"
     })
@@ -229,7 +289,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       title: "Go to Inbox",
       icon: <Inbox className="w-4 h-4" />,
       shortcut: "G then N",
-      action: () => router.push(`/${workspaceSlug}/inbox`),
+      action: handleNavigateToInbox,
       keywords: ["navigate", "triage", "inbox"],
       group: "Quick Access"
     })
@@ -240,10 +300,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       title: "Toggle List/Kanban View",
       icon: <LayoutGrid className="w-4 h-4" />,
       shortcut: "⌘B",
-      action: () => {
-        setIsOpen(false)
-        onToggleViewMode?.()
-      },
+      action: handleToggleViewMode,
       keywords: ["view", "switch", "kanban", "list", "board", "toggle"],
       group: "View"
     })
@@ -253,10 +310,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       title: "Toggle Search Bar",
       icon: <Search className="w-4 h-4" />,
       shortcut: "/",
-      action: () => {
-        setIsOpen(false)
-        onToggleSearch?.()
-      },
+      action: handleToggleSearch,
       keywords: ["search", "find", "filter", "query", "toggle", "show", "hide"],
       group: "View"
     })
@@ -266,10 +320,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       id: "filter-status",
       title: "Filter by Status",
       icon: <Filter className="w-4 h-4" />,
-      action: () => {
-        // TODO: Implement filter functionality
-        console.log("Filter by status")
-      },
+      action: handleFilterByStatus,
       keywords: ["status", "todo", "in progress", "done"],
       group: "Filters"
     })
@@ -278,10 +329,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       id: "recent-issues",
       title: "Recent Issues",
       icon: <Clock className="w-4 h-4" />,
-      action: () => {
-        // TODO: Implement recent issues
-        console.log("Show recent issues")
-      },
+      action: handleShowRecentIssues,
       keywords: ["history", "viewed", "last", "recent"],
       group: "Filters"
     })
@@ -294,7 +342,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
     }, {} as Record<string, number>))
     
     return baseCommands
-  }, [workspaceSlug, workspaceId, router, setIsOpen, onCreateIssue, onToggleViewMode, onToggleSearch, currentIssue, onIssueStatusChange])
+  }, [workspaceSlug, currentIssue, onIssueStatusChange, statusChangeHandlers, handleCreateIssue, handleNextIssue, handleNavigateToIssues, handleNavigateToInbox, handleToggleViewMode, handleToggleSearch, handleFilterByStatus, handleShowRecentIssues])
 
   const filteredCommands = React.useMemo(() => {
     if (!search) return commands
@@ -559,13 +607,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
 
       <NextIssueModal
         open={nextIssueModalOpen}
-        onOpenChange={(open) => {
-          setNextIssueModalOpen(open)
-          if (!open) {
-            // Reset data when modal is closed
-            setNextIssueData({})
-          }
-        }}
+        onOpenChange={handleNextIssueModalChange}
         issueId={nextIssueData.issueId || undefined}
         title={nextIssueData.title || undefined}
         justification={nextIssueData.justification || undefined}
