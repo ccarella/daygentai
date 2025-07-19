@@ -104,7 +104,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       })
     })
 
-    it('should have toggle checked when issue has prompt', async () => {
+    it('should have toggle unchecked by default regardless of existing prompt', async () => {
       const issueWithPrompt = {
         ...defaultIssue,
         generated_prompt: 'Existing prompt',
@@ -115,13 +115,13 @@ describe('EditIssueModal - Prompt Generation', () => {
 
       await waitFor(() => {
         const toggle = screen.getByRole('switch')
-        expect(toggle).toBeChecked()
+        expect(toggle).not.toBeChecked()
       })
     })
   })
 
   describe('prompt update behavior', () => {
-    it('should generate new prompt only when content changes', async () => {
+    it('should generate new prompt only when manually enabled and content changes', async () => {
       const user = userEvent.setup()
       const issueWithPrompt = {
         ...defaultIssue,
@@ -134,6 +134,12 @@ describe('EditIssueModal - Prompt Generation', () => {
       await waitFor(() => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
+
+      // Manually enable the toggle
+      const toggle = screen.getByRole('switch')
+      expect(toggle).not.toBeChecked()
+      await user.click(toggle)
+      expect(toggle).toBeChecked()
 
       // Update title
       const titleInput = screen.getByLabelText('Issue title')
@@ -225,7 +231,7 @@ describe('EditIssueModal - Prompt Generation', () => {
       })
     })
 
-    it('should generate prompt for issue without prompt when enabled', async () => {
+    it('should generate prompt for issue without prompt when manually enabled', async () => {
       const user = userEvent.setup()
       render(<EditIssueModal {...defaultProps} />)
 
@@ -233,8 +239,12 @@ describe('EditIssueModal - Prompt Generation', () => {
         expect(screen.getByRole('switch')).toBeInTheDocument()
       })
 
-      // The toggle is automatically enabled when workspace has API key and issue has no prompt
+      // The toggle starts unchecked and must be manually enabled
       const toggle = screen.getByRole('switch')
+      expect(toggle).not.toBeChecked()
+      
+      // Manually enable the toggle
+      await user.click(toggle)
       expect(toggle).toBeChecked()
 
       // Submit form
@@ -268,8 +278,10 @@ describe('EditIssueModal - Prompt Generation', () => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
-      // The toggle should be ON by default when workspace has API key and issue has no prompt
+      // Manually enable the toggle since it starts unchecked
       const toggle = screen.getByRole('switch')
+      expect(toggle).not.toBeChecked()
+      await user.click(toggle)
       expect(toggle).toBeChecked()
       
       const titleInput = screen.getByLabelText('Issue title')
@@ -416,8 +428,10 @@ describe('EditIssueModal - Prompt Generation', () => {
         expect(screen.getByLabelText('Issue title')).toBeInTheDocument()
       })
 
-      // The toggle is automatically enabled
+      // Manually enable the toggle since it starts unchecked
       const toggle = screen.getByRole('switch')
+      expect(toggle).not.toBeChecked()
+      await user.click(toggle)
       expect(toggle).toBeChecked()
       
       const titleInput = screen.getByLabelText('Issue title')

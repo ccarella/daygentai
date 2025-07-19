@@ -37,6 +37,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
   const [priority, setPriority] = useState<Issue['priority']>('medium');
   const [status, setStatus] = useState<Issue['status']>('todo');
   const [createPrompt, setCreatePrompt] = useState(false);
+  const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [hasApiKey, setHasApiKey] = useState(false);
@@ -54,8 +55,9 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
       setError('');
       setWorkspaceId(issue.workspace_id);
       
-      // Check if the issue already has a prompt
-      setCreatePrompt(!!issue.generated_prompt);
+      // Don't automatically enable prompt generation
+      // User must explicitly choose to generate a prompt
+      setCreatePrompt(false);
     }
   }, [issue, open]);
   
@@ -89,10 +91,8 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
         
         setHasApiKey(hasKey);
         
-        // If workspace has API key and issue doesn't have prompt yet, enable toggle
-        if (hasKey && issue && !issue.generated_prompt) {
-          setCreatePrompt(true);
-        }
+        // Don't automatically enable prompt generation
+        // User must explicitly choose to generate a prompt
       } catch (error) {
         // Silent error handling
       }
@@ -102,6 +102,11 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
   }, [open, workspaceId, issue]);
 
   const handleSubmit = async () => {
+    // Prevent multiple submissions
+    if (isSubmitDisabled || isSubmitting) {
+      return;
+    }
+
     if (!title.trim()) {
       setError('Title is required');
       return;
@@ -113,6 +118,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
     }
 
     setIsSubmitting(true);
+    setIsSubmitDisabled(true);
     setError('');
 
     try {
@@ -181,11 +187,15 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
       setError('An unexpected error occurred');
     } finally {
       setIsSubmitting(false);
+      // Re-enable submit after a short delay to prevent rapid clicks
+      setTimeout(() => {
+        setIsSubmitDisabled(false);
+      }, 500);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !isSubmitting && title.trim()) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !isSubmitting && !isSubmitDisabled && title.trim()) {
       e.preventDefault();
       handleSubmit();
     }
@@ -320,7 +330,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={isSubmitting || !title.trim()}
+            disabled={isSubmitting || isSubmitDisabled || !title.trim()}
           >
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
             {isGeneratingPrompt ? 'Generating prompt...' : 'Save changes'}
