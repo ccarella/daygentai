@@ -26,6 +26,8 @@ import { Loader2 } from 'lucide-react'
 import { generateIssuePrompt } from '@/lib/llm/prompt-generator'
 import { useToast } from '@/components/ui/use-toast'
 import { useWorkspace } from '@/contexts/workspace-context'
+import { TagInput, type TagOption } from '@/components/ui/tag-input'
+import { getWorkspaceTags, createTag, updateIssueTags } from '@/lib/tags'
 
 interface CreateIssueModalProps {
   open: boolean
@@ -50,6 +52,8 @@ export function CreateIssueModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false)
+  const [selectedTags, setSelectedTags] = useState<TagOption[]>([])
+  const [availableTags, setAvailableTags] = useState<TagOption[]>([])
   
   const hasApiKey = workspace?.hasApiKey || false
   
@@ -57,8 +61,26 @@ export function CreateIssueModal({
   useEffect(() => {
     if (open) {
       setCreatePrompt(hasApiKey)
+      // Load available tags
+      loadTags()
     }
   }, [open, hasApiKey])
+  
+  const loadTags = async () => {
+    const tags = await getWorkspaceTags(workspaceId)
+    setAvailableTags(tags)
+  }
+  
+  const handleCreateTag = async (name: string): Promise<TagOption> => {
+    const newTag = await createTag(workspaceId, name)
+    if (newTag) {
+      const tagOption = { id: newTag.id, name: newTag.name, color: newTag.color }
+      setAvailableTags([...availableTags, tagOption])
+      return tagOption
+    }
+    // Return a temporary tag if creation fails
+    return { id: `temp-${Date.now()}`, name, color: '#6366f1' }
+  }
 
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -113,7 +135,7 @@ export function CreateIssueModal({
       }
       
       // Create the issue with or without generated prompt
-      const { error: insertError } = await supabase
+      const { data: issue, error: insertError } = await supabase
         .from('issues')
         .insert({
           title: title.trim(),
@@ -125,6 +147,8 @@ export function CreateIssueModal({
           created_by: user.id,
           generated_prompt: generatedPrompt,
         })
+        .select()
+        .single()
 
       if (insertError) {
         toast({
@@ -134,6 +158,14 @@ export function CreateIssueModal({
         })
         return
       }
+      
+      // Add tags to the issue
+      if (issue && selectedTags.length > 0) {
+        const tagIds = selectedTags.map(tag => tag.id).filter(id => !id.startsWith('temp-'))
+        if (tagIds.length > 0) {
+          await updateIssueTags(issue.id, tagIds)
+        }
+      }
 
       // Reset form
       setTitle('')
@@ -141,6 +173,7 @@ export function CreateIssueModal({
       setType('feature')
       setPriority('medium')
       setCreatePrompt(false)
+      setSelectedTags([])
       
       onOpenChange(false)
       onIssueCreated?.()
@@ -233,6 +266,17 @@ export function CreateIssueModal({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tags">Tags</Label>
+              <TagInput
+                value={selectedTags}
+                onChange={setSelectedTags}
+                availableTags={availableTags}
+                onCreateTag={handleCreateTag}
+                placeholder="Select or create tags..."
+              />
             </div>
 
             <div className="flex items-center justify-between space-x-2 rounded-lg border p-3 md:p-4">

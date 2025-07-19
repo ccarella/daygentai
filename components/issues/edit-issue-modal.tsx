@@ -13,6 +13,8 @@ import { Loader2 } from 'lucide-react';
 import { generateIssuePrompt } from '@/lib/llm/prompt-generator';
 import { useToast } from '@/components/ui/use-toast';
 import { useWorkspace } from '@/contexts/workspace-context';
+import { TagInput, type TagOption } from '@/components/ui/tag-input';
+import { getWorkspaceTags, createTag, updateIssueTags, getIssueTags } from '@/lib/tags';
 
 interface Issue {
   id: string;
@@ -46,6 +48,8 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<TagOption[]>([]);
+  const [availableTags, setAvailableTags] = useState<TagOption[]>([]);
   
   const hasApiKey = workspace?.hasApiKey || false;
 
@@ -61,8 +65,39 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
       
       // Check if the issue already has a prompt or enable by default if API key exists
       setCreatePrompt(!!issue.generated_prompt || (hasApiKey && !issue.generated_prompt));
+      
+      // Load tags
+      loadTags();
+      loadIssueTags();
     }
   }, [issue, open, hasApiKey]);
+  
+  const loadTags = async () => {
+    if (issue) {
+      const tags = await getWorkspaceTags(issue.workspace_id);
+      setAvailableTags(tags);
+    }
+  };
+  
+  const loadIssueTags = async () => {
+    if (issue) {
+      const tags = await getIssueTags(issue.id);
+      setSelectedTags(tags);
+    }
+  };
+  
+  const handleCreateTag = async (name: string): Promise<TagOption> => {
+    if (issue) {
+      const newTag = await createTag(issue.workspace_id, name);
+      if (newTag) {
+        const tagOption = { id: newTag.id, name: newTag.name, color: newTag.color };
+        setAvailableTags([...availableTags, tagOption]);
+        return tagOption;
+      }
+    }
+    // Return a temporary tag if creation fails
+    return { id: `temp-${Date.now()}`, name, color: '#6366f1' };
+  };
 
   // Cleanup timeout on unmount or when modal closes
   useEffect(() => {
@@ -147,6 +182,10 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
         setError('Failed to update issue: ' + updateError.message);
         return;
       }
+      
+      // Update tags
+      const tagIds = selectedTags.map(tag => tag.id).filter(id => !id.startsWith('temp-'));
+      await updateIssueTags(issue.id, tagIds);
 
       toast({
         title: "Issue updated",
@@ -271,6 +310,17 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tags">Tags</Label>
+              <TagInput
+                value={selectedTags}
+                onChange={setSelectedTags}
+                availableTags={availableTags}
+                onCreateTag={handleCreateTag}
+                placeholder="Select or create tags..."
+              />
             </div>
 
             <div className="flex items-center justify-between space-x-2 rounded-lg border p-3 md:p-4">

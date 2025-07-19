@@ -23,6 +23,14 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   takeRecords: vi.fn(() => [])
 }))
 
+// Mock fetch for prompt generation
+global.fetch = vi.fn().mockImplementation(() => 
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({ prompt: 'Generated test prompt' })
+  })
+)
+
 // Test data
 const mockIssues = [
   {
@@ -86,6 +94,31 @@ vi.mock('@/lib/supabase/client', () => ({
             }, 
             error: null 
           })
+        }
+      }
+      if (table === 'issue_tags') {
+        return {
+          delete: vi.fn(() => ({
+            eq: vi.fn(() => Promise.resolve({ error: null }))
+          })),
+          insert: vi.fn(() => Promise.resolve({ error: null })),
+          select: vi.fn(() => ({
+            eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
+          }))
+        }
+      }
+      if (table === 'tags') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              order: vi.fn(() => Promise.resolve({ data: [], error: null }))
+            }))
+          })),
+          insert: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: vi.fn(() => Promise.resolve({ data: { id: 'new-tag-id', name: 'New Tag', color: '#6366f1' }, error: null }))
+            }))
+          }))
         }
       }
       // Default behavior for other tables
@@ -397,6 +430,32 @@ describe('Issue Management', () => {
                 }, 
                 error: null 
               })
+            }
+          }
+          if (table === 'issue_tags') {
+            return {
+              delete: vi.fn(() => ({
+                eq: vi.fn(() => Promise.resolve({ error: null }))
+              })),
+              insert: vi.fn(() => Promise.resolve({ error: null }))
+            }
+          }
+          if (table === 'tags') {
+            return {
+              select: vi.fn(() => ({
+                eq: vi.fn(() => ({
+                  order: vi.fn(() => Promise.resolve({ data: [], error: null }))
+                }))
+              }))
+            }
+          }
+          if (table === 'issues') {
+            return {
+              insert: vi.fn(() => ({
+                select: vi.fn(() => ({
+                  single: vi.fn(() => Promise.resolve({ data: { id: 'new-issue-id' }, error: null }))
+                }))
+              }))
             }
           }
           // Default behavior for other tables

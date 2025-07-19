@@ -27,19 +27,49 @@ describe('CreateIssueModal - Prompt Generation', () => {
         error: null
       }))
     },
-    from: vi.fn(() => ({
-      insert: vi.fn(() => ({
-        select: vi.fn(() => Promise.resolve({ data: [{ id: 'new-issue-id' }], error: null }))
-      })),
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn(() => Promise.resolve({ 
-            data: { id: 'test-workspace', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
-            error: null 
+    from: vi.fn((table) => {
+      if (table === 'issue_tags') {
+        return {
+          delete: vi.fn(() => ({
+            eq: vi.fn(() => Promise.resolve({ error: null }))
+          })),
+          insert: vi.fn(() => Promise.resolve({ error: null }))
+        }
+      }
+      if (table === 'tags') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              order: vi.fn(() => Promise.resolve({ data: [], error: null }))
+            }))
+          })),
+          insert: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: vi.fn(() => Promise.resolve({ data: { id: 'new-tag-id', name: 'New Tag', color: '#6366f1' }, error: null }))
+            }))
+          }))
+        }
+      }
+      if (table === 'issues') {
+        return {
+          insert: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: vi.fn(() => Promise.resolve({ data: { id: 'new-issue-id' }, error: null }))
+            }))
+          }))
+        }
+      }
+      return {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: vi.fn(() => Promise.resolve({ 
+              data: { id: 'test-workspace', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
+              error: null 
+            }))
           }))
         }))
-      }))
-    }))
+      }
+    })
   }
 
   const defaultProps = {
@@ -74,19 +104,50 @@ describe('CreateIssueModal - Prompt Generation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     
-    // Reset the mock to return API key by default
-    mockSupabase.from.mockReturnValue({
-      insert: vi.fn(() => ({
-        select: vi.fn(() => Promise.resolve({ data: [{ id: 'new-issue-id' }], error: null }))
-      })),
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn(() => Promise.resolve({ 
-            data: { id: 'test-workspace', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
-            error: null 
+    // Reset the mock to handle all tables properly
+    mockSupabase.from.mockImplementation((table) => {
+      if (table === 'issue_tags') {
+        return {
+          delete: vi.fn(() => ({
+            eq: vi.fn(() => Promise.resolve({ error: null }))
+          })),
+          insert: vi.fn(() => Promise.resolve({ error: null }))
+        }
+      }
+      if (table === 'tags') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              order: vi.fn(() => Promise.resolve({ data: [], error: null }))
+            }))
+          })),
+          insert: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: vi.fn(() => Promise.resolve({ data: { id: 'new-tag-id', name: 'New Tag', color: '#6366f1' }, error: null }))
+            }))
+          }))
+        }
+      }
+      if (table === 'issues') {
+        return {
+          insert: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: vi.fn(() => Promise.resolve({ data: { id: 'new-issue-id' }, error: null }))
+            }))
+          }))
+        }
+      }
+      // Default for workspaces
+      return {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: vi.fn(() => Promise.resolve({ 
+              data: { id: 'test-workspace', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
+              error: null 
+            }))
           }))
         }))
-      }))
+      }
     })
     
     vi.mocked(createClient).mockReturnValue(mockSupabase as any)
@@ -296,25 +357,56 @@ describe('CreateIssueModal - Prompt Generation', () => {
       const user = userEvent.setup()
       
       // Update mock to return agents_content
-      mockSupabase.from.mockReturnValue({
-        insert: vi.fn(() => ({
-          select: vi.fn(() => Promise.resolve({ data: [{ id: 'new-issue-id' }], error: null }))
-        })),
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            single: vi.fn(() => Promise.resolve({ 
-              data: { 
-                id: 'test-workspace', 
-                name: 'Test Workspace', 
-                api_key: 'test-key', 
-                api_provider: 'openai',
-                agents_content: 'Agents.md content'
-              }, 
-              error: null 
+      mockSupabase.from.mockImplementation((table) => {
+        if (table === 'issue_tags') {
+          return {
+            delete: vi.fn(() => ({
+              eq: vi.fn(() => Promise.resolve({ error: null }))
+            })),
+            insert: vi.fn(() => Promise.resolve({ error: null }))
+          }
+        }
+        if (table === 'tags') {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                order: vi.fn(() => Promise.resolve({ data: [], error: null }))
+              }))
+            })),
+            insert: vi.fn(() => ({
+              select: vi.fn(() => ({
+                single: vi.fn(() => Promise.resolve({ data: { id: 'new-tag-id', name: 'New Tag', color: '#6366f1' }, error: null }))
+              }))
+            }))
+          }
+        }
+        if (table === 'issues') {
+          return {
+            insert: vi.fn(() => ({
+              select: vi.fn(() => ({
+                single: vi.fn(() => Promise.resolve({ data: { id: 'new-issue-id' }, error: null }))
+              }))
+            }))
+          }
+        }
+        // Default for workspaces
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn(() => Promise.resolve({ 
+                data: { 
+                  id: 'test-workspace', 
+                  name: 'Test Workspace', 
+                  api_key: 'test-key', 
+                  api_provider: 'openai',
+                  agents_content: 'Agents.md content'
+                }, 
+                error: null 
+              }))
             }))
           }))
-        }))
-      } as any)
+        }
+      })
 
       renderWithProvider(true, {}, 'Agents.md content')
 
