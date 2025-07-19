@@ -1,7 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import type { WorkspaceMemberSlugQueryResponse } from '@/types/supabase-helpers'
 
 export default async function WorkspaceLoadingPage() {
   const supabase = await createClient()
@@ -34,24 +32,29 @@ export default async function WorkspaceLoadingPage() {
     .order('created_at', { ascending: true })
     .limit(1)
 
-
   if (!workspaceMemberships || workspaceMemberships.length === 0) {
     redirect('/CreateWorkspace')
-  } else if (workspaceMemberships[0]) {
-    const membership = workspaceMemberships[0] as WorkspaceMemberSlugQueryResponse
-    const workspace = membership.workspace[0]
-    if (workspace) {
-      redirect(`/${workspace.slug}`)
+  }
+
+  // The query returns an object with a 'workspace' property
+  const membership = workspaceMemberships[0] as { workspace?: { slug: string } | Array<{ slug: string }> }
+
+  // Handle both array and object formats for workspace
+  let workspaceSlug: string | undefined
+  if (membership?.workspace) {
+    if (Array.isArray(membership.workspace) && membership.workspace[0]?.slug) {
+      // Handle array format (some queries return workspace as array)
+      workspaceSlug = membership.workspace[0].slug
+    } else if (!Array.isArray(membership.workspace) && membership.workspace.slug) {
+      // Handle object format (most queries return workspace as object)  
+      workspaceSlug = membership.workspace.slug
     }
   }
 
-  // Fallback (should not reach here)
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <LoadingSpinner />
-        <p className="text-muted-foreground">Loading your workspace...</p>
-      </div>
-    </div>
-  )
+  if (workspaceSlug) {
+    redirect(`/${workspaceSlug}`)
+  }
+
+  // Fallback - redirect to create workspace if we can't find a valid workspace
+  redirect('/CreateWorkspace')
 }

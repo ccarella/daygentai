@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import type { WorkspaceMemberQueryResponse } from '@/types/supabase-helpers'
 
 export interface UserWorkspace {
   id: string
@@ -40,8 +39,20 @@ export async function getUserWorkspaces(): Promise<UserWorkspace[]> {
   }
 
   // Transform the data to flatten the workspace object
-  return data?.map((item: WorkspaceMemberQueryResponse) => {
-    const workspace = item.workspace[0]
+  return data?.map((item: { 
+    workspace: { id: string; name: string; slug: string; avatar_url: string | null } | 
+              Array<{ id: string; name: string; slug: string; avatar_url: string | null }>;
+    role: string;
+    created_at: string;
+  }) => {
+    // Handle both array and object formats for workspace
+    let workspace: { id: string; name: string; slug: string; avatar_url: string | null } | undefined
+    if (Array.isArray(item.workspace)) {
+      workspace = item.workspace[0]
+    } else {
+      workspace = item.workspace
+    }
+    
     if (!workspace) return null
     return {
       id: workspace.id,

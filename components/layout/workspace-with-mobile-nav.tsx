@@ -6,7 +6,6 @@ import { Header } from './header'
 import { WorkspaceLayout } from './workspace-layout'
 import { useWorkspaceNavigation } from '@/hooks/use-workspace-navigation'
 import type { UserWorkspace } from '@/lib/supabase/workspaces'
-import type { WorkspaceMemberQueryResponse } from '@/types/supabase-helpers'
 
 interface WorkspaceWithMobileNavProps {
   workspace: {
@@ -70,8 +69,20 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
       
       if (workspacesData) {
         const transformedWorkspaces = workspacesData
-          .map((item: WorkspaceMemberQueryResponse) => {
-            const workspace = item.workspace[0]
+          .map((item: { 
+            workspace: { id: string; name: string; slug: string; avatar_url: string | null } | 
+                      Array<{ id: string; name: string; slug: string; avatar_url: string | null }>;
+            role: string;
+            created_at: string;
+          }) => {
+            // Handle both array and object formats for workspace
+            let workspace: { id: string; name: string; slug: string; avatar_url: string | null } | undefined
+            if (Array.isArray(item.workspace)) {
+              workspace = item.workspace[0]
+            } else {
+              workspace = item.workspace
+            }
+            
             if (!workspace) return null
             return {
               id: workspace.id,
@@ -83,6 +94,7 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
             }
           })
           .filter((workspace): workspace is UserWorkspace => workspace !== null)
+        
         setWorkspaces(transformedWorkspaces)
       }
     }
