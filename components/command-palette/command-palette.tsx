@@ -292,25 +292,29 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
     })
 
     // View Section
-    baseCommands.push({
-      id: "toggle-view",
-      title: "Toggle List/Kanban View",
-      icon: <LayoutGrid className="w-4 h-4" />,
-      shortcut: "⌘B",
-      action: handleToggleViewMode,
-      keywords: ["view", "switch", "kanban", "list", "board", "toggle"],
-      group: "View"
-    })
+    if (onToggleViewMode) {
+      baseCommands.push({
+        id: "toggle-view",
+        title: "Toggle List/Kanban View",
+        icon: <LayoutGrid className="w-4 h-4" />,
+        shortcut: "⌘B",
+        action: handleToggleViewMode,
+        keywords: ["view", "switch", "kanban", "list", "board", "toggle"],
+        group: "View"
+      })
+    }
 
-    baseCommands.push({
-      id: "toggle-search",
-      title: "Toggle Search Bar",
-      icon: <Search className="w-4 h-4" />,
-      shortcut: "/",
-      action: handleToggleSearch,
-      keywords: ["search", "find", "filter", "query", "toggle", "show", "hide"],
-      group: "View"
-    })
+    if (onToggleSearch) {
+      baseCommands.push({
+        id: "toggle-search",
+        title: "Toggle Search Bar",
+        icon: <Search className="w-4 h-4" />,
+        shortcut: "/",
+        action: handleToggleSearch,
+        keywords: ["search", "find", "filter", "query", "toggle", "show", "hide"],
+        group: "View"
+      })
+    }
 
     // Filter by Status Section - Only show when in list view
     const currentView = getCurrentView?.()
@@ -473,7 +477,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
         title: "General",
         shortcuts: [
           { keys: ["⌘", "K"], description: "Open command palette" },
-          { keys: ["/"], description: "Toggle search bar" },
+          ...(onToggleSearch ? [{ keys: ["/"], description: "Toggle search bar" }] : []),
           { keys: ["Esc"], description: "Close dialogs and cancel actions" },
         ]
       },
@@ -495,12 +499,12 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
           { keys: ["S", "then", "D"], description: "Change status to Done" },
         ]
       }] : []),
-      {
+      ...(onToggleViewMode ? [{
         title: "View",
         shortcuts: [
           { keys: ["⌘", "B"], description: "Toggle List/Kanban view" },
         ]
-      },
+      }] : []),
       {
         title: "Command Palette",
         shortcuts: [
