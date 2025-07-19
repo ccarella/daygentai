@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Key, Save, AlertCircle } from 'lucide-react'
+import { useWorkspace } from '@/contexts/workspace-context'
 
 interface ApiSettingsProps {
   workspaceId: string
@@ -20,6 +21,7 @@ interface ApiSettingsProps {
 }
 
 export function ApiSettings({ workspaceId, initialSettings }: ApiSettingsProps) {
+  const { updateApiKeyStatus } = useWorkspace()
   const [apiKey, setApiKey] = useState(initialSettings?.api_key || '')
   const [provider, setProvider] = useState(initialSettings?.api_provider || 'openai')
   const [agentsContent, setAgentsContent] = useState(initialSettings?.agents_content || '')
@@ -45,6 +47,9 @@ export function ApiSettings({ workspaceId, initialSettings }: ApiSettingsProps) 
       if (error) {
         throw error
       }
+      
+      // Update the workspace context with the new API key status
+      updateApiKeyStatus(apiKey.length > 0, provider, agentsContent)
       
       setMessage({ type: 'success', text: 'API settings saved successfully!' })
     } catch (error) {

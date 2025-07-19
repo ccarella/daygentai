@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { IssuesList } from '@/components/issues/issues-list'
 import { CreateIssueModal } from '@/components/issues/create-issue-modal'
 import { IssueCacheProvider } from '@/contexts/issue-cache-context'
+import { WorkspaceProvider } from '@/contexts/workspace-context'
 import { useRouter } from 'next/navigation'
 
 // Mock Next.js navigation
@@ -100,11 +101,24 @@ vi.mock('@/lib/supabase/client', () => ({
 }))
 
 // Test wrapper with providers
-function TestWrapper({ children }: { children: React.ReactNode }) {
+function TestWrapper({ children, workspaceId = 'test-workspace' }: { children: React.ReactNode, workspaceId?: string }) {
+  const initialWorkspace = {
+    id: workspaceId,
+    name: 'Test Workspace',
+    slug: 'test-workspace',
+    avatar_url: null,
+    owner_id: 'test-user',
+    hasApiKey: true,
+    apiProvider: 'openai' as string | null,
+    agentsContent: null
+  }
+
   return (
-    <IssueCacheProvider>
-      {children}
-    </IssueCacheProvider>
+    <WorkspaceProvider workspaceId={workspaceId} initialWorkspace={initialWorkspace}>
+      <IssueCacheProvider>
+        {children}
+      </IssueCacheProvider>
+    </WorkspaceProvider>
   )
 }
 

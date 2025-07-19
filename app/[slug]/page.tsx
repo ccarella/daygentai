@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { WorkspaceWithMobileNav } from '@/components/layout/workspace-with-mobile-nav'
 import { WorkspaceContent, WorkspaceContentRef } from '@/components/workspace/workspace-content'
 import { IssueCacheProvider } from '@/contexts/issue-cache-context'
+import { WorkspaceProvider } from '@/contexts/workspace-context'
 import { CommandPaletteProvider } from '@/hooks/use-command-palette'
 import dynamic from 'next/dynamic'
 
@@ -120,24 +121,26 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
 
   return (
     <>
-      <IssueCacheProvider>
-        <WorkspaceWithMobileNav 
-          workspace={workspace} 
-          onIssueCreated={handleIssueCreated}
-          onNavigateToIssues={handleNavigateToIssues}
-          onNavigateToInbox={handleNavigateToInbox}
-          onNavigateToCookbook={handleNavigateToCookbook}
-          onNavigateToSettings={handleNavigateToSettings}
-          userAvatar={userAvatar}
-        >
-          <WorkspaceContent 
-            ref={contentRef}
-            key={refreshKey} 
-            workspace={workspace}
-            onAvatarUpdate={handleAvatarUpdate}
-          />
-        </WorkspaceWithMobileNav>
-      </IssueCacheProvider>
+      <WorkspaceProvider workspaceId={workspace.id} initialWorkspace={workspace}>
+        <IssueCacheProvider>
+          <WorkspaceWithMobileNav 
+            workspace={workspace} 
+            onIssueCreated={handleIssueCreated}
+            onNavigateToIssues={handleNavigateToIssues}
+            onNavigateToInbox={handleNavigateToInbox}
+            onNavigateToCookbook={handleNavigateToCookbook}
+            onNavigateToSettings={handleNavigateToSettings}
+            userAvatar={userAvatar}
+          >
+            <WorkspaceContent 
+              ref={contentRef}
+              key={refreshKey} 
+              workspace={workspace}
+              onAvatarUpdate={handleAvatarUpdate}
+            />
+          </WorkspaceWithMobileNav>
+        </IssueCacheProvider>
+      </WorkspaceProvider>
       {workspace && (
         <AppCommandPalette 
           workspace={workspace}
