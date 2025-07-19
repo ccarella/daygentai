@@ -68,6 +68,8 @@ export interface WorkspaceContentRef {
   getCurrentViewMode: () => 'list' | 'kanban'
   toggleSearch: () => void
   isSearchVisible: () => boolean
+  setStatusFilter: (status: string) => void
+  getCurrentView: () => 'list' | 'issue' | 'inbox' | 'cookbook' | 'settings'
 }
 
 const statusOptions = [
@@ -248,7 +250,9 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     toggleViewMode: handleToggleViewMode,
     getCurrentViewMode: () => issuesViewMode,
     toggleSearch: () => setIsSearchVisible(prev => !prev),
-    isSearchVisible: () => isSearchVisible
+    isSearchVisible: () => isSearchVisible,
+    setStatusFilter: (status: string) => setStatusFilter(status),
+    getCurrentView: () => currentView
   }))
 
   const handleIssueDeleted = () => {

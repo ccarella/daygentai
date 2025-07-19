@@ -15,9 +15,11 @@ interface AppCommandPaletteProps {
   onCreateIssue?: () => void
   onToggleViewMode?: () => void
   onToggleSearch?: () => void
+  onSetStatusFilter?: (status: string) => void
+  getCurrentView?: () => 'list' | 'issue' | 'inbox' | 'cookbook' | 'settings'
 }
 
-export function AppCommandPalette({ workspace, onCreateIssue, onToggleViewMode, onToggleSearch }: AppCommandPaletteProps) {
+export function AppCommandPalette({ workspace, onCreateIssue, onToggleViewMode, onToggleSearch, onSetStatusFilter, getCurrentView }: AppCommandPaletteProps) {
   const pathname = usePathname()
   const [currentIssue, setCurrentIssue] = useState<{
     id: string
@@ -82,6 +84,8 @@ export function AppCommandPalette({ workspace, onCreateIssue, onToggleViewMode, 
       {...(onCreateIssue && { onCreateIssue })}
       {...(onToggleViewMode && { onToggleViewMode })}
       {...(onToggleSearch && { onToggleSearch })}
+      {...(onSetStatusFilter && { onSetStatusFilter })}
+      {...(getCurrentView && { getCurrentView })}
       currentIssue={currentIssue}
       onIssueStatusChange={handleIssueStatusChange}
     />

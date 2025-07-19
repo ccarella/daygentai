@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { Search, FileText, Inbox, Plus, Filter, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle } from "lucide-react"
+import { Search, FileText, Inbox, Plus, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle, Circle } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { emitIssueStatusUpdate } from "@/lib/events/issue-events"
 import {
@@ -36,6 +36,8 @@ interface CommandPaletteProps {
   onCreateIssue?: () => void
   onToggleViewMode?: () => void
   onToggleSearch?: () => void
+  onSetStatusFilter?: (status: string) => void
+  getCurrentView?: () => 'list' | 'issue' | 'inbox' | 'cookbook' | 'settings'
   currentIssue?: {
     id: string
     title: string
@@ -44,7 +46,7 @@ interface CommandPaletteProps {
   onIssueStatusChange?: (newStatus: string) => void
 }
 
-export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onToggleViewMode, onToggleSearch, currentIssue, onIssueStatusChange }: CommandPaletteProps) {
+export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onToggleViewMode, onToggleSearch, onSetStatusFilter, getCurrentView, currentIssue, onIssueStatusChange }: CommandPaletteProps) {
   // Log props on mount
   React.useEffect(() => {
     const location = typeof window !== 'undefined' ? window.location.pathname : 'unknown'
@@ -87,11 +89,6 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
     router.push(`/${workspaceSlug}/inbox`)
   }, [router, workspaceSlug])
   
-  // Placeholder handlers for filter actions - memoized
-  const handleFilterByStatus = React.useCallback(() => {
-    // TODO: Implement filter functionality
-    console.log("Filter by status")
-  }, [])
   
   const handleShowRecentIssues = React.useCallback(() => {
     // TODO: Implement recent issues
@@ -315,16 +312,38 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       group: "View"
     })
 
-    // Filters Section
-    baseCommands.push({
-      id: "filter-status",
-      title: "Filter by Status",
-      icon: <Filter className="w-4 h-4" />,
-      action: handleFilterByStatus,
-      keywords: ["status", "todo", "in progress", "done"],
-      group: "Filters"
-    })
+    // Filter by Status Section - Only show when in list view
+    const currentView = getCurrentView?.()
+    if (currentView === 'list' && onSetStatusFilter) {
+      const statusFilterOptions = [
+        { value: 'all', label: 'Filter by All', icon: <FileText className="w-4 h-4" /> },
+        { value: 'exclude_done', label: 'Filter by Active', icon: <CheckCircle className="w-4 h-4" /> },
+        { value: 'todo', label: 'Filter by Todo', icon: <Circle className="w-4 h-4" /> },
+        { value: 'in_progress', label: 'Filter by In Progress', icon: <Clock className="w-4 h-4" /> },
+        { value: 'in_review', label: 'Filter by In Review', icon: <Search className="w-4 h-4" /> },
+        { value: 'done', label: 'Filter by Done', icon: <CheckCircle className="w-4 h-4" /> },
+      ]
 
+      statusFilterOptions.forEach(option => {
+        baseCommands.push({
+          id: `filter-status-${option.value}`,
+          title: option.label,
+          icon: option.icon,
+          action: () => {
+            onSetStatusFilter(option.value)
+            setIsOpen(false)
+            toast({
+              title: "Filter applied",
+              description: `Showing ${option.label.replace('Filter by ', '').toLowerCase()} issues`,
+            })
+          },
+          keywords: ["filter", "status", option.label.toLowerCase(), option.value],
+          group: "Filter by Status"
+        })
+      })
+    }
+
+    // Other Filters
     baseCommands.push({
       id: "recent-issues",
       title: "Recent Issues",
@@ -342,7 +361,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
     }, {} as Record<string, number>))
     
     return baseCommands
-  }, [workspaceSlug, currentIssue, onIssueStatusChange, statusChangeHandlers, handleCreateIssue, handleNextIssue, handleNavigateToIssues, handleNavigateToInbox, handleToggleViewMode, handleToggleSearch, handleFilterByStatus, handleShowRecentIssues])
+  }, [workspaceSlug, currentIssue, onIssueStatusChange, statusChangeHandlers, handleCreateIssue, handleNextIssue, handleNavigateToIssues, handleNavigateToInbox, handleToggleViewMode, handleToggleSearch, handleShowRecentIssues, onSetStatusFilter, getCurrentView, setIsOpen, toast])
 
   const filteredCommands = React.useMemo(() => {
     if (!search) return commands
@@ -360,7 +379,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   const groupedCommands = React.useMemo(() => {
     const groups: Record<string, Command[]> = {}
     // Define the order of groups
-    const groupOrder = ["Issue Actions", "Quick Access", "View", "Filters"]
+    const groupOrder = ["Issue Actions", "Quick Access", "View", "Filter by Status", "Filters"]
     
     // Initialize groups in the desired order
     groupOrder.forEach(group => {
