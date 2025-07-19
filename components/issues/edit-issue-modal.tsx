@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<Issue['type']>('feature');
+  const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [priority, setPriority] = useState<Issue['priority']>('medium');
   const [status, setStatus] = useState<Issue['status']>('todo');
   const [createPrompt, setCreatePrompt] = useState(false);
@@ -62,6 +63,15 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
       setCreatePrompt(!!issue.generated_prompt || (hasApiKey && !issue.generated_prompt));
     }
   }, [issue, open, hasApiKey]);
+
+  // Cleanup timeout on unmount or when modal closes
+  useEffect(() => {
+    return () => {
+      if (submitTimeoutRef.current) {
+        clearTimeout(submitTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async () => {
     // Prevent multiple submissions
@@ -154,9 +164,14 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
       setError('An unexpected error occurred');
     } finally {
       setIsSubmitting(false);
+      // Clear any existing timeout
+      if (submitTimeoutRef.current) {
+        clearTimeout(submitTimeoutRef.current);
+      }
       // Re-enable submit after a short delay to prevent rapid clicks
-      setTimeout(() => {
+      submitTimeoutRef.current = setTimeout(() => {
         setIsSubmitDisabled(false);
+        submitTimeoutRef.current = null;
       }, 500);
     }
   };

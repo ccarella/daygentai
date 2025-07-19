@@ -21,6 +21,7 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(initialProfile || null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const settingsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -55,6 +56,10 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      // Clear timeout on unmount
+      if (settingsTimeoutRef.current) {
+        clearTimeout(settingsTimeoutRef.current)
+      }
     }
   }, [])
 
@@ -113,8 +118,12 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
                 <button
                   onClick={() => {
                     setIsDropdownOpen(false)
+                    // Clear any existing timeout
+                    if (settingsTimeoutRef.current) {
+                      clearTimeout(settingsTimeoutRef.current)
+                    }
                     // Click the settings button in the sidebar after a small delay to ensure dropdown closes
-                    setTimeout(() => {
+                    settingsTimeoutRef.current = setTimeout(() => {
                       const settingsButtons = document.querySelectorAll('[data-sidebar-item]')
                       settingsButtons.forEach(button => {
                         const span = button.querySelector('span')
@@ -122,6 +131,7 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
                           (button as HTMLElement).click()
                         }
                       })
+                      settingsTimeoutRef.current = null
                     }, 100)
                   }}
                   className="block w-full text-left px-4 py-3 md:px-4 md:py-2 text-sm text-gray-700 hover:bg-gray-100"

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,7 +23,17 @@ export function ProfileSettings({ onAvatarUpdate }: ProfileSettingsProps) {
   const [email, setEmail] = useState('')
   const [avatarEmoji, setAvatarEmoji] = useState('👤')
   
+  const successTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const supabase = createClient()
+
+  useEffect(() => {
+    // Cleanup function to clear timeout on unmount
+    return () => {
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -113,7 +123,15 @@ export function ProfileSettings({ onAvatarUpdate }: ProfileSettingsProps) {
       }
 
       setSuccess(true)
-      setTimeout(() => setSuccess(false), 3000)
+      // Clear any existing timeout
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current)
+      }
+      // Set new timeout
+      successTimeoutRef.current = setTimeout(() => {
+        setSuccess(false)
+        successTimeoutRef.current = null
+      }, 3000)
     } catch (error) {
       console.error('Error updating profile:', error)
       setError(error instanceof Error ? error.message : 'Failed to update profile')
