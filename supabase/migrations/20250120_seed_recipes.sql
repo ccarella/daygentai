@@ -176,3 +176,26 @@ Document migration procedures',
   w.owner_id,
   true
 FROM workspaces w;
+
+INSERT INTO recipes (title, prompt, description, phases, workspace_id, created_by, is_system)
+SELECT 
+  'Search for potential Race Conditions',
+  'What to do: Analyze potential race conditions in the codebase
+How:
+1. Review asynchronous operations that may lead to data conflicts
+2. Identify shared resources accessed by multiple threads or processes
+3. Look for instances where the order of execution impacts results
+4. Consider implementing locking mechanisms or synchronization techniques
+5. Prioritize testing under various concurrency scenarios',
+  'A race condition occurs when multiple threads or processes access shared resources simultaneously, and the program''s behavior depends on the unpredictable timing of their execution. This can lead to data corruption, inconsistent results, or system crashes when operations that should be atomic are interrupted partway through. Common examples include two threads trying to increment the same counter or multiple processes writing to the same file without proper synchronization.',
+  ARRAY[
+    'Review asynchronous operations that may lead to data conflicts',
+    'Identify shared resources accessed by multiple threads or processes',
+    'Look for instances where the order of execution impacts results',
+    'Consider implementing locking mechanisms or synchronization techniques',
+    'Prioritize testing under various concurrency scenarios'
+  ],
+  w.id,
+  w.owner_id,
+  true
+FROM workspaces w;
