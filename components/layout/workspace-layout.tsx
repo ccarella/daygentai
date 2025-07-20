@@ -100,7 +100,7 @@ export function WorkspaceLayout({
     return (
     <div className="flex flex-col h-full">
       {/* Workspace Header */}
-      <div className="p-3 md:p-4 border-b border-gray-200">
+      <div className="p-3 md:p-4 border-b border-border">
         <div className="flex items-center justify-between">
           <WorkspaceSwitcher 
             currentWorkspace={workspace} 
@@ -108,11 +108,11 @@ export function WorkspaceLayout({
             collapsed={false}
           />
           <button 
-            className="hidden md:flex min-h-[40px] min-w-[40px] p-2 md:p-1 hover:bg-gray-100 rounded items-center justify-center"
+            className="hidden md:flex min-h-[40px] min-w-[40px] p-2 md:p-1 hover:bg-accent rounded items-center justify-center"
             onClick={() => setCreateIssueOpen(true)}
             data-create-issue-button
           >
-            <Plus className="w-5 h-5 text-gray-600" />
+            <Plus className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
       </div>
@@ -123,7 +123,7 @@ export function WorkspaceLayout({
         <button
           data-sidebar-item
           onClick={() => setCreateIssueOpen(true)}
-          className="md:hidden w-full flex items-center space-x-2 px-3 min-h-[44px] rounded-lg transition-colors hover:bg-gray-100 text-gray-700 mb-1 focus:outline-none"
+          className="md:hidden w-full flex items-center space-x-2 px-3 min-h-[44px] rounded-lg transition-colors hover:bg-accent text-foreground mb-1 focus:outline-none"
         >
           <Plus className="w-5 h-5" />
           <span>Create Issue</span>
@@ -135,8 +135,8 @@ export function WorkspaceLayout({
             onClick={onNavigateToInbox}
             className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors focus:outline-none ${
               pathname === `/${workspace.slug}/inbox` 
-                ? 'bg-gray-100 text-gray-900' 
-                : 'hover:bg-gray-100 text-gray-700'
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
             }`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,8 +150,8 @@ export function WorkspaceLayout({
             href={`/${workspace.slug}/inbox`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors focus:outline-none ${
               pathname === `/${workspace.slug}/inbox` 
-                ? 'bg-gray-100 text-gray-900' 
-                : 'hover:bg-gray-100 text-gray-700'
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
             }`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,8 +167,8 @@ export function WorkspaceLayout({
             onClick={onNavigateToIssues}
             className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
-                ? 'bg-gray-100 text-gray-900' 
-                : 'hover:bg-gray-100 text-gray-700'
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
             }`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,8 +182,8 @@ export function WorkspaceLayout({
             href={`/${workspace.slug}`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
-                ? 'bg-gray-100 text-gray-900' 
-                : 'hover:bg-gray-100 text-gray-700'
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
             }`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -200,8 +200,8 @@ export function WorkspaceLayout({
             onClick={onNavigateToCookbook}
             className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/cookbook` 
-                ? 'bg-gray-100 text-gray-900' 
-                : 'hover:bg-gray-100 text-gray-700'
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
             }`}
           >
             <BookOpen className="w-5 h-5" />
@@ -213,8 +213,8 @@ export function WorkspaceLayout({
             href={`/${workspace.slug}/cookbook`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/cookbook` 
-                ? 'bg-gray-100 text-gray-900' 
-                : 'hover:bg-gray-100 text-gray-700'
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
             }`}
           >
             <BookOpen className="w-5 h-5" />
@@ -226,7 +226,7 @@ export function WorkspaceLayout({
         <button
           data-sidebar-item
           onClick={() => openWithMode('normal')}
-          className="w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none hover:bg-gray-100 text-gray-700"
+          className="w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none hover:bg-accent text-foreground"
         >
           <Terminal className="w-5 h-5" />
           <span>Commands</span>
@@ -238,8 +238,8 @@ export function WorkspaceLayout({
             onClick={onNavigateToSettings}
             className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/settings` 
-                ? 'bg-gray-100 text-gray-900' 
-                : 'hover:bg-gray-100 text-gray-700'
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
             }`}
           >
             <Settings className="w-5 h-5" />
@@ -251,8 +251,8 @@ export function WorkspaceLayout({
             href={`/${workspace.slug}/settings`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/settings` 
-                ? 'bg-gray-100 text-gray-900' 
-                : 'hover:bg-gray-100 text-gray-700'
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
             }`}
           >
             <Settings className="w-5 h-5" />
@@ -262,14 +262,14 @@ export function WorkspaceLayout({
       </nav>
 
       {/* Info Icon at Bottom - Hidden on mobile */}
-      <div className="hidden md:block p-2 border-t border-gray-200">
+      <div className="hidden md:block p-2 border-t border-border">
         <button
           data-sidebar-item
           onClick={() => openWithMode('help')}
-          className="w-full flex items-center justify-center p-2 rounded-lg transition-colors hover:bg-gray-100 focus:outline-none"
+          className="w-full flex items-center justify-center p-2 rounded-lg transition-colors hover:bg-accent focus:outline-none"
           title="Help & Keyboard shortcuts"
         >
-          <HelpCircle className="w-5 h-5 text-gray-500" />
+          <HelpCircle className="w-5 h-5 text-muted-foreground" />
         </button>
       </div>
     </div>
@@ -278,9 +278,9 @@ export function WorkspaceLayout({
 
   return (
     <>
-      <div className="flex h-screen bg-gray-50">
+      <div className="flex h-screen bg-background">
         {/* Desktop Sidebar */}
-        <div className={`hidden lg:flex bg-white border-r border-gray-200 flex-col relative transition-all duration-300 ${
+        <div className={`hidden lg:flex bg-sidebar border-r border-border flex-col relative transition-all duration-300 ${
           isSidebarCollapsed ? 'w-16' : 'w-[224px]'
         }`}>
           {!isSidebarCollapsed && <SidebarContent />}
@@ -288,13 +288,13 @@ export function WorkspaceLayout({
           {/* Collapse Toggle Button */}
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="absolute -right-3 top-8 bg-white border border-gray-200 rounded-full p-1 hover:bg-gray-50 shadow-sm z-10"
+            className="absolute -right-3 top-8 bg-background border border-border rounded-full p-1 hover:bg-accent shadow-sm z-10"
             aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isSidebarCollapsed ? (
-              <ChevronRight className="w-4 h-4 text-gray-600" />
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
             ) : (
-              <ChevronLeft className="w-4 h-4 text-gray-600" />
+              <ChevronLeft className="w-4 h-4 text-muted-foreground" />
             )}
           </button>
           
@@ -309,21 +309,21 @@ export function WorkspaceLayout({
                 />
               </div>
               <button 
-                className="p-2 hover:bg-gray-100 rounded mb-2"
+                className="p-2 hover:bg-accent rounded mb-2"
                 onClick={() => setCreateIssueOpen(true)}
               >
-                <Plus className="w-5 h-5 text-gray-600" />
+                <Plus className="w-5 h-5 text-muted-foreground" />
               </button>
               {onNavigateToInbox ? (
                 <button
                   onClick={onNavigateToInbox}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}/inbox` 
-                      ? 'bg-gray-100' 
-                      : 'hover:bg-gray-100'
+                      ? 'bg-accent' 
+                      : 'hover:bg-accent'
                   }`}
                 >
-                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                   </svg>
                 </button>
@@ -332,11 +332,11 @@ export function WorkspaceLayout({
                   href={`/${workspace.slug}/inbox`}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}/inbox` 
-                      ? 'bg-gray-100' 
-                      : 'hover:bg-gray-100'
+                      ? 'bg-accent' 
+                      : 'hover:bg-accent'
                   }`}
                 >
-                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                   </svg>
                 </Link>
@@ -346,11 +346,11 @@ export function WorkspaceLayout({
                   onClick={onNavigateToIssues}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
-                      ? 'bg-gray-100' 
-                      : 'hover:bg-gray-100'
+                      ? 'bg-accent' 
+                      : 'hover:bg-accent'
                   }`}
                 >
-                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </button>
@@ -359,11 +359,11 @@ export function WorkspaceLayout({
                   href={`/${workspace.slug}`}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
-                      ? 'bg-gray-100' 
-                      : 'hover:bg-gray-100'
+                      ? 'bg-accent' 
+                      : 'hover:bg-accent'
                   }`}
                 >
-                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </Link>
@@ -373,62 +373,62 @@ export function WorkspaceLayout({
                   onClick={onNavigateToCookbook}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}/cookbook` 
-                      ? 'bg-gray-100' 
-                      : 'hover:bg-gray-100'
+                      ? 'bg-accent' 
+                      : 'hover:bg-accent'
                   }`}
                   title="Cookbook"
                 >
-                  <BookOpen className="w-5 h-5 text-gray-600" />
+                  <BookOpen className="w-5 h-5 text-muted-foreground" />
                 </button>
               ) : (
                 <Link
                   href={`/${workspace.slug}/cookbook`}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}/cookbook` 
-                      ? 'bg-gray-100' 
-                      : 'hover:bg-gray-100'
+                      ? 'bg-accent' 
+                      : 'hover:bg-accent'
                   }`}
                   title="Cookbook"
                 >
-                  <BookOpen className="w-5 h-5 text-gray-600" />
+                  <BookOpen className="w-5 h-5 text-muted-foreground" />
                 </Link>
               )}
               <button
                 onClick={() => openWithMode('normal')}
-                className="p-2 rounded mb-2 hover:bg-gray-100 transition-colors"
+                className="p-2 rounded mb-2 hover:bg-accent transition-colors"
                 title="Commands"
               >
-                <Terminal className="w-5 h-5 text-gray-600" />
+                <Terminal className="w-5 h-5 text-muted-foreground" />
               </button>
               {onNavigateToSettings ? (
                 <button
                   onClick={onNavigateToSettings}
                   className={`p-2 rounded transition-colors ${
                     pathname === `/${workspace.slug}/settings` 
-                      ? 'bg-gray-100' 
-                      : 'hover:bg-gray-100'
+                      ? 'bg-accent' 
+                      : 'hover:bg-accent'
                   }`}
                 >
-                  <Settings className="w-5 h-5 text-gray-600" />
+                  <Settings className="w-5 h-5 text-muted-foreground" />
                 </button>
               ) : (
                 <Link
                   href={`/${workspace.slug}/settings`}
                   className={`p-2 rounded transition-colors ${
                     pathname === `/${workspace.slug}/settings` 
-                      ? 'bg-gray-100' 
-                      : 'hover:bg-gray-100'
+                      ? 'bg-accent' 
+                      : 'hover:bg-accent'
                   }`}
                 >
-                  <Settings className="w-5 h-5 text-gray-600" />
+                  <Settings className="w-5 h-5 text-muted-foreground" />
                 </Link>
               )}
               <button
                 onClick={() => openWithMode('help')}
-                className="p-2 rounded hover:bg-gray-100 mt-auto"
+                className="p-2 rounded hover:bg-accent mt-auto"
                 title="Help & Keyboard shortcuts"
               >
-                <HelpCircle className="w-5 h-5 text-gray-500" />
+                <HelpCircle className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
           )}
@@ -437,8 +437,8 @@ export function WorkspaceLayout({
         {/* Mobile Sidebar Overlay */}
         {isMobileMenuOpen && (
           <div className="lg:hidden fixed inset-0 z-40 flex">
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-75" aria-hidden="true" />
-            <div className="relative flex max-w-xs w-full bg-white mobile-menu pt-11">
+            <div className="fixed inset-0 bg-foreground bg-opacity-75" aria-hidden="true" />
+            <div className="relative flex max-w-xs w-full bg-background mobile-menu pt-11">
               <SidebarContent />
             </div>
           </div>
@@ -451,7 +451,7 @@ export function WorkspaceLayout({
               {children}
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 overflow-auto mx-3 mb-6 mt-3">
+            <div className="bg-background rounded-lg shadow-sm border border-border flex-1 overflow-auto mx-3 mb-6 mt-3">
               {children}
             </div>
           )}

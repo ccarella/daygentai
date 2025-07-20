@@ -134,24 +134,24 @@ export function Cookbook() {
                     <div
                       key={issue.id}
                       onClick={() => handleIssueClick(issue)}
-                      className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                      className="border border-border rounded-lg p-4 hover:bg-accent cursor-pointer transition-colors"
                     >
                       <h3 className="font-semibold text-lg mb-2">{issue.title}</h3>
-                      <p className="text-gray-600 line-clamp-2">{issue.description}</p>
+                      <p className="text-muted-foreground line-clamp-2">{issue.description}</p>
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <p className="text-gray-600">Select a section from the directory to view cookbook recipes.</p>
+              <p className="text-muted-foreground">Select a section from the directory to view cookbook recipes.</p>
             )}
           </div>
         ) : (
           <div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
               <button
                 onClick={() => setSelectedSection(null)}
-                className="hover:text-gray-900"
+                className="hover:text-foreground"
               >
                 Cookbook
               </button>
@@ -174,7 +174,7 @@ export function Cookbook() {
       </div>
 
       {/* Right Sidebar - Cookbook Directory */}
-      <div className="w-64 border-l border-gray-200 p-4 bg-gray-50">
+      <div className="w-64 border-l border-border p-4 bg-sidebar">
         <h2 className="font-semibold text-lg mb-4">Directory</h2>
         <nav className="space-y-1">
           {sections.map((section) => (
@@ -183,8 +183,8 @@ export function Cookbook() {
               onClick={() => handleSectionClick(section)}
               className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
                 selectedSection === section
-                  ? 'bg-gray-200 text-gray-900 font-medium'
-                  : 'hover:bg-gray-100 text-gray-700'
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                  : 'hover:bg-sidebar-accent text-sidebar-foreground'
               }`}
             >
               {section}

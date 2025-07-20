@@ -187,8 +187,8 @@ export function ProfileSettings({ onAvatarUpdate }: ProfileSettingsProps) {
                     onClick={() => setAvatarEmoji(emoji)}
                     className={`w-12 h-12 rounded-full text-2xl flex items-center justify-center transition-all ${
                       avatarEmoji === emoji
-                        ? 'bg-blue-100 ring-2 ring-blue-500'
-                        : 'bg-gray-100 hover:bg-gray-200'
+                        ? 'bg-primary/10 ring-2 ring-primary'
+                        : 'bg-muted hover:bg-accent'
                     }`}
                   >
                     {emoji}

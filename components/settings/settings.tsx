@@ -73,17 +73,17 @@ export function Settings({ workspaceId, onBack }: SettingsProps) {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="p-4 md:p-6 border-b border-gray-200">
+      <div className="p-4 md:p-6 border-b border-border">
         <div className="flex items-center space-x-4">
           {onBack && (
             <button
               onClick={onBack}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors md:hidden"
+              className="p-2 hover:bg-accent rounded-lg transition-colors md:hidden"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-5 h-5 text-muted-foreground" />
             </button>
           )}
-          <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
         </div>
       </div>
 

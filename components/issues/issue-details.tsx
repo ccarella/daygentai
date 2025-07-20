@@ -348,13 +348,13 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-start space-x-2 sm:space-x-3 flex-1 min-w-0">
               <span className="text-xl sm:text-2xl flex-shrink-0">{typeIcons[issue.type]}</span>
-              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 break-words">{issue.title}</h1>
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground break-words">{issue.title}</h1>
             </div>
             
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <MoreHorizontal className="w-5 h-5 text-gray-500" />
+                  <button className="p-2 hover:bg-accent rounded-lg transition-colors">
+                    <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -385,15 +385,15 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
             {/* Status and Type - responsive layout */}
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center space-x-2">
-                <span className="text-gray-500 text-sm">Status:</span>
+                <span className="text-muted-foreground text-sm">Status:</span>
                 <Select
                   value={issue.status}
                   onValueChange={handleStatusChange}
                   disabled={isUpdatingStatus}
                 >
-                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-gray-100 focus:ring-0 focus:ring-offset-0">
+                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0">
                     <SelectValue>
-                      <span className={`text-sm font-medium ${statusOptions.find(s => s.value === issue.status)?.color || 'text-gray-600'}`}>
+                      <span className={`text-sm font-medium ${statusOptions.find(s => s.value === issue.status)?.color || 'text-muted-foreground'}`}>
                         {statusOptions.find(s => s.value === issue.status)?.label || issue.status}
                       </span>
                     </SelectValue>
@@ -408,13 +408,13 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
                 </Select>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-gray-500 text-sm">Type:</span>
+                <span className="text-muted-foreground text-sm">Type:</span>
                 <Select
                   value={issue.type}
                   onValueChange={handleTypeChange}
                   disabled={isUpdatingType}
                 >
-                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-gray-100 focus:ring-0 focus:ring-offset-0">
+                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0">
                     <SelectValue>
                       <span className="text-sm font-medium flex items-center gap-1">
                         <span>{typeOptions.find(t => t.value === issue.type)?.icon || '📌'}</span>
@@ -474,13 +474,13 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
 
           {/* Activity Section */}
           <div className="space-y-4">
-            <h2 className="text-lg font-medium text-gray-900">Activity</h2>
+            <h2 className="text-lg font-medium text-foreground">Activity</h2>
             
             <div className="space-y-4">
               {/* Created by info */}
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0">
-                  <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
                     {creatorAvatar && creatorAvatar.startsWith('http') ? (
                       <img 
                         src={creatorAvatar} 
@@ -490,7 +490,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
                     ) : creatorAvatar && creatorAvatar.length <= 2 ? (
                       <span className="text-lg">{creatorAvatar}</span>
                     ) : (
-                      <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="h-5 w-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     )}

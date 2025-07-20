@@ -103,9 +103,9 @@ export function ApiSettings({ workspaceId, initialSettings }: ApiSettingsProps) 
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
           />
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             Your API key is encrypted and stored securely. Get your key from{' '}
-            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
               OpenAI Platform
             </a>
           </p>
@@ -121,7 +121,7 @@ export function ApiSettings({ workspaceId, initialSettings }: ApiSettingsProps) 
             rows={6}
             className="font-mono text-sm"
           />
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             This content will be included when generating prompts or recommendations
           </p>
         </div>
@@ -132,9 +132,9 @@ export function ApiSettings({ workspaceId, initialSettings }: ApiSettingsProps) 
             {saving ? 'Saving...' : 'Save API Settings'}
           </Button>
           
-          <div className="p-4 bg-gray-50 rounded-lg">
+          <div className="p-4 bg-muted rounded-lg">
             <h4 className="font-medium text-sm mb-2">Features enabled with API key:</h4>
-            <ul className="text-sm text-gray-600 space-y-1">
+            <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Next Issue AI recommendations in Command Palette (⌘K)</li>
               <li>• Automatic prompt generation for new issues</li>
               <li>• AI-powered issue prioritization</li>

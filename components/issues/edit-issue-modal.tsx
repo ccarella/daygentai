@@ -96,7 +96,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
       }
     }
     // Return a temporary tag if creation fails
-    return { id: `temp-${Date.now()}`, name, color: '#6366f1' };
+    return { id: `temp-${Date.now()}`, name, color: 'var(--primary)' };
   };
 
   // Cleanup timeout on unmount or when modal closes

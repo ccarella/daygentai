@@ -315,7 +315,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   return (
     <>
       {/* Search Bar - Only show for issues list view and when visible */}
-      <div className={`bg-white border-b border-gray-200 transition-all duration-200 ease-in-out overflow-hidden ${
+      <div className={`bg-background border-b border-gray-200 transition-all duration-200 ease-in-out overflow-hidden ${
         currentView === 'list' && isSearchVisible ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
       }`}>
         <div className="px-3 sm:px-6 py-6 sm:py-8">
@@ -337,15 +337,15 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
       
       {/* Filters - Show for both list views (list and kanban) */}
       {currentView === 'list' && (issuesViewMode === 'list' || issuesViewMode === 'kanban') && (
-        <div className="border-b border-gray-200 bg-white overflow-hidden relative">
+        <div className="border-b border-border bg-background overflow-hidden relative">
           {/* Mobile and Desktop Filter Header */}
           <div className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-3">
             {/* Left side - Search hint and desktop filters */}
             <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
               {/* Search hint when search is hidden */}
               {!isSearchVisible && !debouncedSearchQuery && (
-                <div className="text-sm text-gray-500 hidden sm:block">
-                  Press <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 border border-gray-200 rounded">/</kbd> to search
+                <div className="text-sm text-muted-foreground hidden sm:block">
+                  Press <kbd className="px-1.5 py-0.5 text-xs bg-muted border border-border rounded">/</kbd> to search
                 </div>
               )}
               
@@ -358,7 +358,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                       setSearchQuery('')
                       setSearchResultCount(0)
                     }}
-                    className="text-gray-500 hover:text-gray-700"
+                    className="text-muted-foreground hover:text-foreground"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -439,7 +439,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               {/* Mobile filter toggle - only visible on small screens */}
               <button
                 onClick={() => setIsFiltersVisible(!isFiltersVisible)}
-                className="sm:hidden p-2 rounded-md hover:bg-gray-100 transition-colors"
+                className="sm:hidden p-2 rounded-md hover:bg-accent transition-colors"
                 title="Toggle filters"
               >
                 <Filter className="h-4 w-4" />
@@ -454,7 +454,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                       updateFiltersForViewMode('list')
                     }
                   }}
-                  className={`p-1 rounded ${issuesViewMode === 'list' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                  className={`p-1 rounded ${issuesViewMode === 'list' ? 'bg-accent' : 'hover:bg-accent'}`}
                   title="List view"
                 >
                   <List className="h-4 w-4" />
@@ -466,7 +466,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                       updateFiltersForViewMode('kanban')
                     }
                   }}
-                  className={`p-1 rounded ${issuesViewMode === 'kanban' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                  className={`p-1 rounded ${issuesViewMode === 'kanban' ? 'bg-accent' : 'hover:bg-accent'}`}
                   title="Kanban view"
                 >
                   <LayoutGrid className="h-4 w-4" />

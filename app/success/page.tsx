@@ -61,10 +61,10 @@ export default async function SuccessPage({
 
   return (
     <AuthenticatedLayout>
-      <div className="min-h-screen flex items-center justify-center p-4 md:p-6 lg:p-8 bg-gray-50">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-4 md:p-6 lg:p-8">
+      <div className="min-h-screen flex items-center justify-center p-4 md:p-6 lg:p-8 bg-background">
+        <div className="max-w-md w-full bg-card rounded-lg shadow-lg p-4 md:p-6 lg:p-8">
           <div className="text-center space-y-6">
-            <h1 className="text-3xl font-bold text-gray-800">
+            <h1 className="text-3xl font-bold text-foreground">
               Welcome!
             </h1>
             

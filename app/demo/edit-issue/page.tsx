@@ -51,27 +51,27 @@ We'll be using NextAuth.js for the authentication implementation.`,
         <h1 className="text-3xl font-bold mb-6">Edit Issue Modal Demo</h1>
         
         <div className="max-w-2xl space-y-6">
-          <div className="p-6 border rounded-lg bg-gray-50">
+          <div className="p-6 border rounded-lg bg-muted">
             <h2 className="text-xl font-semibold mb-4">Current Issue Details</h2>
             <dl className="space-y-2">
               <div>
-                <dt className="font-medium text-gray-600">Title:</dt>
+                <dt className="font-medium text-muted-foreground">Title:</dt>
                 <dd>{sampleIssue.title}</dd>
               </div>
               <div>
-                <dt className="font-medium text-gray-600">Type:</dt>
+                <dt className="font-medium text-muted-foreground">Type:</dt>
                 <dd>{sampleIssue.type}</dd>
               </div>
               <div>
-                <dt className="font-medium text-gray-600">Priority:</dt>
+                <dt className="font-medium text-muted-foreground">Priority:</dt>
                 <dd>{sampleIssue.priority}</dd>
               </div>
               <div>
-                <dt className="font-medium text-gray-600">Status:</dt>
+                <dt className="font-medium text-muted-foreground">Status:</dt>
                 <dd>{sampleIssue.status}</dd>
               </div>
               <div>
-                <dt className="font-medium text-gray-600">Description:</dt>
+                <dt className="font-medium text-muted-foreground">Description:</dt>
                 <dd className="mt-1 whitespace-pre-wrap text-sm">{sampleIssue.description}</dd>
               </div>
             </dl>

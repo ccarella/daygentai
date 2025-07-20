@@ -42,7 +42,7 @@ interface KanbanBoardProps {
 }
 
 const columns = [
-  { id: 'todo', title: 'To Do', color: 'bg-gray-100' },
+  { id: 'todo', title: 'To Do', color: 'bg-muted' },
   { id: 'in_progress', title: 'In Progress', color: 'bg-blue-50' },
   { id: 'in_review', title: 'In Review', color: 'bg-yellow-50' },
   { id: 'done', title: 'Done', color: 'bg-green-50' }
@@ -53,7 +53,7 @@ const typeColors = {
   bug: 'text-red-700 bg-red-50 border border-red-200',
   chore: 'text-blue-700 bg-blue-50 border border-blue-200',
   design: 'text-pink-700 bg-pink-50 border border-pink-200',
-  'non-technical': 'text-gray-700 bg-gray-50 border border-gray-200'
+  'non-technical': 'text-muted-foreground bg-muted border border-border'
 }
 
 const typeLabels = {
@@ -68,7 +68,7 @@ const priorityColors = {
   critical: 'bg-red-100 text-red-800 border-red-200',
   high: 'bg-orange-100 text-orange-800 border-orange-200',
   medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  low: 'bg-gray-100 text-gray-800 border-gray-200'
+  low: 'bg-muted text-muted-foreground border-border'
 }
 
 export function KanbanBoard({ 
@@ -300,10 +300,10 @@ export function KanbanBoard({
               </div>
               
               <div 
-                className="bg-gray-50 border border-t-0 rounded-b-lg min-h-[400px] max-h-[calc(100vh-300px)] overflow-y-auto p-2 space-y-2"
+                className="bg-muted border border-t-0 rounded-b-lg min-h-[400px] max-h-[calc(100vh-300px)] overflow-y-auto p-2 space-y-2"
               >
                 {columnIssues.length === 0 ? (
-                  <p className="text-gray-400 text-sm text-center py-8">
+                  <p className="text-muted-foreground text-sm text-center py-8">
                     No issues
                   </p>
                 ) : (
@@ -315,9 +315,9 @@ export function KanbanBoard({
                       draggable
                       onDragStart={(e) => handleDragStart(e, issue.id)}
                       onClick={() => onIssueClick(issue.id)}
-                      className="bg-white p-3 rounded-lg border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                      className="bg-card p-3 rounded-lg border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                     >
-                      <h4 className="font-medium text-gray-900 mb-2 line-clamp-2">
+                      <h4 className="font-medium text-foreground mb-2 line-clamp-2">
                         {issue.title}
                       </h4>
                       
@@ -345,12 +345,12 @@ export function KanbanBoard({
                       )}
                       
                       {issue.description && (
-                        <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                           {issue.description}
                         </p>
                       )}
                       
-                      <div className="hidden sm:flex items-center justify-end text-xs text-gray-500">
+                      <div className="hidden sm:flex items-center justify-end text-xs text-muted-foreground">
                         <span>{formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}</span>
                       </div>
                     </div>

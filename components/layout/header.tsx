@@ -73,7 +73,7 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
+    <header className="fixed top-0 left-0 right-0 bg-background border-b border-border z-50">
       <div className="w-full px-4 md:px-6 lg:px-8">
         <div className="flex items-center h-11 relative isolate">
           {/* Left Section - Logo */}
@@ -81,17 +81,17 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
             {onMenuToggle && (
               <button
                 onClick={onMenuToggle}
-                className="mr-2 md:mr-4 p-1.5 md:p-2 rounded-md hover:bg-gray-100 lg:hidden"
+                className="mr-2 md:mr-4 p-1.5 md:p-2 rounded-md hover:bg-accent lg:hidden"
                 aria-label="Toggle menu"
               >
                 {isMobileMenuOpen ? (
-                  <X className="h-6 w-6 text-gray-600" />
+                  <X className="h-6 w-6 text-muted-foreground" />
                 ) : (
-                  <Menu className="h-6 w-6 text-gray-600" />
+                  <Menu className="h-6 w-6 text-muted-foreground" />
                 )}
               </button>
             )}
-            <Link href="/daygent" className="text-xl font-bold text-gray-900">
+            <Link href="/daygent" className="text-xl font-bold text-foreground">
               Daygent
             </Link>
           </div>
@@ -104,15 +104,15 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
             <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center justify-center w-11 h-11 md:w-10 md:h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-xl"
+              className="flex items-center justify-center w-11 h-11 md:w-10 md:h-10 rounded-full bg-secondary hover:bg-secondary/80 transition-colors text-xl"
             >
               {userProfile.avatar_url || '👤'}
             </button>
             
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 md:py-1.5">
-                <div className="px-3 py-1.5 md:px-4 md:py-2 border-b border-gray-200">
-                  <p className="text-sm font-medium text-gray-900">{userProfile.name}</p>
+              <div className="absolute right-0 mt-2 w-48 bg-background rounded-lg shadow-lg border border-border py-1 md:py-1.5">
+                <div className="px-3 py-1.5 md:px-4 md:py-2 border-b border-border">
+                  <p className="text-sm font-medium text-foreground">{userProfile.name}</p>
                 </div>
                 
                 <button
@@ -134,14 +134,14 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
                       settingsTimeoutRef.current = null
                     }, 100)
                   }}
-                  className="block w-full text-left px-4 py-3 md:px-4 md:py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  className="block w-full text-left px-4 py-3 md:px-4 md:py-2 text-sm text-muted-foreground hover:bg-accent"
                 >
                   Profile Settings
                 </button>
                 
                 <button
                   onClick={handleLogout}
-                  className="block w-full text-left px-4 py-3 md:px-4 md:py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  className="block w-full text-left px-4 py-3 md:px-4 md:py-2 text-sm text-muted-foreground hover:bg-accent"
                 >
                   Logout
                 </button>

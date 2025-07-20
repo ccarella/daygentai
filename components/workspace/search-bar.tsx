@@ -63,7 +63,7 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(
             onChange={(e) => handleSearch(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="w-full pl-12 pr-24 py-4 bg-white border border-gray-200 rounded-lg text-base placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+            className="w-full pl-12 pr-24 py-4 bg-background border border-gray-200 rounded-lg text-base placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
           />
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" />
           
@@ -85,10 +85,10 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(
             {query && !isSearching && (
               <button
                 onClick={handleClear}
-                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                className="p-1 hover:bg-accent rounded transition-colors"
                 aria-label="Clear search"
               >
-                <X className="w-5 h-5 text-gray-400" />
+                <X className="w-5 h-5 text-muted-foreground" />
               </button>
             )}
           </div>
@@ -96,8 +96,8 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(
         
         {/* Search hint */}
         {!query && (
-          <p className="mt-2 text-sm text-gray-500">
-            Tip: Search filters issues by title. Press <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 border border-gray-200 rounded">Esc</kbd> to clear or close search.
+          <p className="mt-2 text-sm text-muted-foreground">
+            Tip: Search filters issues by title. Press <kbd className="px-1.5 py-0.5 text-xs bg-muted border border-border rounded">Esc</kbd> to clear or close search.
           </p>
         )}
       </div>

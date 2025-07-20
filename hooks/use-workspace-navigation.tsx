@@ -95,8 +95,8 @@ export function useWorkspaceNavigation({
     for (let i = 0; i < sidebarItems.length; i++) {
       const item = sidebarItems[i]
       
-      // Check if the item has the active class (bg-gray-100)
-      if (item && item.classList.contains('bg-gray-100')) {
+      // Check if the item has the active class (bg-accent)
+      if (item && item.classList.contains('bg-accent')) {
         return i
       }
     }
