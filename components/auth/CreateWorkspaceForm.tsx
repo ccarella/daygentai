@@ -131,7 +131,7 @@ export default function CreateWorkspaceForm() {
       <h1 className="text-2xl font-bold text-center mb-8">Create Your Workspace</h1>
       
       <div className="mb-4 md:mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground mb-2">
           Choose a Workspace Avatar (Optional)
         </label>
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 md:gap-3">
@@ -141,8 +141,8 @@ export default function CreateWorkspaceForm() {
               onClick={() => setSelectedAvatar(avatar)}
               className={`min-h-[44px] min-w-[44px] p-2 md:p-3 text-2xl rounded-lg border-2 transition-all ${
                 selectedAvatar === avatar
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-300 hover:border-gray-400'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border hover:border-border'
               }`}
             >
               {avatar}
@@ -150,14 +150,14 @@ export default function CreateWorkspaceForm() {
           ))}
         </div>
         {selectedAvatar && (
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-muted-foreground">
             Selected: {selectedAvatar}
           </p>
         )}
       </div>
 
       <div className="mb-4 md:mb-6">
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
           Workspace Name (Required)
         </label>
         <input
@@ -168,7 +168,7 @@ export default function CreateWorkspaceForm() {
           placeholder="My Awesome Workspace"
           autoComplete="organization"
           autoCapitalize="words"
-          className="w-full px-3 py-2 md:px-4 md:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 md:px-4 md:py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
         />
         {name.length > 0 && name.length < 3 && (
           <p className="mt-1 text-sm text-red-600">
@@ -178,11 +178,11 @@ export default function CreateWorkspaceForm() {
       </div>
 
       <div className="mb-4 md:mb-6">
-        <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="slug" className="block text-sm font-medium text-foreground mb-2">
           Workspace URL (Required)
         </label>
         <div className="flex items-center">
-          <span className="text-gray-500 text-sm mr-1">daygent.ai/</span>
+          <span className="text-muted-foreground text-sm mr-1">daygent.ai/</span>
           <input
             id="slug"
             type="text"
@@ -193,7 +193,7 @@ export default function CreateWorkspaceForm() {
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
-            className="flex-1 px-3 py-2 md:px-4 md:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-3 py-2 md:px-4 md:py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
         {slugError && (
@@ -219,8 +219,8 @@ export default function CreateWorkspaceForm() {
         disabled={!isValidForm || isLoading}
         className={`w-full py-2 px-4 md:py-2.5 md:px-5 rounded-lg font-medium transition-all ${
           isValidForm && !isLoading
-            ? 'bg-blue-500 text-white hover:bg-blue-600'
-            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+            : 'bg-muted text-muted-foreground cursor-not-allowed'
         }`}
       >
         {isLoading ? 'Creating...' : 'Next'}

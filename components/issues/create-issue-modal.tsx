@@ -79,7 +79,7 @@ export function CreateIssueModal({
       return tagOption
     }
     // Return a temporary tag if creation fails
-    return { id: `temp-${Date.now()}`, name, color: '#6366f1' }
+    return { id: `temp-${Date.now()}`, name, color: 'var(--primary)' }
   }
 
   const handleSubmit = async () => {
@@ -284,7 +284,7 @@ export function CreateIssueModal({
                 <Label htmlFor="create-prompt" className="text-base">
                   Create a prompt
                 </Label>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-muted-foreground">
                   {hasApiKey 
                     ? 'Generate an AI prompt for development agents' 
                     : workspaceId 
@@ -292,7 +292,7 @@ export function CreateIssueModal({
                       : 'No workspace ID provided'}
                   {/* Debug info */}
                   {process.env.NODE_ENV === 'development' && (
-                    <div className="text-xs text-gray-400 mt-1">
+                    <div className="text-xs text-muted-foreground mt-1">
                       Debug: workspaceId={workspaceId ? workspaceId.substring(0, 8) + '...' : 'none'}
                     </div>
                   )}
@@ -307,7 +307,7 @@ export function CreateIssueModal({
             </div>
 
             {error && (
-              <div className="text-sm text-red-600 bg-red-50 p-2 md:p-3 rounded-md">
+              <div className="text-sm text-destructive bg-destructive/10 p-2 md:p-3 rounded-md">
                 {error}
               </div>
             )}

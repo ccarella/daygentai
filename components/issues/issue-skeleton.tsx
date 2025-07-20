@@ -24,15 +24,15 @@ export function IssueCardSkeleton() {
 
 export function IssueListSkeleton({ count = 5 }: { count?: number }) {
   return (
-    <div className="flex-1 overflow-auto bg-white">
+    <div className="flex-1 overflow-auto bg-card">
       <div className="">
         {/* Header skeleton */}
-        <div className="px-6 py-4 border-b border-gray-100">
+        <div className="px-6 py-4 border-b border-border">
           <Skeleton className="h-4 w-32" />
         </div>
         
         {/* Issues skeleton */}
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-border">
           {Array.from({ length: count }).map((_, index) => (
             <IssueCardSkeleton key={index} />
           ))}

@@ -315,7 +315,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   return (
     <>
       {/* Search Bar - Only show for issues list view and when visible */}
-      <div className={`bg-white border-b border-gray-200 transition-all duration-200 ease-in-out overflow-hidden ${
+      <div className={`bg-background border-b border-border transition-all duration-200 ease-in-out overflow-hidden ${
         currentView === 'list' && isSearchVisible ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
       }`}>
         <div className="px-3 sm:px-6 py-6 sm:py-8">
@@ -337,28 +337,28 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
       
       {/* Filters - Show for both list views (list and kanban) */}
       {currentView === 'list' && (issuesViewMode === 'list' || issuesViewMode === 'kanban') && (
-        <div className="border-b border-gray-200 bg-white overflow-hidden relative">
+        <div className="border-b border-border bg-background overflow-hidden relative">
           {/* Mobile and Desktop Filter Header */}
           <div className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-3">
             {/* Left side - Search hint and desktop filters */}
             <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
               {/* Search hint when search is hidden */}
               {!isSearchVisible && !debouncedSearchQuery && (
-                <div className="text-sm text-gray-500 hidden sm:block">
-                  Press <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 border border-gray-200 rounded">/</kbd> to search
+                <div className="text-sm text-muted-foreground hidden sm:block">
+                  Press <kbd className="px-1.5 py-0.5 text-xs bg-muted border border-border rounded">/</kbd> to search
                 </div>
               )}
               
               {/* Active search indicator */}
               {!isSearchVisible && debouncedSearchQuery && (
-                <div className="text-sm text-blue-600 font-medium hidden sm:flex items-center gap-2">
+                <div className="text-sm text-primary font-medium hidden sm:flex items-center gap-2">
                   <span>Searching: &ldquo;{debouncedSearchQuery}&rdquo;</span>
                   <button
                     onClick={() => {
                       setSearchQuery('')
                       setSearchResultCount(0)
                     }}
-                    className="text-gray-500 hover:text-gray-700"
+                    className="text-muted-foreground hover:text-foreground"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -367,7 +367,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               
               {/* Desktop filters - always visible on sm+ screens */}
               <div className="hidden sm:flex items-center gap-3 flex-1 min-w-0">
-                <span className="text-sm text-gray-500 flex-shrink-0">Filter by:</span>
+                <span className="text-sm text-muted-foreground flex-shrink-0">Filter by:</span>
                 
                 {/* Status Filter */}
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -439,7 +439,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               {/* Mobile filter toggle - only visible on small screens */}
               <button
                 onClick={() => setIsFiltersVisible(!isFiltersVisible)}
-                className="sm:hidden p-2 rounded-md hover:bg-gray-100 transition-colors"
+                className="sm:hidden p-2 rounded-md hover:bg-accent transition-colors"
                 title="Toggle filters"
               >
                 <Filter className="h-4 w-4" />
@@ -454,7 +454,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                       updateFiltersForViewMode('list')
                     }
                   }}
-                  className={`p-1 rounded ${issuesViewMode === 'list' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                  className={`p-1 rounded ${issuesViewMode === 'list' ? 'bg-accent' : 'hover:bg-accent'}`}
                   title="List view"
                 >
                   <List className="h-4 w-4" />
@@ -466,7 +466,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                       updateFiltersForViewMode('kanban')
                     }
                   }}
-                  className={`p-1 rounded ${issuesViewMode === 'kanban' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
+                  className={`p-1 rounded ${issuesViewMode === 'kanban' ? 'bg-accent' : 'hover:bg-accent'}`}
                   title="Kanban view"
                 >
                   <LayoutGrid className="h-4 w-4" />
@@ -476,15 +476,15 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
           </div>
           
           {/* Mobile filters - only visible when toggled on small screens */}
-          <div className={`sm:hidden border-t border-gray-200 transition-all duration-200 ease-in-out overflow-hidden ${
+          <div className={`sm:hidden border-t border-border transition-all duration-200 ease-in-out overflow-hidden ${
             isFiltersVisible ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
           }`}>
             <div className="px-3 py-4 space-y-3">
-              <div className="text-sm text-gray-500 font-medium">Filter by:</div>
+              <div className="text-sm text-muted-foreground font-medium">Filter by:</div>
               
               {/* Status Filter */}
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Status</label>
+                <label className="text-sm font-medium text-foreground">Status</label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full h-8 text-sm">
                     <SelectValue />
@@ -501,7 +501,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               
               {/* Priority Filter */}
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Priority</label>
+                <label className="text-sm font-medium text-foreground">Priority</label>
                 <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                   <SelectTrigger className="w-full h-8 text-sm">
                     <SelectValue />
@@ -518,7 +518,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               
               {/* Type Filter */}
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Type</label>
+                <label className="text-sm font-medium text-foreground">Type</label>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                   <SelectTrigger className="w-full h-8 text-sm">
                     <SelectValue />
@@ -536,7 +536,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               {/* Tag Filter */}
               {availableTags.length > 0 && (
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Tag</label>
+                  <label className="text-sm font-medium text-foreground">Tag</label>
                   <Select value={tagFilter} onValueChange={setTagFilter}>
                     <SelectTrigger className="w-full h-8 text-sm">
                       <SelectValue />

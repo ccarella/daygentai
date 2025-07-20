@@ -97,7 +97,7 @@ describe('CreateWorkspaceForm', () => {
       await user.click(rocketAvatar)
       
       expect(screen.getByText('Selected: 🚀')).toBeInTheDocument()
-      expect(rocketAvatar).toHaveClass('border-blue-500', 'bg-blue-50')
+      expect(rocketAvatar).toHaveClass('border-primary', 'bg-primary/10')
     })
 
     it('allows changing avatar selection', async () => {
@@ -111,8 +111,8 @@ describe('CreateWorkspaceForm', () => {
       
       await user.click(officeAvatar)
       expect(screen.getByText('Selected: 🏢')).toBeInTheDocument()
-      expect(officeAvatar).toHaveClass('border-blue-500', 'bg-blue-50')
-      expect(rocketAvatar).not.toHaveClass('border-blue-500', 'bg-blue-50')
+      expect(officeAvatar).toHaveClass('border-primary', 'bg-primary/10')
+      expect(rocketAvatar).not.toHaveClass('border-primary', 'bg-primary/10')
     })
   })
 

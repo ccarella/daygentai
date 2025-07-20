@@ -59,11 +59,11 @@ export default function CreateUserForm() {
   }
 
   return (
-    <div className="bg-white p-4 md:p-6 lg:p-8 rounded-lg shadow-lg max-w-md w-full" onKeyDown={handleKeyDown}>
+    <div className="bg-card p-4 md:p-6 lg:p-8 rounded-lg shadow-lg max-w-md w-full" onKeyDown={handleKeyDown}>
       <h1 className="text-2xl font-bold text-center mb-8">Complete Your Profile</h1>
       
       <div className="mb-4 md:mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground mb-2">
           Choose an Avatar (Optional)
         </label>
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 md:gap-3">
@@ -73,8 +73,8 @@ export default function CreateUserForm() {
               onClick={() => setSelectedAvatar(avatar)}
               className={`min-h-[44px] min-w-[44px] p-2 md:p-3 text-2xl rounded-lg border-2 transition-all ${
                 selectedAvatar === avatar
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-300 hover:border-gray-400'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border hover:border-border'
               }`}
             >
               {avatar}
@@ -82,14 +82,14 @@ export default function CreateUserForm() {
           ))}
         </div>
         {selectedAvatar && (
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-muted-foreground">
             Selected: {selectedAvatar}
           </p>
         )}
       </div>
 
       <div className="mb-4 md:mb-6">
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
           Your Name (Required)
         </label>
         <input
@@ -100,7 +100,7 @@ export default function CreateUserForm() {
           placeholder="Enter your name"
           autoComplete="name"
           autoCapitalize="words"
-          className="w-full px-3 py-2 md:px-4 md:py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 md:px-4 md:py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
         />
         {name.length > 0 && !isValidName && (
           <p className="mt-1 text-sm text-red-600">
@@ -120,8 +120,8 @@ export default function CreateUserForm() {
         disabled={!isValidName || isLoading}
         className={`w-full py-2 px-4 md:py-2.5 md:px-5 rounded-lg font-medium transition-all ${
           isValidName && !isLoading
-            ? 'bg-blue-500 text-white hover:bg-blue-600'
-            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+            : 'bg-muted text-muted-foreground cursor-not-allowed'
         }`}
       >
         {isLoading ? 'Saving...' : 'Save'}

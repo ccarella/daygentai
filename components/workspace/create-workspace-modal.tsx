@@ -177,8 +177,8 @@ export function CreateWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }:
                   onClick={() => setSelectedAvatar(avatar)}
                   className={`p-2 text-2xl rounded-lg border-2 transition-all ${
                     selectedAvatar === avatar
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-300 hover:border-gray-400'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border hover:border-border'
                   }`}
                 >
                   {avatar}

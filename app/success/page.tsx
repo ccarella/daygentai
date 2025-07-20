@@ -61,10 +61,10 @@ export default async function SuccessPage({
 
   return (
     <AuthenticatedLayout>
-      <div className="min-h-screen flex items-center justify-center p-4 md:p-6 lg:p-8 bg-gray-50">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-4 md:p-6 lg:p-8">
+      <div className="min-h-screen flex items-center justify-center p-4 md:p-6 lg:p-8 bg-background">
+        <div className="max-w-md w-full bg-card rounded-lg shadow-lg p-4 md:p-6 lg:p-8">
           <div className="text-center space-y-6">
-            <h1 className="text-3xl font-bold text-gray-800">
+            <h1 className="text-3xl font-bold text-foreground">
               Welcome!
             </h1>
             
@@ -74,27 +74,27 @@ export default async function SuccessPage({
               </div>
               
               <div className="space-y-2">
-                <p className="text-xl font-semibold text-gray-700">
+                <p className="text-xl font-semibold text-foreground">
                   {profile.name}
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   {user.email}
                 </p>
               </div>
             </div>
 
-            <div className="pt-4 md:pt-6 border-t border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Your Workspace</h2>
+            <div className="pt-4 md:pt-6 border-t border-border">
+              <h2 className="text-lg font-semibold text-foreground mb-4">Your Workspace</h2>
               
               <div className="flex items-center space-x-3 mb-4">
                 <div className="text-3xl">
                   {workspace.avatar_url || '🏢'}
                 </div>
                 <div>
-                  <p className="font-medium text-gray-700">{workspace.name}</p>
+                  <p className="font-medium text-foreground">{workspace.name}</p>
                   <a 
                     href={`/${workspace.slug}`}
-                    className="text-sm text-blue-500 hover:text-blue-600"
+                    className="text-sm text-primary hover:text-primary"
                   >
                     daygent.ai/{workspace.slug}
                   </a>
@@ -103,7 +103,7 @@ export default async function SuccessPage({
             </div>
 
             <div className="pt-4 md:pt-6 space-y-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 You have successfully set up your profile and workspace.
               </p>
             </div>

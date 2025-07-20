@@ -38,7 +38,7 @@ const Tag = React.forwardRef<HTMLDivElement, TagProps>(
     const customStyle = color
       ? {
           backgroundColor: color,
-          color: '#ffffff',
+          color: 'var(--primary-foreground)',
           ...style,
         }
       : style

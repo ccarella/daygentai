@@ -96,7 +96,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
       }
     }
     // Return a temporary tag if creation fails
-    return { id: `temp-${Date.now()}`, name, color: '#6366f1' };
+    return { id: `temp-${Date.now()}`, name, color: 'var(--primary)' };
   };
 
   // Cleanup timeout on unmount or when modal closes
@@ -328,7 +328,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
                 <Label htmlFor="create-prompt" className="text-base">
                   Create a prompt
                 </Label>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-muted-foreground">
                   {hasApiKey 
                     ? (issue?.generated_prompt 
                         ? 'Update AI prompt for development agents' 
@@ -345,7 +345,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
             </div>
 
             {error && (
-              <div className="text-sm text-red-600 bg-red-50 p-2 md:p-3 rounded-md">
+              <div className="text-sm text-destructive bg-destructive/10 p-2 md:p-3 rounded-md">
                 {error}
               </div>
             )}

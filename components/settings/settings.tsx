@@ -73,17 +73,17 @@ export function Settings({ workspaceId, onBack }: SettingsProps) {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="p-4 md:p-6 border-b border-gray-200">
+      <div className="p-4 md:p-6 border-b border-border">
         <div className="flex items-center space-x-4">
           {onBack && (
             <button
               onClick={onBack}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors md:hidden"
+              className="p-2 hover:bg-accent rounded-lg transition-colors md:hidden"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-5 h-5 text-muted-foreground" />
             </button>
           )}
-          <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
         </div>
       </div>
 
@@ -93,13 +93,13 @@ export function Settings({ workspaceId, onBack }: SettingsProps) {
           {/* Agent Configuration Section */}
           <div className="space-y-4">
             <div>
-              <h2 className="text-lg font-medium text-gray-900 mb-1">Agent Configuration</h2>
-              <p className="text-sm text-gray-600">
+              <h2 className="text-lg font-medium text-foreground mb-1">Agent Configuration</h2>
+              <p className="text-sm text-muted-foreground">
                 Add an Agents.md configuration file to customize agent behavior and instructions.
               </p>
             </div>
             <div>
-              <label htmlFor="agents-config" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="agents-config" className="block text-sm font-medium text-foreground mb-2">
                 Agents.md Content
               </label>
               <textarea
@@ -109,31 +109,31 @@ export function Settings({ workspaceId, onBack }: SettingsProps) {
                 placeholder="# Agent Configuration
 
 Define your agent instructions and behavior here..."
-                className="w-full h-64 px-3 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                className="w-full h-64 px-3 py-2 border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent font-mono text-sm"
                 disabled={loading}
               />
             </div>
           </div>
 
           {/* API Configuration Section */}
-          <div className="space-y-4 border-t border-gray-200 pt-8">
+          <div className="space-y-4 border-t border-border pt-8">
             <div>
-              <h2 className="text-lg font-medium text-gray-900 mb-1">API Configuration</h2>
-              <p className="text-sm text-gray-600">
+              <h2 className="text-lg font-medium text-foreground mb-1">API Configuration</h2>
+              <p className="text-sm text-muted-foreground">
                 Select your AI service provider and enter your API key.
               </p>
             </div>
             
             <div className="grid gap-4 md:grid-cols-[200px_1fr]">
               <div>
-                <label htmlFor="service-provider" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="service-provider" className="block text-sm font-medium text-foreground mb-2">
                   Service Provider
                 </label>
                 <select
                   id="service-provider"
                   value={selectedService}
                   onChange={(e) => setSelectedService(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 >
                   <option value="">Select a provider</option>
                   <option value="anthropic">Anthropic</option>
@@ -145,7 +145,7 @@ Define your agent instructions and behavior here..."
               </div>
               
               <div>
-                <label htmlFor="api-key" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="api-key" className="block text-sm font-medium text-foreground mb-2">
                   API Key
                 </label>
                 <input
@@ -154,19 +154,19 @@ Define your agent instructions and behavior here..."
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   placeholder="Enter your API key"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
               </div>
             </div>
           </div>
 
           {/* Save Button */}
-          <div className="border-t border-gray-200 pt-8">
+          <div className="border-t border-border pt-8">
             <div className="flex items-center justify-between">
               <button
                 onClick={handleSave}
                 disabled={saving || loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? 'Saving...' : 'Save Settings'}
               </button>
