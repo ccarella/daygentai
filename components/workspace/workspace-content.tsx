@@ -38,6 +38,19 @@ const Cookbook = dynamic(
     loading: () => <ContentSkeleton />
   }
 )
+const RecipeDetails = dynamic(
+  () => import('@/components/cookbook/recipe-details').then(mod => ({ default: mod.RecipeDetails })),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-4xl mx-auto p-4 sm:p-6">
+          <ContentSkeleton />
+        </div>
+      </div>
+    )
+  }
+)
 import {
   Select,
   SelectContent,
@@ -58,7 +71,7 @@ interface WorkspaceContentProps {
     avatar_url: string | null
     owner_id: string
   }
-  initialView?: 'list' | 'issue' | 'inbox' | 'cookbook'
+  initialView?: 'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe'
   initialIssueId?: string
 }
 
@@ -71,7 +84,7 @@ export interface WorkspaceContentRef {
   toggleSearch: () => void
   isSearchVisible: () => boolean
   setStatusFilter: (status: string) => void
-  getCurrentView: () => 'list' | 'issue' | 'inbox' | 'cookbook'
+  getCurrentView: () => 'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe'
 }
 
 const statusOptions = [
@@ -110,17 +123,25 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     return match ? match[1] : null
   }
   
+  // Extract recipe ID from URL if present
+  const getRecipeIdFromPath = () => {
+    const match = pathname.match(/\/recipe\/([a-zA-Z0-9-]+)/)
+    return match ? match[1] : null
+  }
+  
   // Determine initial view based on URL if not provided
   const getInitialView = () => {
     if (initialView !== 'list') return initialView
     if (pathname.includes('/inbox')) return 'inbox'
     if (pathname.includes('/cookbook')) return 'cookbook'
     if (pathname.includes('/issue/')) return 'issue'
+    if (pathname.includes('/recipe/')) return 'recipe'
     return 'list'
   }
   
-  const [currentView, setCurrentView] = useState<'list' | 'issue' | 'inbox' | 'cookbook'>(getInitialView())
+  const [currentView, setCurrentView] = useState<'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe'>(getInitialView())
   const [currentIssueId, setCurrentIssueId] = useState<string | null>(initialIssueId || getIssueIdFromPath() || null)
+  const [currentRecipeId, setCurrentRecipeId] = useState<string | null>(getRecipeIdFromPath() || null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [issuesViewMode, setIssuesViewMode] = useState<'list' | 'kanban'>('list')
   
@@ -157,18 +178,29 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
       if (pathname.includes('/inbox')) {
         setCurrentView('inbox')
         setCurrentIssueId(null)
+        setCurrentRecipeId(null)
       } else if (pathname.includes('/cookbook')) {
         setCurrentView('cookbook')
         setCurrentIssueId(null)
+        setCurrentRecipeId(null)
       } else if (pathname.includes('/issue/')) {
         const issueId = getIssueIdFromPath()
         if (issueId) {
           setCurrentView('issue')
           setCurrentIssueId(issueId)
+          setCurrentRecipeId(null)
+        }
+      } else if (pathname.includes('/recipe/')) {
+        const recipeId = getRecipeIdFromPath()
+        if (recipeId) {
+          setCurrentView('recipe')
+          setCurrentRecipeId(recipeId)
+          setCurrentIssueId(null)
         }
       } else if (pathname.endsWith(`/${workspace.slug}`)) {
         setCurrentView('list')
         setCurrentIssueId(null)
+        setCurrentRecipeId(null)
       }
     }
 
@@ -222,21 +254,40 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
 
   const handleIssueClick = (issueId: string) => {
     setCurrentIssueId(issueId)
+    setCurrentRecipeId(null)
     setCurrentView('issue')
     // Update URL without page refresh
     window.history.pushState({}, '', `/${workspace.slug}/issue/${issueId}`)
   }
 
+  const handleRecipeClick = (recipeId: string) => {
+    setCurrentRecipeId(recipeId)
+    setCurrentIssueId(null)
+    setCurrentView('recipe')
+    // Update URL without page refresh
+    window.history.pushState({}, '', `/${workspace.slug}/recipe/${recipeId}`)
+  }
+
   const handleBackToList = () => {
     setCurrentView('list')
     setCurrentIssueId(null)
+    setCurrentRecipeId(null)
     // Update URL without page refresh
     window.history.pushState({}, '', `/${workspace.slug}`)
+  }
+
+  const handleBackToCookbook = () => {
+    setCurrentView('cookbook')
+    setCurrentRecipeId(null)
+    setCurrentIssueId(null)
+    // Update URL without page refresh
+    window.history.pushState({}, '', `/${workspace.slug}/cookbook`)
   }
 
   const handleNavigateToInbox = () => {
     setCurrentView('inbox')
     setCurrentIssueId(null)
+    setCurrentRecipeId(null)
     // Update URL without page refresh
     window.history.pushState({}, '', `/${workspace.slug}/inbox`)
   }
@@ -244,10 +295,10 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   const handleNavigateToCookbook = () => {
     setCurrentView('cookbook')
     setCurrentIssueId(null)
+    setCurrentRecipeId(null)
     // Update URL without page refresh
     window.history.pushState({}, '', `/${workspace.slug}/cookbook`)
   }
-
 
   // Shared function to update filters based on view mode
   const updateFiltersForViewMode = (viewMode: 'list' | 'kanban') => {
@@ -570,7 +621,16 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
       ) : currentView === 'inbox' ? (
         <Inbox />
       ) : currentView === 'cookbook' ? (
-        <Cookbook />
+        <Cookbook 
+          workspaceId={workspace.id} 
+          workspaceSlug={workspace.slug} 
+          onRecipeClick={handleRecipeClick}
+        />
+      ) : currentView === 'recipe' && currentRecipeId ? (
+        <RecipeDetails
+          recipeId={currentRecipeId}
+          onBack={handleBackToCookbook}
+        />
       ) : currentIssueId ? (
         <IssueDetails
           issueId={currentIssueId}

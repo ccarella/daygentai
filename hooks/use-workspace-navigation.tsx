@@ -31,7 +31,7 @@ export function useWorkspaceNavigation({
     // Get main content items
     if (mainContentRef.current) {
       const mainItems = Array.from(
-        mainContentRef.current.querySelectorAll<HTMLElement>('[data-issue-row], [data-issue-card]')
+        mainContentRef.current.querySelectorAll<HTMLElement>('[data-issue-row], [data-issue-card], [data-recipe-row]')
       ).filter(el => !el.hasAttribute('disabled'))
       
       mainItems.forEach(el => items.push({ element: el, area: 'main' }))
@@ -54,7 +54,7 @@ export function useWorkspaceNavigation({
       return getSidebarItems()
     } else if (currentAreaRef.current === 'main' && mainContentRef.current) {
       return Array.from(
-        mainContentRef.current.querySelectorAll<HTMLElement>('[data-issue-row], [data-issue-card]')
+        mainContentRef.current.querySelectorAll<HTMLElement>('[data-issue-row], [data-issue-card], [data-recipe-row]')
       ).filter(el => !el.hasAttribute('disabled'))
     }
     return []
@@ -171,8 +171,8 @@ export function useWorkspaceNavigation({
           e.preventDefault()
           const item = currentItems[currentIndexRef.current]
           if (item) {
-            // For issue rows and cards, trigger their click handlers
-            if (item.hasAttribute('data-issue-row') || item.hasAttribute('data-issue-card')) {
+            // For issue rows, cards, and recipe rows, trigger their click handlers
+            if (item.hasAttribute('data-issue-row') || item.hasAttribute('data-issue-card') || item.hasAttribute('data-recipe-row')) {
               // Find and click the element to trigger the existing click handler
               item.click()
             } else {
