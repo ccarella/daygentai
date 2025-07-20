@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useImperativeHandle, forwardRef, useEffect, useRef } from 'react'
+import { useState, useImperativeHandle, forwardRef, useEffect, useRef, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { IssuesList } from '@/components/issues/issues-list'
 import dynamic from 'next/dynamic'
@@ -10,6 +10,13 @@ import { KanbanBoardSkeleton } from '@/components/issues/kanban-skeleton'
 import { IssueDetailsSkeleton } from '@/components/issues/issue-skeleton'
 import { ContentSkeleton } from '@/components/ui/content-skeleton'
 import { ProfileSettingsSkeleton } from '@/components/settings/settings-skeleton'
+import { 
+  subscribeToNavigateToIssues,
+  subscribeToNavigateToInbox,
+  subscribeToToggleViewMode,
+  subscribeToToggleSearch,
+  subscribeToSetStatusFilter
+} from '@/lib/events/issue-events'
 
 const KanbanBoard = dynamic(
   () => import('@/components/issues/kanban-board').then(mod => ({ default: mod.KanbanBoard })),
@@ -267,6 +274,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     }
   }, [searchQuery, debouncedSearchQuery])
 
+
   const handleIssueClick = (issueId: string) => {
     setCurrentIssueId(issueId)
     setCurrentRecipeId(null)
@@ -283,45 +291,45 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     window.history.pushState({}, '', `/${workspace.slug}/recipe/${recipeId}`)
   }
 
-  const handleBackToList = () => {
+  const handleBackToList = useCallback(() => {
     setCurrentView('list')
     setCurrentIssueId(null)
     setCurrentRecipeId(null)
     // Update URL without page refresh
     window.history.pushState({}, '', `/${workspace.slug}`)
-  }
+  }, [workspace.slug])
 
-  const handleBackToCookbook = () => {
+  const handleBackToCookbook = useCallback(() => {
     setCurrentView('cookbook')
     setCurrentRecipeId(null)
     setCurrentIssueId(null)
     // Update URL without page refresh
     window.history.pushState({}, '', `/${workspace.slug}/cookbook`)
-  }
+  }, [workspace.slug])
 
-  const handleNavigateToInbox = () => {
+  const handleNavigateToInbox = useCallback(() => {
     setCurrentView('inbox')
     setCurrentIssueId(null)
     setCurrentRecipeId(null)
     // Update URL without page refresh
     window.history.pushState({}, '', `/${workspace.slug}/inbox`)
-  }
+  }, [workspace.slug])
 
-  const handleNavigateToCookbook = () => {
+  const handleNavigateToCookbook = useCallback(() => {
     setCurrentView('cookbook')
     setCurrentIssueId(null)
     setCurrentRecipeId(null)
     // Update URL without page refresh
     window.history.pushState({}, '', `/${workspace.slug}/cookbook`)
-  }
+  }, [workspace.slug])
 
-  const handleNavigateToSettings = () => {
+  const handleNavigateToSettings = useCallback(() => {
     setCurrentView('settings')
     setCurrentIssueId(null)
     setCurrentRecipeId(null)
     // Update URL without page refresh
     window.history.pushState({}, '', `/${workspace.slug}/settings`)
-  }
+  }, [workspace.slug])
 
   // Shared function to update filters based on view mode
   const updateFiltersForViewMode = (viewMode: 'list' | 'kanban') => {
@@ -338,13 +346,13 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   }
 
   // Handler to toggle between list and kanban views
-  const handleToggleViewMode = () => {
+  const handleToggleViewMode = useCallback(() => {
     setIssuesViewMode(prev => {
       const newMode = prev === 'list' ? 'kanban' : 'list'
       updateFiltersForViewMode(newMode)
       return newMode
     })
-  }
+  }, [])
 
   // Expose method to parent component
   useImperativeHandle(ref, () => ({
@@ -364,6 +372,37 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     handleBackToList()
     setRefreshKey(prev => prev + 1)
   }
+
+  // Subscribe to navigation events from command palette
+  useEffect(() => {
+    const unsubscribeNavigateToIssues = subscribeToNavigateToIssues(() => {
+      handleBackToList()
+    })
+    
+    const unsubscribeNavigateToInbox = subscribeToNavigateToInbox(() => {
+      handleNavigateToInbox()
+    })
+    
+    const unsubscribeToggleViewMode = subscribeToToggleViewMode(() => {
+      handleToggleViewMode()
+    })
+    
+    const unsubscribeToggleSearch = subscribeToToggleSearch(() => {
+      setIsSearchVisible(prev => !prev)
+    })
+    
+    const unsubscribeSetStatusFilter = subscribeToSetStatusFilter((event) => {
+      setStatusFilter(event.detail.status)
+    })
+    
+    return () => {
+      unsubscribeNavigateToIssues()
+      unsubscribeNavigateToInbox()
+      unsubscribeToggleViewMode()
+      unsubscribeToggleSearch()
+      unsubscribeSetStatusFilter()
+    }
+  }, [handleBackToList, handleNavigateToInbox, handleToggleViewMode])
 
 
   return (

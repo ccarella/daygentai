@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { Plus, ChevronLeft, ChevronRight, HelpCircle, Settings, Terminal, BookOpen } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import type { UserWorkspace } from '@/lib/supabase/workspaces'
+import { subscribeToCreateIssueRequests } from '@/lib/events/issue-events'
 
 const CreateIssueModal = dynamic(
   () => import('@/components/issues/create-issue-modal').then(mod => ({ default: mod.CreateIssueModal })),
@@ -95,6 +96,15 @@ export function WorkspaceLayout({
     }
     return undefined
   }, [isMobileMenuOpen])
+
+  // Subscribe to create issue requests from command palette
+  useEffect(() => {
+    const unsubscribe = subscribeToCreateIssueRequests(() => {
+      setCreateIssueOpen(true)
+    })
+    
+    return unsubscribe
+  }, [])
 
   const SidebarContent = () => {
     return (
