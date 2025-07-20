@@ -3,6 +3,7 @@
 import { WorkspaceWithMobileNav } from '@/components/layout/workspace-with-mobile-nav'
 import { ApiSettings } from '@/components/settings/api-settings'
 import { CommandPaletteProvider } from '@/hooks/use-command-palette'
+import { WorkspaceProvider } from '@/contexts/workspace-context'
 import dynamic from 'next/dynamic'
 
 const AppCommandPalette = dynamic(
@@ -33,21 +34,23 @@ export function SettingsPageContent({ workspace, initialSettings }: SettingsPage
   if (initialSettings.agents_content) settings.agents_content = initialSettings.agents_content
 
   return (
-    <CommandPaletteProvider>
-      <WorkspaceWithMobileNav workspace={workspace}>
-        <div className="max-w-4xl mx-auto p-6">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold mb-2">Workspace Settings</h1>
-            <p className="text-muted-foreground">Manage your workspace configuration and integrations</p>
+    <WorkspaceProvider workspaceId={workspace.id} initialWorkspace={workspace}>
+      <CommandPaletteProvider>
+        <WorkspaceWithMobileNav workspace={workspace}>
+          <div className="max-w-4xl mx-auto p-6">
+            <div className="mb-8">
+              <h1 className="text-2xl font-bold mb-2">Workspace Settings</h1>
+              <p className="text-muted-foreground">Manage your workspace configuration and integrations</p>
+            </div>
+            
+            <ApiSettings 
+              workspaceId={workspace.id}
+              initialSettings={settings}
+            />
           </div>
-          
-          <ApiSettings 
-            workspaceId={workspace.id}
-            initialSettings={settings}
-          />
-        </div>
-      </WorkspaceWithMobileNav>
-      {workspace && <AppCommandPalette workspace={workspace} />}
-    </CommandPaletteProvider>
+        </WorkspaceWithMobileNav>
+        {workspace && <AppCommandPalette workspace={workspace} />}
+      </CommandPaletteProvider>
+    </WorkspaceProvider>
   )
 }
