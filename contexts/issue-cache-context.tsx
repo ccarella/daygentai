@@ -27,6 +27,9 @@ interface IssueCacheContextType {
   preloadIssue: (issueId: string) => Promise<void>
   preloadIssues: (issueIds: string[]) => Promise<void>
   clearCache: () => void
+  warmCache: (workspaceId: string) => Promise<void>
+  updateIssue: (issueId: string, updates: Partial<IssueWithCreator>) => void
+  removeIssue: (issueId: string) => void
 }
 
 const IssueCacheContext = createContext<IssueCacheContextType | undefined>(undefined)
@@ -119,8 +122,54 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
     setCache(new Map())
   }, [])
 
+  const warmCache = useCallback(async (workspaceId: string) => {
+    try {
+      const supabase = createClient()
+      
+      // Fetch first 50 most recent issues for cache warming
+      const { data: issues, error } = await supabase
+        .from('issues')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .neq('status', 'done')
+        .order('created_at', { ascending: false })
+        .limit(50)
+
+      if (!error && issues) {
+        setCache(prev => {
+          const newCache = new Map(prev)
+          issues.forEach(issue => {
+            newCache.set(issue.id, issue as IssueWithCreator)
+          })
+          return newCache
+        })
+      }
+    } catch (error) {
+      console.error('Error warming cache:', error)
+    }
+  }, [])
+
+  const updateIssue = useCallback((issueId: string, updates: Partial<IssueWithCreator>) => {
+    setCache(prev => {
+      const existing = prev.get(issueId)
+      if (!existing) return prev
+      
+      const newCache = new Map(prev)
+      newCache.set(issueId, { ...existing, ...updates })
+      return newCache
+    })
+  }, [])
+
+  const removeIssue = useCallback((issueId: string) => {
+    setCache(prev => {
+      const newCache = new Map(prev)
+      newCache.delete(issueId)
+      return newCache
+    })
+  }, [])
+
   return (
-    <IssueCacheContext.Provider value={{ getIssue, preloadIssue, preloadIssues, clearCache }}>
+    <IssueCacheContext.Provider value={{ getIssue, preloadIssue, preloadIssues, clearCache, warmCache, updateIssue, removeIssue }}>
       {children}
     </IssueCacheContext.Provider>
   )

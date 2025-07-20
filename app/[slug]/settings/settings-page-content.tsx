@@ -2,13 +2,7 @@
 
 import { WorkspaceWithMobileNav } from '@/components/layout/workspace-with-mobile-nav'
 import { ApiSettings } from '@/components/settings/api-settings'
-import { CommandPaletteProvider } from '@/hooks/use-command-palette'
-import dynamic from 'next/dynamic'
-
-const AppCommandPalette = dynamic(
-  () => import('@/components/layout/app-command-palette').then(mod => ({ default: mod.AppCommandPalette })),
-  { ssr: false }
-)
+import { useWorkspace } from '@/contexts/workspace-context'
 
 interface SettingsPageContentProps {
   workspace: {
@@ -25,7 +19,14 @@ interface SettingsPageContentProps {
   }
 }
 
-export function SettingsPageContent({ workspace, initialSettings }: SettingsPageContentProps) {
+export function SettingsPageContent({ workspace: serverWorkspace, initialSettings }: SettingsPageContentProps) {
+  const { workspace } = useWorkspace()
+  
+  // Use the workspace from context if available, otherwise fall back to server data
+  const currentWorkspace = workspace || serverWorkspace
+  
+  if (!currentWorkspace) return null
+  
   // Filter out null values
   const settings: { api_key?: string; api_provider?: string; agents_content?: string } = {}
   if (initialSettings.api_key) settings.api_key = initialSettings.api_key
@@ -33,21 +34,18 @@ export function SettingsPageContent({ workspace, initialSettings }: SettingsPage
   if (initialSettings.agents_content) settings.agents_content = initialSettings.agents_content
 
   return (
-    <CommandPaletteProvider>
-      <WorkspaceWithMobileNav workspace={workspace}>
-        <div className="max-w-4xl mx-auto p-6">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold mb-2">Workspace Settings</h1>
-            <p className="text-muted-foreground">Manage your workspace configuration and integrations</p>
-          </div>
-          
-          <ApiSettings 
-            workspaceId={workspace.id}
-            initialSettings={settings}
-          />
+    <WorkspaceWithMobileNav workspace={currentWorkspace}>
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold mb-2">Workspace Settings</h1>
+          <p className="text-muted-foreground">Manage your workspace configuration and integrations</p>
         </div>
-      </WorkspaceWithMobileNav>
-      {workspace && <AppCommandPalette workspace={workspace} />}
-    </CommandPaletteProvider>
+        
+        <ApiSettings 
+          workspaceId={currentWorkspace.id}
+          initialSettings={settings}
+        />
+      </div>
+    </WorkspaceWithMobileNav>
   )
 }
