@@ -165,7 +165,8 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
         .single()
 
       if (error || !issue) {
-        onBack()
+        // Don't redirect, let the page handle the error
+        setLoading(false)
         return
       }
 
