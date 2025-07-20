@@ -1,75 +1,17 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useState, useRef } from 'react'
 import { WorkspaceWithMobileNav } from '@/components/layout/workspace-with-mobile-nav'
 import { WorkspaceContent, WorkspaceContentRef } from '@/components/workspace/workspace-content'
-import { IssueCacheProvider } from '@/contexts/issue-cache-context'
-import { WorkspaceProvider } from '@/contexts/workspace-context'
-import { CommandPaletteProvider } from '@/hooks/use-command-palette'
-import dynamic from 'next/dynamic'
-import { WorkspacePageSkeleton } from '@/components/workspace/workspace-skeleton'
+import { useWorkspace } from '@/contexts/workspace-context'
+import { use } from 'react'
 
-const AppCommandPalette = dynamic(
-  () => import('@/components/layout/app-command-palette').then(mod => ({ default: mod.AppCommandPalette })),
-  { 
-    ssr: false,
-    loading: () => null
-  }
-)
-
-function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> }) {
-  const router = useRouter()
+export default function WorkspacePage({ params }: { params: Promise<{ slug: string }> }) {
+  use(params) // Resolve params promise
+  const { workspace } = useWorkspace()
   const contentRef = useRef<WorkspaceContentRef>(null)
-  const [workspace, setWorkspace] = useState<{
-    id: string
-    name: string
-    slug: string
-    avatar_url: string | null
-    owner_id: string
-  } | null>(null)
-  const [loading, setLoading] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
   const [userAvatar, setUserAvatar] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchWorkspace = async () => {
-      const supabase = createClient()
-      const resolvedParams = await params
-      
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        router.push('/')
-        return
-      }
-
-      // Fetch workspace data - check if user is a member (owner or otherwise)
-      const { data: workspace } = await supabase
-        .from('workspaces')
-        .select(`
-          *,
-          workspace_members!inner (
-            user_id,
-            role
-          )
-        `)
-        .eq('slug', resolvedParams.slug)
-        .eq('workspace_members.user_id', user.id)
-        .single()
-
-      if (!workspace) {
-        router.push('/CreateWorkspace')
-        return
-      }
-
-      setWorkspace(workspace)
-      setLoading(false)
-    }
-
-    fetchWorkspace()
-  }, [params, router])
 
   const handleIssueCreated = () => {
     setRefreshKey(prev => prev + 1)
@@ -91,89 +33,31 @@ function WorkspacePageContent({ params }: { params: Promise<{ slug: string }> })
     contentRef.current?.navigateToSettings()
   }
 
-  // Handler to trigger create issue modal
-  const handleCreateIssue = () => {
-    // Find and click the create issue button in the sidebar
-    const createButton = document.querySelector('[data-create-issue-button]') as HTMLButtonElement
-    if (createButton) {
-      createButton.click()
-    }
-  }
-
-  // Handler to toggle view mode
-  const handleToggleViewMode = () => {
-    contentRef.current?.toggleViewMode()
-  }
-
-  // Handler to toggle search
-  const handleToggleSearch = () => {
-    contentRef.current?.toggleSearch()
-  }
-
-  // Handler to set status filter
-  const handleSetStatusFilter = (status: string) => {
-    contentRef.current?.setStatusFilter(status)
-  }
-
-  // Handler to get current view
-  const getCurrentView = () => {
-    return contentRef.current?.getCurrentView() || 'list'
-  }
+  // These handlers were previously used with AppCommandPalette
+  // which is now handled at the layout level
 
   const handleAvatarUpdate = (newAvatar: string) => {
     setUserAvatar(newAvatar)
   }
 
-  // Global shortcuts are now handled by AppCommandPalette
-
-  if (loading) {
-    return <WorkspacePageSkeleton />
-  }
-
   if (!workspace) return null
 
   return (
-    <>
-      <WorkspaceProvider workspaceId={workspace.id} initialWorkspace={workspace}>
-        <IssueCacheProvider>
-          <WorkspaceWithMobileNav 
-            workspace={workspace} 
-            onIssueCreated={handleIssueCreated}
-            onNavigateToIssues={handleNavigateToIssues}
-            onNavigateToInbox={handleNavigateToInbox}
-            onNavigateToCookbook={handleNavigateToCookbook}
-            onNavigateToSettings={handleNavigateToSettings}
-            userAvatar={userAvatar}
-          >
-            <WorkspaceContent 
-              ref={contentRef}
-              key={refreshKey} 
-              workspace={workspace}
-              onAvatarUpdate={handleAvatarUpdate}
-            />
-          </WorkspaceWithMobileNav>
-        </IssueCacheProvider>
-      </WorkspaceProvider>
-      {workspace && (
-        <AppCommandPalette 
-          workspace={workspace}
-          onCreateIssue={handleCreateIssue}
-          onToggleViewMode={handleToggleViewMode}
-          onToggleSearch={handleToggleSearch}
-          onSetStatusFilter={handleSetStatusFilter}
-          getCurrentView={getCurrentView}
-          onNavigateToIssues={handleNavigateToIssues}
-          onNavigateToInbox={handleNavigateToInbox}
-        />
-      )}
-    </>
-  )
-}
-
-export default function WorkspacePage({ params }: { params: Promise<{ slug: string }> }) {
-  return (
-    <CommandPaletteProvider>
-      <WorkspacePageContent params={params} />
-    </CommandPaletteProvider>
+    <WorkspaceWithMobileNav 
+      workspace={workspace} 
+      onIssueCreated={handleIssueCreated}
+      onNavigateToIssues={handleNavigateToIssues}
+      onNavigateToInbox={handleNavigateToInbox}
+      onNavigateToCookbook={handleNavigateToCookbook}
+      onNavigateToSettings={handleNavigateToSettings}
+      userAvatar={userAvatar}
+    >
+      <WorkspaceContent 
+        ref={contentRef}
+        key={refreshKey} 
+        workspace={workspace}
+        onAvatarUpdate={handleAvatarUpdate}
+      />
+    </WorkspaceWithMobileNav>
   )
 }

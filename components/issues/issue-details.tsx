@@ -93,7 +93,7 @@ const typeOptions = [
 
 export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) {
   const { toast } = useToast()
-  const { getIssue } = useIssueCache()
+  const { getIssue, updateIssue, removeIssue } = useIssueCache()
   const [issue, setIssue] = useState<Issue | null>(null)
   const [loading, setLoading] = useState(true)
   const [creatorName, setCreatorName] = useState<string>('')
@@ -118,9 +118,12 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
 
   useEffect(() => {
     const fetchIssue = async () => {
+      const startTime = Date.now()
+      
       // Check cache first
       const cachedIssue = getIssue(issueId)
       if (cachedIssue) {
+        console.log(`[Performance] Issue ${issueId} loaded from cache in ${Date.now() - startTime}ms`)
         setIssue(cachedIssue)
         setCreatedAt(cachedIssue.created_at)
         
@@ -141,10 +144,12 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
         }
         
         setLoading(false)
+        console.log(`[Performance] Issue ${issueId} fully loaded (with creator) in ${Date.now() - startTime}ms`)
         return
       }
 
       // If not in cache, fetch from database
+      console.log(`[Performance] Issue ${issueId} not in cache, fetching from database...`)
       setLoading(true)
       const supabase = createClient()
 
@@ -189,6 +194,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
       }
 
       setLoading(false)
+      console.log(`[Performance] Issue ${issueId} loaded from database in ${Date.now() - startTime}ms`)
     }
 
     fetchIssue()
@@ -219,6 +225,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
       .eq('id', issue.id)
 
     if (!error) {
+      removeIssue(issue.id)
       onDeleted()
     }
   }
@@ -245,7 +252,9 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
       return
     }
     
-    setIssue({ ...issue, status: newStatus as Issue['status'] })
+    const updatedIssue = { ...issue, status: newStatus as Issue['status'] }
+    setIssue(updatedIssue)
+    updateIssue(issue.id, { status: newStatus as Issue['status'] })
     toast({
       title: "Status updated",
       description: `Issue status changed to ${newStatus.toLowerCase().replace('_', ' ')}.`,
@@ -276,7 +285,9 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
       return
     }
     
-    setIssue({ ...issue, type: newType as Issue['type'] })
+    const updatedIssue = { ...issue, type: newType as Issue['type'] }
+    setIssue(updatedIssue)
+    updateIssue(issue.id, { type: newType as Issue['type'] })
     toast({
       title: "Type updated",
       description: `Issue type changed to ${newType.toLowerCase()}.`,
@@ -309,6 +320,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
     
     if (updatedIssue) {
       setIssue(updatedIssue)
+      updateIssue(issueId, updatedIssue)
     }
   }
 

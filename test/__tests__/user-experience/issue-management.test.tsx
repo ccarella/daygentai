@@ -84,16 +84,20 @@ vi.mock('@/lib/supabase/client', () => ({
     from: vi.fn((table: string) => {
       if (table === 'workspaces') {
         return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          single: vi.fn().mockResolvedValue({ 
-            data: { 
-              api_key: 'test-key', 
-              api_provider: 'openai', 
-              agents_content: null 
-            }, 
-            error: null 
-          })
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                single: vi.fn(() => Promise.resolve({ 
+                  data: { 
+                    api_key: 'test-key', 
+                    api_provider: 'openai', 
+                    agents_content: null 
+                  }, 
+                  error: null 
+                }))
+              }))
+            }))
+          }))
         }
       }
       if (table === 'issue_tags') {

@@ -74,7 +74,18 @@ vi.mock('@/lib/supabase/client', () => ({
 
 vi.mock('@/contexts/issue-cache-context', () => ({
   useIssueCache: () => ({
-    preloadIssues: vi.fn()
+    preloadIssues: vi.fn(),
+    getListCache: vi.fn(() => null),
+    setListCache: vi.fn(),
+    invalidateListCache: vi.fn(),
+    getStats: vi.fn(() => ({
+      hits: 0,
+      misses: 0,
+      size: 0,
+      listHits: 0,
+      listMisses: 0,
+      listSize: 0
+    }))
   })
 }))
 

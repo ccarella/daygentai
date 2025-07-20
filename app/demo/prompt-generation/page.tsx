@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { PromptDisplay } from '@/components/issues/prompt-display';
 import { CreateIssueModal } from '@/components/issues/create-issue-modal';
 import { WorkspaceProvider } from '@/contexts/workspace-context';
+import { IssueCacheProvider } from '@/contexts/issue-cache-context';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Sparkles, Key, FileText } from 'lucide-react';
@@ -43,7 +44,8 @@ export default function PromptGenerationDemo() {
 
   return (
     <WorkspaceProvider workspaceId={demoWorkspaceId} initialWorkspace={demoWorkspace}>
-      <div className="container mx-auto py-8 max-w-6xl">
+      <IssueCacheProvider>
+        <div className="container mx-auto py-8 max-w-6xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">AI Prompt Generation for Issues</h1>
         <p className="text-muted-foreground">
@@ -189,7 +191,8 @@ export default function PromptGenerationDemo() {
           setDemoPrompt(examplePrompt);
         }}
       />
-      </div>
+        </div>
+      </IssueCacheProvider>
     </WorkspaceProvider>
   );
 }

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from 'date-fns'
 import { useRouter } from 'next/navigation'
-import { useIssueCache } from '@/contexts/issue-cache-context'
+import { useIssueCache, type ListCacheKey } from '@/contexts/issue-cache-context'
 import { stripMarkdown } from '@/lib/markdown-utils'
 import { IssueListSkeleton } from './issue-skeleton'
 import { Tag as TagComponent } from '@/components/ui/tag'
@@ -85,21 +85,54 @@ export function IssuesList({
   onSearchResultsChange
 }: IssuesListProps) {
   const router = useRouter()
-  const { preloadIssues } = useIssueCache()
+  const { preloadIssues, getListCache, setListCache } = useIssueCache()
   const [issues, setIssues] = useState<Issue[]>([])
   const [initialLoading, setInitialLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
+  const [isStale, setIsStale] = useState(false)
   const isLoadingRef = useRef(false)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const preloadedIssuesRef = useRef<Set<string>>(new Set())
   const listContainerRef = useRef<HTMLDivElement>(null)
   const preloadTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  const fetchIssues = useCallback(async (pageNum: number, append = false) => {
-    if (isLoadingRef.current) return { issues: [], hasMore: false, totalCount: 0 }
+  const fetchIssues = useCallback(async (pageNum: number, append = false, skipCache = false) => {
+    if (isLoadingRef.current && !skipCache) return { issues: [], hasMore: false, totalCount: 0 }
+    
+    const startTime = Date.now()
+    
+    // Generate cache key
+    const cacheKey: ListCacheKey = {
+      workspaceId,
+      statusFilter,
+      priorityFilter,
+      typeFilter,
+      tagFilter,
+      searchQuery,
+      page: pageNum
+    }
+    
+    // Check cache first (unless skipping cache)
+    if (!skipCache && !append) {
+      const cachedData = getListCache(cacheKey)
+      if (cachedData) {
+        // Check if cache is fresh (less than 30 seconds old)
+        const isFresh = Date.now() - cachedData.timestamp < 30000
+        console.log(`[Performance] List loaded from cache in ${Date.now() - startTime}ms (${isFresh ? 'fresh' : 'stale'})`)
+        
+        if (isFresh) {
+          // Return fresh cached data immediately
+          return cachedData
+        } else {
+          // Return stale data but mark for background refresh
+          setIsStale(true)
+          // Continue to fetch fresh data below
+        }
+      }
+    }
     
     isLoadingRef.current = true
     const supabase = createClient()
@@ -256,31 +289,89 @@ export function IssuesList({
       }, 500)
     }
 
-    return { issues: newIssues, hasMore: hasMorePages, totalCount }
-  }, [workspaceId, statusFilter, priorityFilter, typeFilter, tagFilter, searchQuery, preloadIssues, onSearchResultsChange])
+    const result = { issues: newIssues, hasMore: hasMorePages, totalCount }
+    
+    // Cache the result
+    if (!append) {
+      console.log(`[Performance] List fetched from database in ${Date.now() - startTime}ms`)
+      setListCache(cacheKey, {
+        ...result,
+        timestamp: Date.now()
+      })
+      setIsStale(false)
+    }
+    
+    return result
+  }, [workspaceId, statusFilter, priorityFilter, typeFilter, tagFilter, searchQuery, preloadIssues, getListCache, setListCache])
 
   // Initial load when component mounts or filters change
   useEffect(() => {
     let cancelled = false
 
     const loadInitialData = async () => {
-      // Only show loading state on first mount, not on filter changes
-      if (issues.length === 0) {
-        setInitialLoading(true)
+      const startTime = Date.now()
+      
+      // First, try to load from cache
+      const cacheKey: ListCacheKey = {
+        workspaceId,
+        statusFilter,
+        priorityFilter,
+        typeFilter,
+        tagFilter,
+        searchQuery,
+        page: 0
       }
       
-      const { issues: newIssues, hasMore: moreAvailable, totalCount: total } = await fetchIssues(0)
-      
-      if (!cancelled) {
-        setIssues(newIssues)
-        setHasMore(moreAvailable)
-        setTotalCount(total)
+      const cachedData = getListCache(cacheKey)
+      if (cachedData) {
+        // Show cached data immediately
+        console.log(`[Performance] Showing cached list data immediately (${Date.now() - startTime}ms)`)
+        setIssues(cachedData.issues)
+        setHasMore(cachedData.hasMore)
+        setTotalCount(cachedData.totalCount)
         setPage(0)
         setInitialLoading(false)
         
-        // Notify parent of search results count if searching
         if (searchQuery && onSearchResultsChange) {
-          onSearchResultsChange(total)
+          onSearchResultsChange(cachedData.totalCount)
+        }
+        
+        // Check if cache is stale (older than 30 seconds)
+        const isStale = Date.now() - cachedData.timestamp > 30000
+        if (isStale) {
+          console.log('[Performance] Cache is stale, fetching fresh data in background...')
+          setIsStale(true)
+          
+          // Fetch fresh data in background
+          const { issues: freshIssues, hasMore: freshHasMore, totalCount: freshTotal } = await fetchIssues(0, false, true)
+          
+          if (!cancelled) {
+            console.log(`[Performance] Fresh data loaded, updating UI (${Date.now() - startTime}ms total)`)
+            setIssues(freshIssues)
+            setHasMore(freshHasMore)
+            setTotalCount(freshTotal)
+            
+            if (searchQuery && onSearchResultsChange) {
+              onSearchResultsChange(freshTotal)
+            }
+          }
+        }
+      } else {
+        // No cache, show loading state
+        setInitialLoading(true)
+        
+        const { issues: newIssues, hasMore: moreAvailable, totalCount: total } = await fetchIssues(0)
+        
+        if (!cancelled) {
+          setIssues(newIssues)
+          setHasMore(moreAvailable)
+          setTotalCount(total)
+          setPage(0)
+          setInitialLoading(false)
+          
+          if (searchQuery && onSearchResultsChange) {
+            onSearchResultsChange(total)
+          }
         }
       }
     }
@@ -295,7 +386,7 @@ export function IssuesList({
         clearTimeout(preloadTimeoutRef.current)
       }
     }
-  }, [workspaceId, statusFilter, priorityFilter, typeFilter, tagFilter, searchQuery]) // Added searchQuery dependency
+  }, [workspaceId, statusFilter, priorityFilter, typeFilter, tagFilter, searchQuery, getListCache]) // Added getListCache dependency
 
   // Setup IntersectionObserver for viewport-based preloading
   useEffect(() => {
@@ -399,6 +490,14 @@ export function IssuesList({
   return (
     <div className="flex-1 overflow-auto bg-background">
       <div ref={listContainerRef} className="">
+        {/* Stale data indicator */}
+        {isStale && (
+          <div className="px-6 py-2 bg-muted/50 border-b border-border flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="w-3 h-3 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin"></div>
+            <span>Refreshing data...</span>
+          </div>
+        )}
+        
         {/* Header with count */}
         <div className="px-6 py-4 border-b border-border">
           <h2 className="text-sm font-medium text-muted-foreground">

@@ -22,22 +22,154 @@ interface IssueWithCreator extends Issue {
   }
 }
 
+interface CacheStats {
+  hits: number
+  misses: number
+  size: number
+  listHits: number
+  listMisses: number
+  listSize: number
+  lastHit?: string
+  lastMiss?: string
+}
+
+interface ListCacheEntry {
+  issues: Issue[]
+  hasMore: boolean
+  totalCount: number
+  timestamp: number
+}
+
+interface ListCacheKey {
+  workspaceId: string
+  statusFilter: string
+  priorityFilter: string
+  typeFilter: string
+  tagFilter: string
+  searchQuery: string
+  page: number
+}
+
 interface IssueCacheContextType {
+  // Individual issue methods
   getIssue: (issueId: string) => IssueWithCreator | null
   preloadIssue: (issueId: string) => Promise<void>
   preloadIssues: (issueIds: string[]) => Promise<void>
+  updateIssue: (issueId: string, updates: Partial<IssueWithCreator>) => void
+  removeIssue: (issueId: string) => void
+  
+  // List cache methods
+  getListCache: (key: ListCacheKey) => ListCacheEntry | null
+  setListCache: (key: ListCacheKey, data: ListCacheEntry) => void
+  invalidateListCache: (workspaceId: string) => void
+  
+  // General methods
   clearCache: () => void
+  warmCache: (workspaceId: string) => Promise<void>
+  getCacheStats: () => CacheStats
 }
 
 const IssueCacheContext = createContext<IssueCacheContextType | undefined>(undefined)
 
+// Helper function to generate cache key
+function generateListCacheKey(key: ListCacheKey): string {
+  return `${key.workspaceId}-${key.statusFilter}-${key.priorityFilter}-${key.typeFilter}-${key.tagFilter}-${key.searchQuery}-${key.page}`
+}
+
 export function IssueCacheProvider({ children }: { children: ReactNode }) {
   const [cache, setCache] = useState<Map<string, IssueWithCreator>>(new Map())
+  const [listCache, setListCacheState] = useState<Map<string, ListCacheEntry>>(new Map())
   const [loadingIssues, setLoadingIssues] = useState<Set<string>>(new Set())
+  const [cacheStats, setCacheStats] = useState<CacheStats>({
+    hits: 0,
+    misses: 0,
+    size: 0,
+    listHits: 0,
+    listMisses: 0,
+    listSize: 0
+  })
 
   const getIssue = useCallback((issueId: string): IssueWithCreator | null => {
-    return cache.get(issueId) || null
+    const issue = cache.get(issueId)
+    
+    if (issue) {
+      console.log(`[Cache HIT] Issue ${issueId}`)
+      setCacheStats(prev => ({
+        ...prev,
+        hits: prev.hits + 1,
+        lastHit: issueId
+      }))
+    } else {
+      console.log(`[Cache MISS] Issue ${issueId}`)
+      setCacheStats(prev => ({
+        ...prev,
+        misses: prev.misses + 1,
+        lastMiss: issueId
+      }))
+    }
+    
+    return issue || null
   }, [cache])
+
+  const getListCache = useCallback((key: ListCacheKey): ListCacheEntry | null => {
+    const cacheKey = generateListCacheKey(key)
+    const entry = listCache.get(cacheKey)
+    
+    if (entry) {
+      const age = Date.now() - entry.timestamp
+      console.log(`[List Cache HIT] Key: ${cacheKey}, Age: ${age}ms`)
+      setCacheStats(prev => ({
+        ...prev,
+        listHits: prev.listHits + 1
+      }))
+      return entry
+    } else {
+      console.log(`[List Cache MISS] Key: ${cacheKey}`)
+      setCacheStats(prev => ({
+        ...prev,
+        listMisses: prev.listMisses + 1
+      }))
+      return null
+    }
+  }, [listCache])
+
+  const setListCache = useCallback((key: ListCacheKey, data: ListCacheEntry) => {
+    const cacheKey = generateListCacheKey(key)
+    console.log(`[List Cache SET] Key: ${cacheKey}, Issues: ${data.issues.length}`)
+    
+    setListCacheState(prev => {
+      const newCache = new Map(prev)
+      newCache.set(cacheKey, data)
+      setCacheStats(prev => ({ ...prev, listSize: newCache.size }))
+      return newCache
+    })
+    
+    // Also update individual issue cache
+    data.issues.forEach(issue => {
+      setCache(prev => {
+        const newCache = new Map(prev)
+        if (!newCache.has(issue.id)) {
+          newCache.set(issue.id, issue as IssueWithCreator)
+        }
+        return newCache
+      })
+    })
+    setCacheStats(prev => ({ ...prev, size: cache.size }))
+  }, [cache])
+
+  const invalidateListCache = useCallback((workspaceId: string) => {
+    console.log(`[List Cache INVALIDATE] Workspace: ${workspaceId}`)
+    setListCacheState(prev => {
+      const newCache = new Map()
+      prev.forEach((value, key) => {
+        if (!key.startsWith(workspaceId)) {
+          newCache.set(key, value)
+        }
+      })
+      setCacheStats(prev => ({ ...prev, listSize: newCache.size }))
+      return newCache
+    })
+  }, [])
 
   const preloadIssue = useCallback(async (issueId: string) => {
     // Skip if already cached or currently loading
@@ -47,6 +179,8 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
 
     setLoadingIssues(prev => new Set(prev).add(issueId))
 
+    const startTime = Date.now()
+    
     try {
       const supabase = createClient()
 
@@ -58,7 +192,13 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (!error && issue) {
-        setCache(prev => new Map(prev).set(issueId, issue as IssueWithCreator))
+        console.log(`[Cache LOADED] Issue ${issueId} loaded in ${Date.now() - startTime}ms`)
+        setCache(prev => {
+          const newCache = new Map(prev)
+          newCache.set(issueId, issue as IssueWithCreator)
+          setCacheStats(prev => ({ ...prev, size: newCache.size }))
+          return newCache
+        })
       }
     } catch (error) {
       console.error('Error preloading issue:', error)
@@ -86,6 +226,8 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
       return newSet
     })
 
+    const startTime = Date.now()
+    
     try {
       const supabase = createClient()
 
@@ -96,11 +238,13 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
         .in('id', issuesToLoad)
 
       if (!error && issues) {
+        console.log(`[Cache BATCH LOADED] ${issues.length} issues loaded in ${Date.now() - startTime}ms`)
         setCache(prev => {
           const newCache = new Map(prev)
           issues.forEach(issue => {
             newCache.set(issue.id, issue as IssueWithCreator)
           })
+          setCacheStats(prev => ({ ...prev, size: newCache.size }))
           return newCache
         })
       }
@@ -116,11 +260,114 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
   }, [cache, loadingIssues])
 
   const clearCache = useCallback(() => {
+    console.log('[Cache CLEARED]')
     setCache(new Map())
+    setListCacheState(new Map())
+    setCacheStats({ hits: 0, misses: 0, size: 0, listHits: 0, listMisses: 0, listSize: 0 })
   }, [])
 
+  const warmCache = useCallback(async (workspaceId: string) => {
+    const startTime = Date.now()
+    
+    try {
+      const supabase = createClient()
+      
+      // Fetch first 50 most recent issues for cache warming
+      const { data: issues, error } = await supabase
+        .from('issues')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .neq('status', 'done')
+        .order('created_at', { ascending: false })
+        .limit(50)
+
+      if (!error && issues) {
+        console.log(`[Cache WARMED] ${issues.length} issues pre-loaded in ${Date.now() - startTime}ms`)
+        setCache(prev => {
+          const newCache = new Map(prev)
+          issues.forEach(issue => {
+            newCache.set(issue.id, issue as IssueWithCreator)
+          })
+          setCacheStats(prev => ({ ...prev, size: newCache.size }))
+          return newCache
+        })
+        
+        // Also cache this as the first page of default list view
+        const defaultKey: ListCacheKey = {
+          workspaceId,
+          statusFilter: 'exclude_done',
+          priorityFilter: 'all',
+          typeFilter: 'all',
+          tagFilter: 'all',
+          searchQuery: '',
+          page: 0
+        }
+        setListCache(defaultKey, {
+          issues: issues as Issue[],
+          hasMore: issues.length === 50,
+          totalCount: issues.length,
+          timestamp: Date.now()
+        })
+      }
+    } catch (error) {
+      console.error('Error warming cache:', error)
+    }
+  }, [setListCache])
+
+  const updateIssue = useCallback((issueId: string, updates: Partial<IssueWithCreator>) => {
+    console.log(`[Cache UPDATE] Issue ${issueId}`)
+    setCache(prev => {
+      const existing = prev.get(issueId)
+      if (!existing) return prev
+      
+      const newCache = new Map(prev)
+      newCache.set(issueId, { ...existing, ...updates })
+      return newCache
+    })
+    
+    // Invalidate list cache for the workspace
+    const issue = cache.get(issueId)
+    if (issue) {
+      invalidateListCache(issue.workspace_id)
+    }
+  }, [cache, invalidateListCache])
+
+  const removeIssue = useCallback((issueId: string) => {
+    console.log(`[Cache REMOVE] Issue ${issueId}`)
+    
+    // Get workspace ID before removing
+    const issue = cache.get(issueId)
+    const workspaceId = issue?.workspace_id
+    
+    setCache(prev => {
+      const newCache = new Map(prev)
+      newCache.delete(issueId)
+      setCacheStats(prev => ({ ...prev, size: newCache.size }))
+      return newCache
+    })
+    
+    // Invalidate list cache for the workspace
+    if (workspaceId) {
+      invalidateListCache(workspaceId)
+    }
+  }, [cache, invalidateListCache])
+
+  const getCacheStats = useCallback(() => cacheStats, [cacheStats])
+
   return (
-    <IssueCacheContext.Provider value={{ getIssue, preloadIssue, preloadIssues, clearCache }}>
+    <IssueCacheContext.Provider value={{ 
+      getIssue, 
+      preloadIssue, 
+      preloadIssues, 
+      clearCache, 
+      warmCache, 
+      updateIssue, 
+      removeIssue, 
+      getCacheStats,
+      getListCache,
+      setListCache,
+      invalidateListCache
+    }}>
       {children}
     </IssueCacheContext.Provider>
   )
@@ -133,3 +380,6 @@ export function useIssueCache() {
   }
   return context
 }
+
+// Export types for use in other components
+export type { Issue, IssueWithCreator, ListCacheKey, ListCacheEntry }
