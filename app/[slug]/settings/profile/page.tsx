@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { ProfileSettingsPageContent } from './profile-settings-page-content'
 
-export default async function ProfileSettingsPage({ params }: { params: { slug: string } }) {
+export default async function ProfileSettingsPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
@@ -25,7 +26,7 @@ export default async function ProfileSettingsPage({ params }: { params: { slug: 
         role
       )
     `)
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .eq('workspace_members.user_id', user.id)
     .single()
   
