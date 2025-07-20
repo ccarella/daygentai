@@ -26,6 +26,7 @@ import { Loader2 } from 'lucide-react'
 import { generateIssuePrompt } from '@/lib/llm/prompt-generator'
 import { useToast } from '@/components/ui/use-toast'
 import { useWorkspace } from '@/contexts/workspace-context'
+import { useIssueCache } from '@/contexts/issue-cache-context'
 import { TagInput, type TagOption } from '@/components/ui/tag-input'
 import { getWorkspaceTags, createTag, updateIssueTags } from '@/lib/tags'
 
@@ -44,6 +45,7 @@ export function CreateIssueModal({
 }: CreateIssueModalProps) {
   const { toast } = useToast()
   const { workspace } = useWorkspace()
+  const { invalidateListCache } = useIssueCache()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [type, setType] = useState<'feature' | 'bug' | 'chore' | 'design' | 'non-technical'>('feature')
@@ -174,6 +176,9 @@ export function CreateIssueModal({
       setPriority('medium')
       setCreatePrompt(false)
       setSelectedTags([])
+      
+      // Invalidate list cache for this workspace
+      invalidateListCache(workspaceId)
       
       onOpenChange(false)
       onIssueCreated?.()

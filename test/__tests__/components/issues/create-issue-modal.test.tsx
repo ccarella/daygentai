@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CreateIssueModal } from '@/components/issues/create-issue-modal'
 import { WorkspaceProvider } from '@/contexts/workspace-context'
+import { IssueCacheProvider } from '@/contexts/issue-cache-context'
 import { createClient } from '@/lib/supabase/client'
 import * as promptGenerator from '@/lib/llm/prompt-generator'
 
@@ -62,9 +63,11 @@ describe('CreateIssueModal - Prompt Generation', () => {
       return {
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
-            single: vi.fn(() => Promise.resolve({ 
-              data: { id: 'test-workspace', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
-              error: null 
+            eq: vi.fn(() => ({
+              single: vi.fn(() => Promise.resolve({ 
+                data: { id: 'test-workspace', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
+                error: null 
+              }))
             }))
           }))
         }))
@@ -96,7 +99,9 @@ describe('CreateIssueModal - Prompt Generation', () => {
 
     return render(
       <WorkspaceProvider workspaceId="test-workspace" initialWorkspace={initialWorkspace}>
-        <CreateIssueModal {...props} />
+        <IssueCacheProvider>
+          <CreateIssueModal {...props} />
+        </IssueCacheProvider>
       </WorkspaceProvider>
     )
   }
@@ -141,9 +146,11 @@ describe('CreateIssueModal - Prompt Generation', () => {
       return {
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
-            single: vi.fn(() => Promise.resolve({ 
-              data: { id: 'test-workspace', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
-              error: null 
+            eq: vi.fn(() => ({
+              single: vi.fn(() => Promise.resolve({ 
+                data: { id: 'test-workspace', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
+                error: null 
+              }))
             }))
           }))
         }))
@@ -393,15 +400,17 @@ describe('CreateIssueModal - Prompt Generation', () => {
         return {
           select: vi.fn(() => ({
             eq: vi.fn(() => ({
-              single: vi.fn(() => Promise.resolve({ 
-                data: { 
-                  id: 'test-workspace', 
-                  name: 'Test Workspace', 
-                  api_key: 'test-key', 
-                  api_provider: 'openai',
-                  agents_content: 'Agents.md content'
-                }, 
-                error: null 
+              eq: vi.fn(() => ({
+                single: vi.fn(() => Promise.resolve({ 
+                  data: { 
+                    id: 'test-workspace', 
+                    name: 'Test Workspace', 
+                    api_key: 'test-key', 
+                    api_provider: 'openai',
+                    agents_content: 'Agents.md content'
+                  }, 
+                  error: null 
+                }))
               }))
             }))
           }))
@@ -527,7 +536,9 @@ describe('CreateIssueModal - Prompt Generation', () => {
           apiProvider: 'openai',
           agentsContent: null
         }}>
-          <CreateIssueModal {...defaultProps} open={false} />
+          <IssueCacheProvider>
+            <CreateIssueModal {...defaultProps} open={false} />
+          </IssueCacheProvider>
         </WorkspaceProvider>
       )
 
@@ -543,7 +554,9 @@ describe('CreateIssueModal - Prompt Generation', () => {
           apiProvider: 'openai',
           agentsContent: null
         }}>
-          <CreateIssueModal {...defaultProps} open={true} />
+          <IssueCacheProvider>
+            <CreateIssueModal {...defaultProps} open={true} />
+          </IssueCacheProvider>
         </WorkspaceProvider>
       )
 
