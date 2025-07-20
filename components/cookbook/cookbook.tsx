@@ -11,9 +11,10 @@ import { useArrowNavigation } from '@/hooks/use-arrow-navigation'
 interface CookbookProps {
   workspaceId: string
   workspaceSlug: string
+  onRecipeClick?: (recipeId: string) => void
 }
 
-export function Cookbook({ workspaceId, workspaceSlug }: CookbookProps) {
+export function Cookbook({ workspaceId, workspaceSlug, onRecipeClick }: CookbookProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
   const [tagFilter, setTagFilter] = useState('all')
@@ -47,7 +48,7 @@ export function Cookbook({ workspaceId, workspaceSlug }: CookbookProps) {
     onEnter: (element) => {
       const recipeId = element.getAttribute('data-recipe-id')
       if (recipeId) {
-        router.push(`/${workspaceSlug}/recipe/${recipeId}`)
+        handleRecipeClick(recipeId)
       }
     },
     onEscape: () => {
@@ -78,7 +79,11 @@ export function Cookbook({ workspaceId, workspaceSlug }: CookbookProps) {
   }, [focusItem])
 
   const handleRecipeClick = (recipeId: string) => {
-    router.push(`/${workspaceSlug}/recipe/${recipeId}`)
+    if (onRecipeClick) {
+      onRecipeClick(recipeId)
+    } else {
+      router.push(`/${workspaceSlug}/recipe/${recipeId}`)
+    }
   }
 
   return (
