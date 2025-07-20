@@ -261,8 +261,8 @@ export function WorkspaceLayout({
         )}
       </nav>
 
-      {/* Info Icon at Bottom */}
-      <div className="p-2 border-t border-gray-200">
+      {/* Info Icon at Bottom - Hidden on mobile */}
+      <div className="hidden md:block p-2 border-t border-gray-200">
         <button
           data-sidebar-item
           onClick={() => openWithMode('help')}
