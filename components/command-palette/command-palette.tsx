@@ -4,7 +4,15 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { Search, FileText, Inbox, Plus, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle, Circle, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
-import { emitIssueStatusUpdate } from "@/lib/events/issue-events"
+import { 
+  emitIssueStatusUpdate, 
+  emitCreateIssueRequest,
+  emitNavigateToIssues,
+  emitNavigateToInbox,
+  emitToggleViewMode,
+  emitToggleSearch,
+  emitSetStatusFilter
+} from "@/lib/events/issue-events"
 import {
   Dialog,
   DialogContent,
@@ -72,34 +80,51 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   // Memoize callbacks to prevent recreating functions
   const handleCreateIssue = React.useCallback(() => {
     setIsOpen(false)
+    // Always emit the event
+    emitCreateIssueRequest()
+    // If callback is provided, call it too (for backwards compatibility)
     onCreateIssue?.()
   }, [setIsOpen, onCreateIssue])
   
   const handleToggleViewMode = React.useCallback(() => {
     setIsOpen(false)
+    // Always emit the event
+    emitToggleViewMode()
+    // If callback is provided, call it too (for backwards compatibility)
     onToggleViewMode?.()
   }, [setIsOpen, onToggleViewMode])
   
   const handleToggleSearch = React.useCallback(() => {
     setIsOpen(false)
+    // Always emit the event
+    emitToggleSearch()
+    // If callback is provided, call it too (for backwards compatibility)
     onToggleSearch?.()
   }, [setIsOpen, onToggleSearch])
   
   const handleNavigateToIssues = React.useCallback(() => {
+    setIsOpen(false)
+    // Always emit the event
+    emitNavigateToIssues()
+    // If callback is provided, call it too (for backwards compatibility)
     if (onNavigateToIssues) {
       onNavigateToIssues()
     } else {
       router.push(`/${workspaceSlug}`)
     }
-  }, [router, workspaceSlug, onNavigateToIssues])
+  }, [router, workspaceSlug, onNavigateToIssues, setIsOpen])
   
   const handleNavigateToInbox = React.useCallback(() => {
+    setIsOpen(false)
+    // Always emit the event
+    emitNavigateToInbox()
+    // If callback is provided, call it too (for backwards compatibility)
     if (onNavigateToInbox) {
       onNavigateToInbox()
     } else {
       router.push(`/${workspaceSlug}/inbox`)
     }
-  }, [router, workspaceSlug, onNavigateToInbox])
+  }, [router, workspaceSlug, onNavigateToInbox, setIsOpen])
   
   
   const handleShowRecentIssues = React.useCallback(() => {
@@ -351,8 +376,11 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
           title: option.label,
           icon: option.icon,
           action: () => {
-            onSetStatusFilter(option.value)
             setIsOpen(false)
+            // Always emit the event
+            emitSetStatusFilter(option.value)
+            // If callback is provided, call it too (for backwards compatibility)
+            onSetStatusFilter?.(option.value)
             toast({
               title: "Filter applied",
               description: `Showing ${option.label.replace('Filter by ', '').toLowerCase()} issues`,

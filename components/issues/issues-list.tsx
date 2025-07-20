@@ -522,7 +522,13 @@ export function IssuesList({
                 }
               }}
               className="px-6 py-4 hover:bg-accent cursor-pointer transition-colors"
-              onClick={() => {
+              onClick={(e) => {
+                // Prevent event from bubbling if clicking on interactive elements
+                const target = e.target as HTMLElement
+                if (target.tagName === 'A' || target.tagName === 'BUTTON') {
+                  return
+                }
+                
                 if (onIssueClick) {
                   onIssueClick(issue.id)
                 } else {
