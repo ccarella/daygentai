@@ -43,15 +43,15 @@ interface KanbanBoardProps {
 
 const columns = [
   { id: 'todo', title: 'To Do', color: 'bg-muted' },
-  { id: 'in_progress', title: 'In Progress', color: 'bg-blue-50' },
+  { id: 'in_progress', title: 'In Progress', color: 'bg-primary/10' },
   { id: 'in_review', title: 'In Review', color: 'bg-yellow-50' },
   { id: 'done', title: 'Done', color: 'bg-green-50' }
 ]
 
 const typeColors = {
   feature: 'text-purple-700 bg-purple-50 border border-purple-200',
-  bug: 'text-red-700 bg-red-50 border border-red-200',
-  chore: 'text-blue-700 bg-blue-50 border border-blue-200',
+  bug: 'text-destructive bg-destructive/10 border border-destructive/20',
+  chore: 'text-primary bg-primary/10 border border-primary/20',
   design: 'text-pink-700 bg-pink-50 border border-pink-200',
   'non-technical': 'text-muted-foreground bg-muted border border-border'
 }
@@ -65,7 +65,7 @@ const typeLabels = {
 }
 
 const priorityColors = {
-  critical: 'bg-red-100 text-red-800 border-red-200',
+  critical: 'bg-destructive/10 text-destructive border-destructive/20',
   high: 'bg-orange-100 text-orange-800 border-orange-200',
   medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   low: 'bg-muted text-muted-foreground border-border'
@@ -271,7 +271,7 @@ export function KanbanBoard({
         <div className="flex items-center justify-end mb-4 text-sm">
           <button
             onClick={loadMore}
-            className="text-blue-600 hover:text-blue-800"
+            className="text-primary hover:text-primary"
             disabled={loadingMoreRef.current}
           >
             {loadingMoreRef.current ? 'Loading...' : 'Load more'}
@@ -291,9 +291,9 @@ export function KanbanBoard({
               onDrop={(e) => handleDrop(e, column.id)}
             >
               <div className={`${column.color} rounded-t-lg p-3 border border-b-0`}>
-                <h3 className="font-medium text-gray-900">
+                <h3 className="font-medium text-foreground">
                   {column.title}
-                  <span className="ml-2 text-sm text-gray-500">
+                  <span className="ml-2 text-sm text-muted-foreground">
                     ({columnIssues.length})
                   </span>
                 </h3>

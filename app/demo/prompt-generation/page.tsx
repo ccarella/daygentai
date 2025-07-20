@@ -46,7 +46,7 @@ export default function PromptGenerationDemo() {
       <div className="container mx-auto py-8 max-w-6xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">AI Prompt Generation for Issues</h1>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Automatically generate development prompts for AI agents from your issues
         </p>
       </div>
@@ -73,7 +73,7 @@ export default function PromptGenerationDemo() {
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Your API key is encrypted and stored securely in your workspace settings
               </p>
             </div>
@@ -93,7 +93,7 @@ export default function PromptGenerationDemo() {
             
             <div className="pt-2">
               <h4 className="font-medium mb-2">How it works:</h4>
-              <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+              <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
                 <li>Add your API key in workspace settings</li>
                 <li>Create or edit an issue with the toggle enabled</li>
                 <li>AI generates a structured prompt for development agents</li>

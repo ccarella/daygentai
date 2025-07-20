@@ -63,20 +63,20 @@ export const SearchBar = forwardRef<SearchBarRef, SearchBarProps>(
             onChange={(e) => handleSearch(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="w-full pl-12 pr-24 py-4 bg-background border border-gray-200 rounded-lg text-base placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+            className="w-full pl-12 pr-24 py-4 bg-background border border-border rounded-lg text-base placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 shadow-sm hover:shadow-md"
           />
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" />
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-muted-foreground" />
           
           {/* Right side indicators */}
           <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
             {/* Search indicator */}
             {isSearching && (
-              <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+              <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
             )}
             
             {/* Result count */}
             {showResultCount && !isSearching && query && resultCount !== undefined && (
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-muted-foreground">
                 {resultCount} {resultCount === 1 ? 'result' : 'results'}
               </span>
             )}

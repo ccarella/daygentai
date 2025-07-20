@@ -86,7 +86,7 @@ We'll be using NextAuth.js for the authentication implementation.`,
             </Button>
           </div>
 
-          <div className="text-sm text-gray-600 space-y-2">
+          <div className="text-sm text-muted-foreground space-y-2">
             <p>This demo shows the edit issue modal with the same UI as the create issue modal.</p>
             <p>Key features:</p>
             <ul className="list-disc list-inside ml-4">

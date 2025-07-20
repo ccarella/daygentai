@@ -147,7 +147,7 @@ export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = fa
             <CommandGroup heading="Workspaces">
               {workspaces.length === 0 && (
                 <CommandItem disabled>
-                  <span className="text-gray-500">Loading workspaces...</span>
+                  <span className="text-muted-foreground">Loading workspaces...</span>
                 </CommandItem>
               )}
               {workspaces.map((workspace) => (
@@ -164,7 +164,7 @@ export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = fa
                     )}>
                       {workspace.name}
                     </span>
-                    <span className="text-xs text-gray-500">{workspace.role}</span>
+                    <span className="text-xs text-muted-foreground">{workspace.role}</span>
                   </div>
                   {workspace.slug === currentWorkspace.slug && (
                     <Check className="ml-2 h-4 w-4" />

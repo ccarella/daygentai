@@ -315,7 +315,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   return (
     <>
       {/* Search Bar - Only show for issues list view and when visible */}
-      <div className={`bg-background border-b border-gray-200 transition-all duration-200 ease-in-out overflow-hidden ${
+      <div className={`bg-background border-b border-border transition-all duration-200 ease-in-out overflow-hidden ${
         currentView === 'list' && isSearchVisible ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
       }`}>
         <div className="px-3 sm:px-6 py-6 sm:py-8">
@@ -351,7 +351,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               
               {/* Active search indicator */}
               {!isSearchVisible && debouncedSearchQuery && (
-                <div className="text-sm text-blue-600 font-medium hidden sm:flex items-center gap-2">
+                <div className="text-sm text-primary font-medium hidden sm:flex items-center gap-2">
                   <span>Searching: &ldquo;{debouncedSearchQuery}&rdquo;</span>
                   <button
                     onClick={() => {
@@ -367,7 +367,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               
               {/* Desktop filters - always visible on sm+ screens */}
               <div className="hidden sm:flex items-center gap-3 flex-1 min-w-0">
-                <span className="text-sm text-gray-500 flex-shrink-0">Filter by:</span>
+                <span className="text-sm text-muted-foreground flex-shrink-0">Filter by:</span>
                 
                 {/* Status Filter */}
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -476,15 +476,15 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
           </div>
           
           {/* Mobile filters - only visible when toggled on small screens */}
-          <div className={`sm:hidden border-t border-gray-200 transition-all duration-200 ease-in-out overflow-hidden ${
+          <div className={`sm:hidden border-t border-border transition-all duration-200 ease-in-out overflow-hidden ${
             isFiltersVisible ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
           }`}>
             <div className="px-3 py-4 space-y-3">
-              <div className="text-sm text-gray-500 font-medium">Filter by:</div>
+              <div className="text-sm text-muted-foreground font-medium">Filter by:</div>
               
               {/* Status Filter */}
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Status</label>
+                <label className="text-sm font-medium text-foreground">Status</label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full h-8 text-sm">
                     <SelectValue />
@@ -501,7 +501,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               
               {/* Priority Filter */}
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Priority</label>
+                <label className="text-sm font-medium text-foreground">Priority</label>
                 <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                   <SelectTrigger className="w-full h-8 text-sm">
                     <SelectValue />
@@ -518,7 +518,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               
               {/* Type Filter */}
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Type</label>
+                <label className="text-sm font-medium text-foreground">Type</label>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                   <SelectTrigger className="w-full h-8 text-sm">
                     <SelectValue />
@@ -536,7 +536,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               {/* Tag Filter */}
               {availableTags.length > 0 && (
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Tag</label>
+                  <label className="text-sm font-medium text-foreground">Tag</label>
                   <Select value={tagFilter} onValueChange={setTagFilter}>
                     <SelectTrigger className="w-full h-8 text-sm">
                       <SelectValue />

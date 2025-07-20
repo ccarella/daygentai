@@ -63,7 +63,7 @@ const typeIcons = {
 }
 
 const priorityColors = {
-  critical: 'text-red-600 bg-red-50',
+  critical: 'text-destructive bg-destructive/10',
   high: 'text-orange-600 bg-orange-50',
   medium: 'text-yellow-600 bg-yellow-50',
   low: 'text-green-600 bg-green-50'
@@ -77,7 +77,7 @@ const priorityLabels = {
 }
 
 const statusOptions = [
-  { value: 'todo', label: 'Todo', color: 'text-gray-600' },
+  { value: 'todo', label: 'Todo', color: 'text-muted-foreground' },
   { value: 'in_progress', label: 'In Progress', color: 'text-yellow-600' },
   { value: 'in_review', label: 'In Review', color: 'text-purple-600' },
   { value: 'done', label: 'Done', color: 'text-green-600' },
@@ -333,7 +333,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
         <div className="mb-6">
           <button
             onClick={onBack}
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
+            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
           >
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -364,7 +364,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={handleDelete}
-                    className="text-red-600 focus:text-red-600"
+                    className="text-destructive focus:text-destructive"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete issue
@@ -439,7 +439,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
             {/* Tags */}
             {issue.issue_tags && issue.issue_tags.length > 0 && (
               <div className="flex items-center flex-wrap gap-2 mt-3">
-                <span className="text-gray-500 text-sm">Tags:</span>
+                <span className="text-muted-foreground text-sm">Tags:</span>
                 {issue.issue_tags.map(({ tags }) => (
                   <TagComponent
                     key={tags.id}
@@ -466,11 +466,11 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
               </ReactMarkdown>
             </div>
           ) : (
-            <p className="text-gray-500 italic">No description provided</p>
+            <p className="text-muted-foreground italic">No description provided</p>
           )}
 
           {/* Divider */}
-          <div className="border-t border-gray-200 my-8"></div>
+          <div className="border-t border-border my-8"></div>
 
           {/* Activity Section */}
           <div className="space-y-4">
@@ -497,11 +497,11 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900">
+                  <p className="text-sm text-foreground">
                     <span className="font-medium">{creatorName}</span>
-                    <span className="text-gray-500"> created this issue</span>
+                    <span className="text-muted-foreground"> created this issue</span>
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     {createdAt && formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
                   </p>
                 </div>

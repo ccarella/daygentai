@@ -119,10 +119,10 @@ export function Cookbook() {
             <h1 className="text-2xl font-bold mb-6">Cookbook</h1>
             {selectedSection ? (
               <div>
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                   <button
                     onClick={() => setSelectedSection(null)}
-                    className="hover:text-gray-900"
+                    className="hover:text-foreground"
                   >
                     Cookbook
                   </button>
@@ -158,7 +158,7 @@ export function Cookbook() {
               <ChevronRight className="w-4 h-4" />
               <button
                 onClick={() => setSelectedIssue(null)}
-                className="hover:text-gray-900"
+                className="hover:text-foreground"
               >
                 {selectedIssue.section}
               </button>
