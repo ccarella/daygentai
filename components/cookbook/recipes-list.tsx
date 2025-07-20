@@ -35,17 +35,19 @@ export function RecipesList({
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
-  const isLoadingRef = useRef(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
-  const fetchRecipes = useCallback(async (pageNum: number) => {
-    if (isLoadingRef.current) return { recipes: [], hasMore: false, totalCount: 0 }
-    
-    isLoadingRef.current = true
+  const fetchRecipes = useCallback(async (pageNum: number, signal?: AbortSignal) => {
     const supabase = createClient()
     
     // If filtering by tag, we need to get recipe IDs that have that tag first
     let recipeIds: string[] | null = null
     if (tagFilter !== 'all') {
+      // Check if request was aborted
+      if (signal?.aborted) {
+        return { recipes: [], hasMore: false, totalCount: 0 }
+      }
+      
       const { data: taggedRecipes } = await supabase
         .from('recipe_tags')
         .select('recipe_id')
@@ -55,7 +57,6 @@ export function RecipesList({
         recipeIds = taggedRecipes.map(rt => rt.recipe_id)
       } else {
         // No recipes with this tag
-        isLoadingRef.current = false
         return { recipes: [], hasMore: false, totalCount: 0 }
       }
     }
@@ -71,7 +72,17 @@ export function RecipesList({
       countQuery = countQuery.in('id', recipeIds)
     }
 
+    // Check if request was aborted before count query
+    if (signal?.aborted) {
+      return { recipes: [], hasMore: false, totalCount: 0 }
+    }
+    
     const { count: tagFilteredCount } = await countQuery
+
+    // Check if request was aborted after count query
+    if (signal?.aborted) {
+      return { recipes: [], hasMore: false, totalCount: 0 }
+    }
 
     // Now fetch the actual data
     let query = supabase
@@ -102,12 +113,21 @@ export function RecipesList({
     // and then filter by search client-side to get accurate counts
     let allRecipes: RecipeWithTags[] = []
     if (searchQuery && searchQuery.trim() !== '') {
+      // Check if request was aborted
+      if (signal?.aborted) {
+        return { recipes: [], hasMore: false, totalCount: 0 }
+      }
+      
       // Fetch all recipes without pagination to apply search filter
       const { data: allData, error: allError } = await query
       
       if (allError) {
         console.error('Error fetching all recipes:', allError)
-        isLoadingRef.current = false
+        return { recipes: [], hasMore: false, totalCount: 0 }
+      }
+      
+      // Check if request was aborted after fetching
+      if (signal?.aborted) {
         return { recipes: [], hasMore: false, totalCount: 0 }
       }
       
@@ -126,8 +146,6 @@ export function RecipesList({
       const end = start + RECIPES_PER_PAGE
       const paginatedRecipes = allRecipes.slice(start, end)
       
-      isLoadingRef.current = false
-      
       const totalCount = allRecipes.length
       const hasMorePages = end < totalCount
       
@@ -138,12 +156,20 @@ export function RecipesList({
       const end = start + RECIPES_PER_PAGE - 1
       query = query.range(start, end)
       
-      const { data, error } = await query
+      // Check if request was aborted
+      if (signal?.aborted) {
+        return { recipes: [], hasMore: false, totalCount: 0 }
+      }
       
-      isLoadingRef.current = false
+      const { data, error } = await query
       
       if (error) {
         console.error('Error fetching recipes:', error)
+        return { recipes: [], hasMore: false, totalCount: 0 }
+      }
+      
+      // Check if request was aborted after fetching
+      if (signal?.aborted) {
         return { recipes: [], hasMore: false, totalCount: 0 }
       }
       
@@ -157,25 +183,43 @@ export function RecipesList({
 
   // Initial load when component mounts or filters change
   useEffect(() => {
-    let cancelled = false
+    // Cancel any in-flight requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    
+    // Create new abort controller for this request
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
 
     const loadInitialData = async () => {
       if (recipes.length === 0) {
         setInitialLoading(true)
       }
       
-      const { recipes: newRecipes, hasMore: moreAvailable, totalCount: total } = await fetchRecipes(0)
-      
-      if (!cancelled) {
-        setRecipes(newRecipes)
-        setHasMore(moreAvailable)
-        setTotalCount(total)
-        setPage(0)
-        setInitialLoading(false)
+      try {
+        const { recipes: newRecipes, hasMore: moreAvailable, totalCount: total } = await fetchRecipes(0, abortController.signal)
         
-        // Notify parent of search results count if searching
-        if (searchQuery && onSearchResultsChange) {
-          onSearchResultsChange(newRecipes.length)
+        // Only update state if request wasn't aborted
+        if (!abortController.signal.aborted) {
+          setRecipes(newRecipes)
+          setHasMore(moreAvailable)
+          setTotalCount(total)
+          setPage(0)
+          setInitialLoading(false)
+          
+          // Notify parent of search results count if searching
+          if (searchQuery && onSearchResultsChange) {
+            onSearchResultsChange(newRecipes.length)
+          }
+        }
+      } catch (error) {
+        // Ignore abort errors
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.error('Error loading recipes:', error)
+          if (!abortController.signal.aborted) {
+            setInitialLoading(false)
+          }
         }
       }
     }
@@ -183,28 +227,47 @@ export function RecipesList({
     loadInitialData()
 
     return () => {
-      cancelled = true
-      isLoadingRef.current = false
+      // Cleanup: abort the request if component unmounts or dependencies change
+      abortController.abort()
+      if (abortControllerRef.current === abortController) {
+        abortControllerRef.current = null
+      }
     }
-  }, [workspaceId, tagFilter, searchQuery])
+  }, [workspaceId, tagFilter, searchQuery, fetchRecipes, onSearchResultsChange])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Abort any in-flight requests when component unmounts
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
+  }, [])
 
   // Load more recipes handler
   const handleLoadMore = async () => {
-    if (loadingMore || !hasMore || isLoadingRef.current) return
+    if (loadingMore || !hasMore) return
 
     setLoadingMore(true)
     const nextPage = page + 1
     
-    const { recipes: newRecipes, hasMore: moreAvailable, totalCount: total } = await fetchRecipes(nextPage)
-    
-    if (newRecipes.length > 0) {
-      setRecipes(prev => [...prev, ...newRecipes])
-      setPage(nextPage)
-      setHasMore(moreAvailable)
-      setTotalCount(total)
+    try {
+      // Note: Load more doesn't use abort controller since it's user-initiated
+      // and we want to complete the request even if they navigate away
+      const { recipes: newRecipes, hasMore: moreAvailable, totalCount: total } = await fetchRecipes(nextPage)
+      
+      if (newRecipes.length > 0) {
+        setRecipes(prev => [...prev, ...newRecipes])
+        setPage(nextPage)
+        setHasMore(moreAvailable)
+        setTotalCount(total)
+      }
+    } catch (error) {
+      console.error('Error loading more recipes:', error)
+    } finally {
+      setLoadingMore(false)
     }
-    
-    setLoadingMore(false)
   }
 
   const truncateDescription = (description: string | null, maxLength: number = 100) => {
