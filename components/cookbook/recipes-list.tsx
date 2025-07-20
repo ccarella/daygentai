@@ -287,18 +287,18 @@ export function RecipesList({
         <div className="text-center">
           <div className="mb-6 flex justify-center">
             <div className="relative">
-              <svg className="w-24 h-24 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-24 h-24 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
               <div className="absolute -top-2 -right-2">
-                <svg className="w-8 h-8 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-8 h-8 text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
             </div>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No recipes found</h3>
-          <p className="text-sm text-gray-500">
+          <h3 className="text-lg font-medium text-foreground mb-2">No recipes found</h3>
+          <p className="text-sm text-muted-foreground">
             {tagFilter !== 'all' || searchQuery
               ? 'Try adjusting your filters' 
               : 'Recipes will appear here once added'}
@@ -309,11 +309,11 @@ export function RecipesList({
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-white">
+    <div className="flex-1 overflow-auto bg-background">
       <div className="">
         {/* Header with count */}
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-medium text-gray-600">
+        <div className="px-6 py-4 border-b border-border">
+          <h2 className="text-sm font-medium text-muted-foreground">
             {totalCount > 0 && recipes.length < totalCount ? (
               <>Showing {recipes.length} of {totalCount} {totalCount === 1 ? 'recipe' : 'recipes'}</>
             ) : (
@@ -323,13 +323,13 @@ export function RecipesList({
         </div>
         
         {/* Recipes List */}
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-border">
           {recipes.map((recipe) => (
             <div
               key={recipe.id}
               data-recipe-row
               data-recipe-id={recipe.id}
-              className="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
+              className="px-6 py-4 hover:bg-accent cursor-pointer transition-colors"
               onClick={() => {
                 if (onRecipeClick) {
                   onRecipeClick(recipe.id)
@@ -341,18 +341,18 @@ export function RecipesList({
               {/* Recipe Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-sm font-medium text-gray-900">
+                  <h3 className="text-sm font-medium text-foreground">
                     {recipe.title}
                   </h3>
                   {recipe.is_system && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
                       System
                     </span>
                   )}
                 </div>
                 
                 {recipe.description && (
-                  <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
                     {truncateDescription(recipe.description, 150)}
                   </p>
                 )}
@@ -375,13 +375,13 @@ export function RecipesList({
                   
                   {/* Phase count */}
                   {recipe.phases && recipe.phases.length > 0 && (
-                    <span className="text-gray-500">
+                    <span className="text-muted-foreground">
                       {recipe.phases.length} {recipe.phases.length === 1 ? 'phase' : 'phases'}
                     </span>
                   )}
                   
                   {/* Created Date - Hidden on mobile */}
-                  <span className="hidden sm:inline text-gray-400 ml-auto">
+                  <span className="hidden sm:inline text-muted-foreground ml-auto">
                     {formatDistanceToNow(new Date(recipe.created_at), { addSuffix: true })}
                   </span>
                 </div>
@@ -398,8 +398,8 @@ export function RecipesList({
               disabled={loadingMore}
               className={`px-6 py-2 rounded-lg font-medium transition-all ${
                 loadingMore
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                  ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                  : 'bg-background text-foreground border border-border hover:bg-accent hover:border-border'
               }`}
             >
               {loadingMore ? 'Loading...' : 'Load more'}
@@ -409,7 +409,7 @@ export function RecipesList({
         
         {/* End of list message */}
         {!hasMore && recipes.length > 0 && (
-          <div className="px-6 py-8 text-center text-sm text-gray-500">
+          <div className="px-6 py-8 text-center text-sm text-muted-foreground">
             All recipes loaded
           </div>
         )}

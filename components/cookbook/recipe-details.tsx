@@ -103,7 +103,7 @@ export function RecipeDetails({ recipeId, onBack }: RecipeDetailsProps) {
         <div className="mb-6">
           <button
             onClick={onBack}
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
+            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
           >
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -116,12 +116,12 @@ export function RecipeDetails({ recipeId, onBack }: RecipeDetailsProps) {
         <div className="space-y-6">
           {/* Title */}
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 break-words">
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground break-words">
               {recipe.title}
             </h1>
-            <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+            <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
               {recipe.is_system && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
                   System Recipe
                 </span>
               )}
@@ -134,7 +134,7 @@ export function RecipeDetails({ recipeId, onBack }: RecipeDetailsProps) {
           {/* Tags */}
           {recipe.recipe_tags && recipe.recipe_tags.length > 0 && (
             <div className="flex items-center flex-wrap gap-2">
-              <span className="text-gray-500 text-sm">Tags:</span>
+              <span className="text-muted-foreground text-sm">Tags:</span>
               {recipe.recipe_tags.map(({ tags }) => (
                 <TagComponent
                   key={tags.id}
@@ -148,15 +148,15 @@ export function RecipeDetails({ recipeId, onBack }: RecipeDetailsProps) {
           )}
 
           {/* Prompt */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h2 className="text-sm font-medium text-gray-700 mb-2">Prompt</h2>
-            <p className="text-sm text-gray-900 whitespace-pre-wrap">{recipe.prompt}</p>
+          <div className="bg-muted rounded-lg p-4">
+            <h2 className="text-sm font-medium text-foreground mb-2">Prompt</h2>
+            <p className="text-sm text-foreground whitespace-pre-wrap">{recipe.prompt}</p>
           </div>
 
           {/* Description */}
           {recipe.description && (
             <div>
-              <h2 className="text-lg font-medium text-gray-900 mb-3">Description</h2>
+              <h2 className="text-lg font-medium text-foreground mb-3">Description</h2>
               <div className="prose prose-sm sm:prose max-w-none break-words">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {recipe.description}
@@ -168,15 +168,15 @@ export function RecipeDetails({ recipeId, onBack }: RecipeDetailsProps) {
           {/* Phases */}
           {recipe.phases && recipe.phases.length > 0 && (
             <div>
-              <h2 className="text-lg font-medium text-gray-900 mb-3">Phases</h2>
+              <h2 className="text-lg font-medium text-foreground mb-3">Phases</h2>
               <div className="space-y-3">
                 {recipe.phases.map((phase, index) => (
                   <div key={index} className="flex gap-3">
-                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">
                       {index + 1}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-gray-900">{phase}</p>
+                      <p className="text-sm text-foreground">{phase}</p>
                     </div>
                   </div>
                 ))}

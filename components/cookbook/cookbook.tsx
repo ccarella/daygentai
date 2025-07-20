@@ -55,27 +55,27 @@ export function Cookbook({ workspaceId, workspaceSlug }: CookbookProps) {
   }
 
   return (
-    <div className="flex h-full bg-gray-50">
+    <div className="flex h-full bg-background">
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div className="flex-1 flex flex-col bg-background">
         {/* Header */}
-        <div className="border-b border-gray-200 px-6 py-4">
+        <div className="border-b border-border px-6 py-4">
           <h1 className="text-2xl font-bold mb-4">Cookbook</h1>
           
           {/* Search and Filters */}
           <div className="flex items-center gap-4">
             {/* Search Bar */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search recipes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
               {searchQuery && searchResultsCount > 0 && (
-                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
                   {searchResultsCount} results
                 </span>
               )}
@@ -85,7 +85,7 @@ export function Cookbook({ workspaceId, workspaceSlug }: CookbookProps) {
             <select
               value={tagFilter}
               onChange={(e) => setTagFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="all">All Tags</option>
               {tags.map((tag) => (

@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export function RecipeSkeleton({ count = 5 }: { count?: number }) {
   return (
-    <div className="divide-y divide-gray-100">
+    <div className="divide-y divide-border">
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="px-6 py-4">
           <div className="flex-1 min-w-0">
