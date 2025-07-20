@@ -118,7 +118,7 @@ export function WorkspaceLayout({
       </div>
 
       {/* Navigation - scrollable on mobile */}
-      <nav ref={sidebarRef} className="flex-1 p-1.5 md:p-2 overflow-y-auto">
+      <nav ref={sidebarRef} className="flex-1 p-1.5 md:p-2 overflow-y-auto scrollbar-thin">
         {/* Create Issue button - mobile only */}
         <button
           data-sidebar-item
@@ -438,7 +438,7 @@ export function WorkspaceLayout({
         {isMobileMenuOpen && (
           <div className="lg:hidden fixed inset-0 z-40 flex">
             <div className="fixed inset-0 bg-gray-600 bg-opacity-75" aria-hidden="true" />
-            <div className="relative flex max-w-xs w-full bg-white mobile-menu">
+            <div className="relative flex max-w-xs w-full bg-white mobile-menu pt-11">
               <SidebarContent />
             </div>
           </div>
