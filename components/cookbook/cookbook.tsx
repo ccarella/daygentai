@@ -1,196 +1,111 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronRight } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { RecipesList } from './recipes-list'
+import { createClient } from '@/lib/supabase/client'
+import { Tag } from '@/types/recipe'
 
-interface CookbookIssue {
-  id: string
-  title: string
-  description: string
-  section: string
+interface CookbookProps {
+  workspaceId: string
+  workspaceSlug: string
 }
 
-const placeholderIssues: CookbookIssue[] = [
-  // Setup Section
-  {
-    id: 'setup-1',
-    title: 'Initial Environment Configuration',
-    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.',
-    section: 'Setup'
-  },
-  {
-    id: 'setup-2',
-    title: 'Database Connection Setup',
-    description: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt.',
-    section: 'Setup'
-  },
-  {
-    id: 'setup-3',
-    title: 'Authentication Provider Integration',
-    description: 'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto.',
-    section: 'Setup'
-  },
-  // Testing and Debugging Section
-  {
-    id: 'testing-1',
-    title: 'Unit Test Framework Setup',
-    description: 'At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati.',
-    section: 'Testing and Debugging'
-  },
-  {
-    id: 'testing-2',
-    title: 'Debugging Production Issues',
-    description: 'Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus.',
-    section: 'Testing and Debugging'
-  },
-  {
-    id: 'testing-3',
-    title: 'Performance Monitoring Setup',
-    description: 'Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae itaque earum rerum.',
-    section: 'Testing and Debugging'
-  },
-  // Documents Section
-  {
-    id: 'docs-1',
-    title: 'API Documentation Standards',
-    description: 'Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere.',
-    section: 'Documents'
-  },
-  {
-    id: 'docs-2',
-    title: 'Component Library Documentation',
-    description: 'Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur at vero eos.',
-    section: 'Documents'
-  },
-  {
-    id: 'docs-3',
-    title: 'Deployment Guide Template',
-    description: 'Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam.',
-    section: 'Documents'
-  }
-]
-
-export function Cookbook() {
-  const [selectedSection, setSelectedSection] = useState<string | null>(null)
-  const [selectedIssue, setSelectedIssue] = useState<CookbookIssue | null>(null)
+export function Cookbook({ workspaceId, workspaceSlug }: CookbookProps) {
   const router = useRouter()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [tagFilter, setTagFilter] = useState('all')
+  const [tags, setTags] = useState<Tag[]>([])
+  const [searchResultsCount, setSearchResultsCount] = useState(0)
 
-  const sections = ['Setup', 'Testing and Debugging', 'Documents']
+  // Fetch available tags
+  useEffect(() => {
+    const fetchTags = async () => {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('tags')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .order('name')
 
-  const handleSectionClick = (section: string) => {
-    setSelectedSection(section)
-    setSelectedIssue(null)
-  }
+      if (data) {
+        setTags(data)
+      }
+    }
 
-  const handleIssueClick = (issue: CookbookIssue) => {
-    setSelectedIssue(issue)
-  }
+    fetchTags()
+  }, [workspaceId])
 
   // Handle ESC key to navigate back
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
-        if (selectedIssue) {
-          setSelectedIssue(null)
-        } else if (selectedSection) {
-          setSelectedSection(null)
-        } else {
-          router.back()
-        }
+        router.push(`/${workspaceSlug}`)
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedIssue, selectedSection, router])
+  }, [router, workspaceSlug])
 
-  const filteredIssues = selectedSection 
-    ? placeholderIssues.filter(issue => issue.section === selectedSection)
-    : []
+  const handleRecipeClick = (recipeId: string) => {
+    router.push(`/${workspaceSlug}/recipe/${recipeId}`)
+  }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-gray-50">
       {/* Main Content Area */}
-      <div className="flex-1 p-6">
-        {!selectedIssue ? (
-          <div>
-            <h1 className="text-2xl font-bold mb-6">Cookbook</h1>
-            {selectedSection ? (
-              <div>
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                  <button
-                    onClick={() => setSelectedSection(null)}
-                    className="hover:text-gray-900"
-                  >
-                    Cookbook
-                  </button>
-                  <ChevronRight className="w-4 h-4" />
-                  <span>{selectedSection}</span>
-                </div>
-                <div className="space-y-4">
-                  {filteredIssues.map((issue) => (
-                    <div
-                      key={issue.id}
-                      onClick={() => handleIssueClick(issue)}
-                      className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                    >
-                      <h3 className="font-semibold text-lg mb-2">{issue.title}</h3>
-                      <p className="text-gray-600 line-clamp-2">{issue.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <p className="text-gray-600">Select a section from the directory to view cookbook recipes.</p>
-            )}
-          </div>
-        ) : (
-          <div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 mb-6">
-              <button
-                onClick={() => setSelectedSection(null)}
-                className="hover:text-gray-900"
-              >
-                Cookbook
-              </button>
-              <ChevronRight className="w-4 h-4" />
-              <button
-                onClick={() => setSelectedIssue(null)}
-                className="hover:text-gray-900"
-              >
-                {selectedIssue.section}
-              </button>
-              <ChevronRight className="w-4 h-4" />
-              <span>{selectedIssue.title}</span>
+      <div className="flex-1 flex flex-col bg-white">
+        {/* Header */}
+        <div className="border-b border-gray-200 px-6 py-4">
+          <h1 className="text-2xl font-bold mb-4">Cookbook</h1>
+          
+          {/* Search and Filters */}
+          <div className="flex items-center gap-4">
+            {/* Search Bar */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search recipes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              {searchQuery && searchResultsCount > 0 && (
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">
+                  {searchResultsCount} results
+                </span>
+              )}
             </div>
-            <article className="prose max-w-none">
-              <h1>{selectedIssue.title}</h1>
-              <p>{selectedIssue.description}</p>
-            </article>
-          </div>
-        )}
-      </div>
 
-      {/* Right Sidebar - Cookbook Directory */}
-      <div className="w-64 border-l border-gray-200 p-4 bg-gray-50">
-        <h2 className="font-semibold text-lg mb-4">Directory</h2>
-        <nav className="space-y-1">
-          {sections.map((section) => (
-            <button
-              key={section}
-              onClick={() => handleSectionClick(section)}
-              className={`w-full text-left px-3 py-2 rounded-md transition-colors ${
-                selectedSection === section
-                  ? 'bg-gray-200 text-gray-900 font-medium'
-                  : 'hover:bg-gray-100 text-gray-700'
-              }`}
+            {/* Tag Filter */}
+            <select
+              value={tagFilter}
+              onChange={(e) => setTagFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              {section}
-            </button>
-          ))}
-        </nav>
+              <option value="all">All Tags</option>
+              {tags.map((tag) => (
+                <option key={tag.id} value={tag.id}>
+                  {tag.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Recipes List */}
+        <RecipesList
+          workspaceId={workspaceId}
+          workspaceSlug={workspaceSlug}
+          onRecipeClick={handleRecipeClick}
+          tagFilter={tagFilter}
+          searchQuery={searchQuery}
+          onSearchResultsChange={setSearchResultsCount}
+        />
       </div>
     </div>
   )

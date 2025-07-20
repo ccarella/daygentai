@@ -591,7 +591,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
       ) : currentView === 'inbox' ? (
         <Inbox />
       ) : currentView === 'cookbook' ? (
-        <Cookbook />
+        <Cookbook workspaceId={workspace.id} workspaceSlug={workspace.slug} />
       ) : currentView === 'settings' ? (
         <ProfileSettings {...(onAvatarUpdate && { onAvatarUpdate })} />
       ) : currentIssueId ? (
