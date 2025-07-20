@@ -15,9 +15,10 @@ interface HeaderProps {
   initialProfile?: UserProfile
   onMenuToggle?: () => void
   isMobileMenuOpen?: boolean
+  workspaceSlug?: string
 }
 
-export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: HeaderProps) {
+export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen, workspaceSlug }: HeaderProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(initialProfile || null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -115,29 +116,13 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
                   <p className="text-sm font-medium text-gray-900">{userProfile.name}</p>
                 </div>
                 
-                <button
-                  onClick={() => {
-                    setIsDropdownOpen(false)
-                    // Clear any existing timeout
-                    if (settingsTimeoutRef.current) {
-                      clearTimeout(settingsTimeoutRef.current)
-                    }
-                    // Click the settings button in the sidebar after a small delay to ensure dropdown closes
-                    settingsTimeoutRef.current = setTimeout(() => {
-                      const settingsButtons = document.querySelectorAll('[data-sidebar-item]')
-                      settingsButtons.forEach(button => {
-                        const span = button.querySelector('span')
-                        if (span && span.textContent === 'Settings') {
-                          (button as HTMLElement).click()
-                        }
-                      })
-                      settingsTimeoutRef.current = null
-                    }, 100)
-                  }}
+                <Link
+                  href={workspaceSlug ? `/${workspaceSlug}/settings/profile` : "/settings/profile"}
+                  onClick={() => setIsDropdownOpen(false)}
                   className="block w-full text-left px-4 py-3 md:px-4 md:py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
                   Profile Settings
-                </button>
+                </Link>
                 
                 <button
                   onClick={handleLogout}

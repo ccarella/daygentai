@@ -122,11 +122,13 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
           }} 
           onMenuToggle={handleMenuToggle}
           isMobileMenuOpen={isMobileMenuOpen}
+          workspaceSlug={workspace.slug}
         />
       ) : (
         <Header 
           onMenuToggle={handleMenuToggle}
           isMobileMenuOpen={isMobileMenuOpen}
+          workspaceSlug={workspace.slug}
         />
       )}
       <div className="pt-11">

@@ -80,6 +80,7 @@ export function WorkspaceLayout({
     setIsMobileMenuOpen(false)
   }, [pathname])
 
+
   // Close mobile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -232,6 +233,7 @@ export function WorkspaceLayout({
           <span>Commands</span>
         </button>
         
+        {/* Settings - Workspace Settings Only */}
         {onNavigateToSettings ? (
           <button
             data-sidebar-item
@@ -400,29 +402,17 @@ export function WorkspaceLayout({
               >
                 <Terminal className="w-5 h-5 text-gray-600" />
               </button>
-              {onNavigateToSettings ? (
-                <button
-                  onClick={onNavigateToSettings}
-                  className={`p-2 rounded transition-colors ${
-                    pathname === `/${workspace.slug}/settings` 
-                      ? 'bg-gray-100' 
-                      : 'hover:bg-gray-100'
-                  }`}
-                >
-                  <Settings className="w-5 h-5 text-gray-600" />
-                </button>
-              ) : (
-                <Link
-                  href={`/${workspace.slug}/settings`}
-                  className={`p-2 rounded transition-colors ${
-                    pathname === `/${workspace.slug}/settings` 
-                      ? 'bg-gray-100' 
-                      : 'hover:bg-gray-100'
-                  }`}
-                >
-                  <Settings className="w-5 h-5 text-gray-600" />
-                </Link>
-              )}
+              <Link
+                href={`/${workspace.slug}/settings`}
+                className={`p-2 rounded transition-colors ${
+                  pathname.includes(`/${workspace.slug}/settings`) 
+                    ? 'bg-gray-100' 
+                    : 'hover:bg-gray-100'
+                }`}
+                title="Settings"
+              >
+                <Settings className="w-5 h-5 text-gray-600" />
+              </Link>
               <button
                 onClick={() => openWithMode('help')}
                 className="p-2 rounded hover:bg-gray-100 mt-auto"
