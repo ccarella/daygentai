@@ -71,7 +71,7 @@ export function RecipesList({
       countQuery = countQuery.in('id', recipeIds)
     }
 
-    const { count: totalFilteredCount } = await countQuery
+    const { count: tagFilteredCount } = await countQuery
 
     // Now fetch the actual data
     let query = supabase
@@ -98,37 +98,61 @@ export function RecipesList({
       .order('is_system', { ascending: false })
       .order('created_at', { ascending: false })
 
-    // Apply range for pagination
-    const start = pageNum * RECIPES_PER_PAGE
-    const end = start + RECIPES_PER_PAGE - 1
-    query = query.range(start, end)
-
-    const { data, error } = await query
-
-    isLoadingRef.current = false
-
-    if (error) {
-      console.error('Error fetching recipes:', error)
-      return { recipes: [], hasMore: false, totalCount: 0 }
-    }
-
-    let newRecipes = data || []
-
-    // Apply search filter on the client side
-    // TODO: Implement server-side search with full-text search function similar to search_issues RPC
+    // If we have a search query, we need to fetch ALL recipes matching the tag filter
+    // and then filter by search client-side to get accurate counts
+    let allRecipes: RecipeWithTags[] = []
     if (searchQuery && searchQuery.trim() !== '') {
+      // Fetch all recipes without pagination to apply search filter
+      const { data: allData, error: allError } = await query
+      
+      if (allError) {
+        console.error('Error fetching all recipes:', allError)
+        isLoadingRef.current = false
+        return { recipes: [], hasMore: false, totalCount: 0 }
+      }
+      
+      allRecipes = allData || []
+      
+      // Apply search filter
       const searchLower = searchQuery.toLowerCase()
-      newRecipes = newRecipes.filter((recipe: RecipeWithTags) => 
+      allRecipes = allRecipes.filter((recipe: RecipeWithTags) => 
         recipe.title.toLowerCase().includes(searchLower) ||
         (recipe.description && recipe.description.toLowerCase().includes(searchLower)) ||
         recipe.prompt.toLowerCase().includes(searchLower)
       )
+      
+      // Apply pagination to filtered results
+      const start = pageNum * RECIPES_PER_PAGE
+      const end = start + RECIPES_PER_PAGE
+      const paginatedRecipes = allRecipes.slice(start, end)
+      
+      isLoadingRef.current = false
+      
+      const totalCount = allRecipes.length
+      const hasMorePages = end < totalCount
+      
+      return { recipes: paginatedRecipes, hasMore: hasMorePages, totalCount }
+    } else {
+      // No search query, use normal pagination
+      const start = pageNum * RECIPES_PER_PAGE
+      const end = start + RECIPES_PER_PAGE - 1
+      query = query.range(start, end)
+      
+      const { data, error } = await query
+      
+      isLoadingRef.current = false
+      
+      if (error) {
+        console.error('Error fetching recipes:', error)
+        return { recipes: [], hasMore: false, totalCount: 0 }
+      }
+      
+      const recipes = data || []
+      const totalCount = tagFilteredCount || 0
+      const hasMorePages = (pageNum + 1) * RECIPES_PER_PAGE < totalCount
+      
+      return { recipes, hasMore: hasMorePages, totalCount }
     }
-    
-    const totalCount = totalFilteredCount || 0
-    const hasMorePages = (pageNum + 1) * RECIPES_PER_PAGE < totalCount
-    
-    return { recipes: newRecipes, hasMore: hasMorePages, totalCount }
   }, [workspaceId, tagFilter, searchQuery])
 
   // Initial load when component mounts or filters change
