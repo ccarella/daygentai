@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { RecipesList } from './recipes-list'
 import { createClient } from '@/lib/supabase/client'
 import { Tag } from '@/types/recipe'
+import { useArrowNavigation } from '@/hooks/use-arrow-navigation'
 
 interface CookbookProps {
   workspaceId: string
@@ -18,6 +19,7 @@ export function Cookbook({ workspaceId, workspaceSlug }: CookbookProps) {
   const [tagFilter, setTagFilter] = useState('all')
   const [tags, setTags] = useState<Tag[]>([])
   const [searchResultsCount, setSearchResultsCount] = useState(0)
+  const mainContentRef = useRef<HTMLDivElement>(null)
 
   // Fetch available tags
   useEffect(() => {
@@ -37,18 +39,43 @@ export function Cookbook({ workspaceId, workspaceSlug }: CookbookProps) {
     fetchTags()
   }, [workspaceId])
 
-  // Handle ESC key to navigate back
+  // Set up arrow navigation for recipes
+  const { focusItem } = useArrowNavigation({
+    containerRef: mainContentRef,
+    itemSelector: '[data-recipe-row]',
+    orientation: 'vertical',
+    onEnter: (element) => {
+      const recipeId = element.getAttribute('data-recipe-id')
+      if (recipeId) {
+        router.push(`/${workspaceSlug}/recipe/${recipeId}`)
+      }
+    },
+    onEscape: () => {
+      router.push(`/${workspaceSlug}`)
+    },
+    scrollIntoView: { behavior: 'smooth', block: 'nearest' },
+    disableWhenModalOpen: true,
+  })
+
+  // Focus first recipe when navigating with keyboard
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        router.push(`/${workspaceSlug}`)
+    const container = mainContentRef.current
+    if (!container) return
+
+    const handleFocusIn = () => {
+      // Check if focus came from sidebar (left arrow navigation)
+      const activeElement = document.activeElement
+      if (activeElement?.hasAttribute('data-sidebar-item')) {
+        // Focus first recipe when coming from sidebar
+        setTimeout(() => focusItem(0), 0)
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [router, workspaceSlug])
+    container.addEventListener('focusin', handleFocusIn)
+    return () => {
+      container.removeEventListener('focusin', handleFocusIn)
+    }
+  }, [focusItem])
 
   const handleRecipeClick = (recipeId: string) => {
     router.push(`/${workspaceSlug}/recipe/${recipeId}`)
@@ -57,7 +84,7 @@ export function Cookbook({ workspaceId, workspaceSlug }: CookbookProps) {
   return (
     <div className="flex h-full bg-background">
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col bg-background">
+      <div ref={mainContentRef} className="flex-1 flex flex-col bg-background">
         {/* Header */}
         <div className="border-b border-border px-6 py-4">
           <h1 className="text-2xl font-bold mb-4">Cookbook</h1>
