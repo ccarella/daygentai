@@ -22,6 +22,14 @@ interface IssueWithCreator extends Issue {
   }
 }
 
+interface CacheStats {
+  hits: number
+  misses: number
+  size: number
+  lastHit?: string
+  lastMiss?: string
+}
+
 interface IssueCacheContextType {
   getIssue: (issueId: string) => IssueWithCreator | null
   preloadIssue: (issueId: string) => Promise<void>
@@ -30,6 +38,7 @@ interface IssueCacheContextType {
   warmCache: (workspaceId: string) => Promise<void>
   updateIssue: (issueId: string, updates: Partial<IssueWithCreator>) => void
   removeIssue: (issueId: string) => void
+  getCacheStats: () => CacheStats
 }
 
 const IssueCacheContext = createContext<IssueCacheContextType | undefined>(undefined)
@@ -37,9 +46,32 @@ const IssueCacheContext = createContext<IssueCacheContextType | undefined>(undef
 export function IssueCacheProvider({ children }: { children: ReactNode }) {
   const [cache, setCache] = useState<Map<string, IssueWithCreator>>(new Map())
   const [loadingIssues, setLoadingIssues] = useState<Set<string>>(new Set())
+  const [cacheStats, setCacheStats] = useState<CacheStats>({
+    hits: 0,
+    misses: 0,
+    size: 0
+  })
 
   const getIssue = useCallback((issueId: string): IssueWithCreator | null => {
-    return cache.get(issueId) || null
+    const issue = cache.get(issueId)
+    
+    if (issue) {
+      console.log(`[Cache HIT] Issue ${issueId}`)
+      setCacheStats(prev => ({
+        ...prev,
+        hits: prev.hits + 1,
+        lastHit: issueId
+      }))
+    } else {
+      console.log(`[Cache MISS] Issue ${issueId}`)
+      setCacheStats(prev => ({
+        ...prev,
+        misses: prev.misses + 1,
+        lastMiss: issueId
+      }))
+    }
+    
+    return issue || null
   }, [cache])
 
   const preloadIssue = useCallback(async (issueId: string) => {
@@ -50,6 +82,8 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
 
     setLoadingIssues(prev => new Set(prev).add(issueId))
 
+    const startTime = Date.now()
+    
     try {
       const supabase = createClient()
 
@@ -61,7 +95,13 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (!error && issue) {
-        setCache(prev => new Map(prev).set(issueId, issue as IssueWithCreator))
+        console.log(`[Cache LOADED] Issue ${issueId} loaded in ${Date.now() - startTime}ms`)
+        setCache(prev => {
+          const newCache = new Map(prev)
+          newCache.set(issueId, issue as IssueWithCreator)
+          setCacheStats(prev => ({ ...prev, size: newCache.size }))
+          return newCache
+        })
       }
     } catch (error) {
       console.error('Error preloading issue:', error)
@@ -89,6 +129,8 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
       return newSet
     })
 
+    const startTime = Date.now()
+    
     try {
       const supabase = createClient()
 
@@ -99,11 +141,13 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
         .in('id', issuesToLoad)
 
       if (!error && issues) {
+        console.log(`[Cache BATCH LOADED] ${issues.length} issues loaded in ${Date.now() - startTime}ms`)
         setCache(prev => {
           const newCache = new Map(prev)
           issues.forEach(issue => {
             newCache.set(issue.id, issue as IssueWithCreator)
           })
+          setCacheStats(prev => ({ ...prev, size: newCache.size }))
           return newCache
         })
       }
@@ -119,10 +163,14 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
   }, [cache, loadingIssues])
 
   const clearCache = useCallback(() => {
+    console.log('[Cache CLEARED]')
     setCache(new Map())
+    setCacheStats({ hits: 0, misses: 0, size: 0 })
   }, [])
 
   const warmCache = useCallback(async (workspaceId: string) => {
+    const startTime = Date.now()
+    
     try {
       const supabase = createClient()
       
@@ -136,11 +184,13 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
         .limit(50)
 
       if (!error && issues) {
+        console.log(`[Cache WARMED] ${issues.length} issues pre-loaded in ${Date.now() - startTime}ms`)
         setCache(prev => {
           const newCache = new Map(prev)
           issues.forEach(issue => {
             newCache.set(issue.id, issue as IssueWithCreator)
           })
+          setCacheStats(prev => ({ ...prev, size: newCache.size }))
           return newCache
         })
       }
@@ -150,6 +200,7 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const updateIssue = useCallback((issueId: string, updates: Partial<IssueWithCreator>) => {
+    console.log(`[Cache UPDATE] Issue ${issueId}`)
     setCache(prev => {
       const existing = prev.get(issueId)
       if (!existing) return prev
@@ -161,15 +212,19 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const removeIssue = useCallback((issueId: string) => {
+    console.log(`[Cache REMOVE] Issue ${issueId}`)
     setCache(prev => {
       const newCache = new Map(prev)
       newCache.delete(issueId)
+      setCacheStats(prev => ({ ...prev, size: newCache.size }))
       return newCache
     })
   }, [])
 
+  const getCacheStats = useCallback(() => cacheStats, [cacheStats])
+
   return (
-    <IssueCacheContext.Provider value={{ getIssue, preloadIssue, preloadIssues, clearCache, warmCache, updateIssue, removeIssue }}>
+    <IssueCacheContext.Provider value={{ getIssue, preloadIssue, preloadIssues, clearCache, warmCache, updateIssue, removeIssue, getCacheStats }}>
       {children}
     </IssueCacheContext.Provider>
   )

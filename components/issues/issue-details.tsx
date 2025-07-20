@@ -118,9 +118,12 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
 
   useEffect(() => {
     const fetchIssue = async () => {
+      const startTime = Date.now()
+      
       // Check cache first
       const cachedIssue = getIssue(issueId)
       if (cachedIssue) {
+        console.log(`[Performance] Issue ${issueId} loaded from cache in ${Date.now() - startTime}ms`)
         setIssue(cachedIssue)
         setCreatedAt(cachedIssue.created_at)
         
@@ -141,10 +144,12 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
         }
         
         setLoading(false)
+        console.log(`[Performance] Issue ${issueId} fully loaded (with creator) in ${Date.now() - startTime}ms`)
         return
       }
 
       // If not in cache, fetch from database
+      console.log(`[Performance] Issue ${issueId} not in cache, fetching from database...`)
       setLoading(true)
       const supabase = createClient()
 
@@ -189,6 +194,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
       }
 
       setLoading(false)
+      console.log(`[Performance] Issue ${issueId} loaded from database in ${Date.now() - startTime}ms`)
     }
 
     fetchIssue()

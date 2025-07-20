@@ -16,6 +16,14 @@ const AppCommandPalette = dynamic(
   }
 )
 
+const CacheStatsIndicator = dynamic(
+  () => import('@/components/debug/cache-stats-indicator').then(mod => ({ default: mod.CacheStatsIndicator })),
+  { 
+    ssr: false,
+    loading: () => null
+  }
+)
+
 interface WorkspaceLayoutProps {
   children: React.ReactNode
   params: Promise<{ slug: string }>
@@ -101,6 +109,7 @@ export default function WorkspaceLayout({ children, params }: WorkspaceLayoutPro
             {children}
           </WorkspaceLayoutInner>
           <AppCommandPalette workspace={workspace} />
+          <CacheStatsIndicator />
         </IssueCacheProvider>
       </WorkspaceProvider>
     </CommandPaletteProvider>
