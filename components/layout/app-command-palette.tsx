@@ -17,7 +17,7 @@ interface AppCommandPaletteProps {
   onToggleViewMode?: () => void
   onToggleSearch?: () => void
   onSetStatusFilter?: (status: string) => void
-  getCurrentView?: () => 'list' | 'issue' | 'inbox' | 'cookbook' | 'settings'
+  getCurrentView?: () => 'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe' | 'settings'
   onNavigateToIssues?: () => void
   onNavigateToInbox?: () => void
 }
