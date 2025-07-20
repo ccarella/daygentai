@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow } from 'date-fns'
 import ReactMarkdown from 'react-markdown'
@@ -8,10 +8,76 @@ import remarkGfm from 'remark-gfm'
 import { RecipeDetailSkeleton } from './recipe-skeleton'
 import { Tag as TagComponent } from '@/components/ui/tag'
 import { RecipeWithTags } from '@/types/recipe'
+import { Copy, Check, Sparkles } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface RecipeDetailsProps {
   recipeId: string
   onBack: () => void
+}
+
+function PromptSection({ prompt }: { prompt: string }) {
+  const [copied, setCopied] = useState(false)
+  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(prompt)
+      setCopied(true)
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current)
+      }
+      copyTimeoutRef.current = setTimeout(() => {
+        setCopied(false)
+        copyTimeoutRef.current = null
+      }, 2000)
+    } catch (err) {
+      console.error('Failed to copy prompt:', err)
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <Sparkles className="w-4 h-4 text-purple-600" />
+        <h2 className="text-sm font-medium text-foreground">AI Prompt</h2>
+      </div>
+      
+      <div className="relative group">
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 pr-12">
+          <pre className="text-sm text-foreground whitespace-pre-wrap font-mono">
+            {prompt}
+          </pre>
+        </div>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleCopy}
+          className="absolute top-2 right-2 h-8 w-8 p-0 opacity-70 hover:opacity-100 transition-opacity"
+          title="Copy prompt"
+        >
+          {copied ? (
+            <Check className="h-4 w-4 text-green-600" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+      
+      <p className="text-xs text-muted-foreground">
+        This prompt was generated to help AI agents understand and implement this recipe.
+      </p>
+    </div>
+  )
 }
 
 export function RecipeDetails({ recipeId, onBack }: RecipeDetailsProps) {
@@ -148,10 +214,7 @@ export function RecipeDetails({ recipeId, onBack }: RecipeDetailsProps) {
           )}
 
           {/* Prompt */}
-          <div className="bg-muted rounded-lg p-4">
-            <h2 className="text-sm font-medium text-foreground mb-2">Prompt</h2>
-            <p className="text-sm text-foreground whitespace-pre-wrap">{recipe.prompt}</p>
-          </div>
+          <PromptSection prompt={recipe.prompt} />
 
           {/* Description */}
           {recipe.description && (
