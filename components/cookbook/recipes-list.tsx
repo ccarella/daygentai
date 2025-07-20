@@ -43,11 +43,33 @@ export function RecipesList({
     isLoadingRef.current = true
     const supabase = createClient()
     
-    // First, get the total count with filters applied
-    const countQuery = supabase
+    // If filtering by tag, we need to get recipe IDs that have that tag first
+    let recipeIds: string[] | null = null
+    if (tagFilter !== 'all') {
+      const { data: taggedRecipes } = await supabase
+        .from('recipe_tags')
+        .select('recipe_id')
+        .eq('tag_id', tagFilter)
+      
+      if (taggedRecipes && taggedRecipes.length > 0) {
+        recipeIds = taggedRecipes.map(rt => rt.recipe_id)
+      } else {
+        // No recipes with this tag
+        isLoadingRef.current = false
+        return { recipes: [], hasMore: false, totalCount: 0 }
+      }
+    }
+
+    // Build the base query for counting
+    let countQuery = supabase
       .from('recipes')
       .select('*', { count: 'exact', head: true })
       .eq('workspace_id', workspaceId)
+    
+    // Apply tag filter to count query
+    if (recipeIds !== null) {
+      countQuery = countQuery.in('id', recipeIds)
+    }
 
     const { count: totalFilteredCount } = await countQuery
 
@@ -65,6 +87,11 @@ export function RecipesList({
         )
       `)
       .eq('workspace_id', workspaceId)
+
+    // Apply tag filter to data query
+    if (recipeIds !== null) {
+      query = query.in('id', recipeIds)
+    }
 
     // Apply ordering - system recipes first, then by created date
     query = query
@@ -86,15 +113,9 @@ export function RecipesList({
     }
 
     let newRecipes = data || []
-    
-    // Apply tag filter on the client side
-    if (tagFilter !== 'all') {
-      newRecipes = newRecipes.filter((recipe: RecipeWithTags) => 
-        recipe.recipe_tags && recipe.recipe_tags.some(({ tags }) => tags.id === tagFilter)
-      )
-    }
 
     // Apply search filter on the client side
+    // TODO: Implement server-side search with full-text search function similar to search_issues RPC
     if (searchQuery && searchQuery.trim() !== '') {
       const searchLower = searchQuery.toLowerCase()
       newRecipes = newRecipes.filter((recipe: RecipeWithTags) => 
