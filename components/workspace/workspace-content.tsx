@@ -454,7 +454,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                       updateFiltersForViewMode('list')
                     }
                   }}
-                  className={`p-1 rounded ${issuesViewMode === 'list' ? 'bg-muted' : 'hover:bg-accent'}`}
+                  className={`p-1 rounded ${issuesViewMode === 'list' ? 'bg-accent' : 'hover:bg-accent'}`}
                   title="List view"
                 >
                   <List className="h-4 w-4" />
@@ -466,7 +466,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                       updateFiltersForViewMode('kanban')
                     }
                   }}
-                  className={`p-1 rounded ${issuesViewMode === 'kanban' ? 'bg-muted' : 'hover:bg-accent'}`}
+                  className={`p-1 rounded ${issuesViewMode === 'kanban' ? 'bg-accent' : 'hover:bg-accent'}`}
                   title="Kanban view"
                 >
                   <LayoutGrid className="h-4 w-4" />

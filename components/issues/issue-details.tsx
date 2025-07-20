@@ -63,7 +63,7 @@ const typeIcons = {
 }
 
 const priorityColors = {
-  critical: 'text-red-600 bg-red-50',
+  critical: 'text-destructive bg-destructive/10',
   high: 'text-orange-600 bg-orange-50',
   medium: 'text-yellow-600 bg-yellow-50',
   low: 'text-green-600 bg-green-50'
@@ -77,7 +77,7 @@ const priorityLabels = {
 }
 
 const statusOptions = [
-  { value: 'todo', label: 'Todo', color: 'text-gray-600' },
+  { value: 'todo', label: 'Todo', color: 'text-muted-foreground' },
   { value: 'in_progress', label: 'In Progress', color: 'text-yellow-600' },
   { value: 'in_review', label: 'In Review', color: 'text-purple-600' },
   { value: 'done', label: 'Done', color: 'text-green-600' },
@@ -333,7 +333,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
         <div className="mb-6">
           <button
             onClick={onBack}
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
+            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
           >
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -348,13 +348,13 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-start space-x-2 sm:space-x-3 flex-1 min-w-0">
               <span className="text-xl sm:text-2xl flex-shrink-0">{typeIcons[issue.type]}</span>
-              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 break-words">{issue.title}</h1>
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground break-words">{issue.title}</h1>
             </div>
             
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <MoreHorizontal className="w-5 h-5 text-gray-500" />
+                  <button className="p-2 hover:bg-accent rounded-lg transition-colors">
+                    <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -364,7 +364,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={handleDelete}
-                    className="text-red-600 focus:text-red-600"
+                    className="text-destructive focus:text-destructive"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete issue
@@ -385,15 +385,15 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
             {/* Status and Type - responsive layout */}
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center space-x-2">
-                <span className="text-gray-500 text-sm">Status:</span>
+                <span className="text-muted-foreground text-sm">Status:</span>
                 <Select
                   value={issue.status}
                   onValueChange={handleStatusChange}
                   disabled={isUpdatingStatus}
                 >
-                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-gray-100 focus:ring-0 focus:ring-offset-0">
+                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0">
                     <SelectValue>
-                      <span className={`text-sm font-medium ${statusOptions.find(s => s.value === issue.status)?.color || 'text-gray-600'}`}>
+                      <span className={`text-sm font-medium ${statusOptions.find(s => s.value === issue.status)?.color || 'text-muted-foreground'}`}>
                         {statusOptions.find(s => s.value === issue.status)?.label || issue.status}
                       </span>
                     </SelectValue>
@@ -408,13 +408,13 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
                 </Select>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-gray-500 text-sm">Type:</span>
+                <span className="text-muted-foreground text-sm">Type:</span>
                 <Select
                   value={issue.type}
                   onValueChange={handleTypeChange}
                   disabled={isUpdatingType}
                 >
-                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-gray-100 focus:ring-0 focus:ring-offset-0">
+                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0">
                     <SelectValue>
                       <span className="text-sm font-medium flex items-center gap-1">
                         <span>{typeOptions.find(t => t.value === issue.type)?.icon || '📌'}</span>
@@ -439,7 +439,7 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
             {/* Tags */}
             {issue.issue_tags && issue.issue_tags.length > 0 && (
               <div className="flex items-center flex-wrap gap-2 mt-3">
-                <span className="text-gray-500 text-sm">Tags:</span>
+                <span className="text-muted-foreground text-sm">Tags:</span>
                 {issue.issue_tags.map(({ tags }) => (
                   <TagComponent
                     key={tags.id}
@@ -466,21 +466,21 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
               </ReactMarkdown>
             </div>
           ) : (
-            <p className="text-gray-500 italic">No description provided</p>
+            <p className="text-muted-foreground italic">No description provided</p>
           )}
 
           {/* Divider */}
-          <div className="border-t border-gray-200 my-8"></div>
+          <div className="border-t border-border my-8"></div>
 
           {/* Activity Section */}
           <div className="space-y-4">
-            <h2 className="text-lg font-medium text-gray-900">Activity</h2>
+            <h2 className="text-lg font-medium text-foreground">Activity</h2>
             
             <div className="space-y-4">
               {/* Created by info */}
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0">
-                  <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
                     {creatorAvatar && creatorAvatar.startsWith('http') ? (
                       <img 
                         src={creatorAvatar} 
@@ -490,18 +490,18 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
                     ) : creatorAvatar && creatorAvatar.length <= 2 ? (
                       <span className="text-lg">{creatorAvatar}</span>
                     ) : (
-                      <svg className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="h-5 w-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     )}
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900">
+                  <p className="text-sm text-foreground">
                     <span className="font-medium">{creatorName}</span>
-                    <span className="text-gray-500"> created this issue</span>
+                    <span className="text-muted-foreground"> created this issue</span>
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted-foreground">
                     {createdAt && formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
                   </p>
                 </div>

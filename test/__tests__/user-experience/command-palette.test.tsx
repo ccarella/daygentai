@@ -240,7 +240,12 @@ describe('Command Palette (Simplified)', () => {
       
       expect(screen.getByText('G then I')).toBeInTheDocument()
       expect(screen.getByText('C')).toBeInTheDocument()
-      expect(screen.getByText('⌘B')).toBeInTheDocument()
+      // Platform-specific shortcut - could be ⌘B on Mac or Ctrl+B on Windows/Linux
+      try {
+        expect(screen.getByText('⌘B')).toBeInTheDocument()
+      } catch {
+        expect(screen.getByText('Ctrl+B')).toBeInTheDocument()
+      }
     })
   })
 

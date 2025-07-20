@@ -19,6 +19,7 @@ import { useCommandPalette } from "@/hooks/use-command-palette"
 import { recommendNextIssueAction } from "@/app/actions/recommend-issue"
 import { NextIssueModal } from "@/components/issues/next-issue-modal"
 import { useToast } from "@/components/ui/use-toast"
+import { getPlatformShortcut, detectPlatform } from "@/lib/keyboard/platform-utils"
 
 interface Command {
   id: string
@@ -281,7 +282,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       id: "next-issue",
       title: "Next Issue",
       icon: <Sparkles className="w-4 h-4" />,
-      shortcut: "⌘N",
+      shortcut: getPlatformShortcut("⌘N", "Ctrl+N"),
       action: handleNextIssue,
       keywords: ["ai", "recommend", "suggestion", "next", "task", "priority"],
       group: "Quick Access"
@@ -313,7 +314,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
         id: "toggle-view",
         title: "Toggle List/Kanban View",
         icon: <LayoutGrid className="w-4 h-4" />,
-        shortcut: "⌘B",
+        shortcut: getPlatformShortcut("⌘B", "Ctrl+B"),
         action: handleToggleViewMode,
         keywords: ["view", "switch", "kanban", "list", "board", "toggle"],
         group: "View"
@@ -488,11 +489,15 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
 
   // Cheatsheet content
   const renderCheatsheet = () => {
+    const platform = detectPlatform()
+    const modKey = platform === 'mac' ? '⌘' : 'Ctrl'
+    
     const shortcutGroups = [
       {
         title: "General",
         shortcuts: [
-          { keys: ["⌘", "K"], description: "Open command palette" },
+          { keys: [modKey, "K"], description: "Open command palette" },
+          { keys: ["?"], description: "Show keyboard shortcuts" },
           ...(onToggleSearch ? [{ keys: ["/"], description: "Toggle search bar" }] : []),
           { keys: ["Esc"], description: "Close dialogs and cancel actions" },
         ]
@@ -501,7 +506,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
         title: "Quick Access",
         shortcuts: [
           { keys: ["C"], description: "Create new issue" },
-          { keys: ["⌘", "N"], description: "Get next issue recommendation" },
+          { keys: [modKey, "N"], description: "Get next issue recommendation" },
           { keys: ["G", "then", "I"], description: "Go to Issues" },
           { keys: ["G", "then", "N"], description: "Go to Inbox" },
         ]
@@ -518,7 +523,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       ...(onToggleViewMode ? [{
         title: "View",
         shortcuts: [
-          { keys: ["⌘", "B"], description: "Toggle List/Kanban view" },
+          { keys: [modKey, "B"], description: "Toggle List/Kanban view" },
         ]
       }] : []),
       {
@@ -540,24 +545,24 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
         
         {shortcutGroups.map((group) => (
           <div key={group.title}>
-            <h3 className="text-sm font-medium text-gray-900 mb-3">{group.title}</h3>
+            <h3 className="text-sm font-medium text-foreground mb-3">{group.title}</h3>
             <div className="space-y-2">
               {group.shortcuts.map((shortcut, index) => (
                 <div 
                   key={index}
-                  className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50"
+                  className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-accent"
                 >
-                  <span className="text-sm text-gray-600">{shortcut.description}</span>
+                  <span className="text-sm text-muted-foreground">{shortcut.description}</span>
                   <div className="flex items-center gap-1">
                     {shortcut.keys.map((key, keyIndex) => (
                       <React.Fragment key={keyIndex}>
                         {keyIndex > 0 && key !== "then" && (
-                          <span className="text-xs text-gray-400">+</span>
+                          <span className="text-xs text-muted-foreground">+</span>
                         )}
                         {key === "then" ? (
-                          <span className="text-xs text-gray-400 mx-1">then</span>
+                          <span className="text-xs text-muted-foreground mx-1">then</span>
                         ) : (
-                          <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-md">
+                          <kbd className="px-2 py-1 text-xs font-semibold text-foreground bg-muted border border-border rounded-md">
                             {key}
                           </kbd>
                         )}
@@ -571,8 +576,8 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
         ))}
         
         <div className="pt-4 border-t">
-          <p className="text-xs text-gray-500">
-            <strong>Tip:</strong> Press <kbd className="px-1.5 py-0.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded">?</kbd> to show this help anytime
+          <p className="text-xs text-muted-foreground">
+            <strong>Tip:</strong> Press <kbd className="px-1.5 py-0.5 text-xs font-semibold text-foreground bg-muted border border-border rounded">?</kbd> to show this help anytime
           </p>
         </div>
       </div>
@@ -644,7 +649,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
           
           {/* Loading overlay */}
           {isLoadingAction && (
-            <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center rounded-lg">
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center rounded-lg">
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="text-sm text-muted-foreground">Processing...</span>

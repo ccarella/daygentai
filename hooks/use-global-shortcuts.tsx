@@ -13,6 +13,7 @@ interface GlobalShortcutsProps {
   onCreateIssue?: () => void
   onShowHelp?: () => void
   onToggleViewMode?: () => void
+  onToggleSearch?: () => void
   currentIssue?: {
     id: string
     title: string
@@ -28,6 +29,7 @@ export function useGlobalShortcuts({
   onCreateIssue, 
   onShowHelp, 
   onToggleViewMode, 
+  onToggleSearch,
   currentIssue, 
   onIssueStatusChange,
   onNavigateToIssues,
@@ -173,6 +175,13 @@ export function useGlobalShortcuts({
         },
         description: 'Create new issue',
       },
+      '/': {
+        handler: () => {
+          onToggleSearch?.()
+          return true
+        },
+        description: 'Toggle search bar',
+      },
       
       // Sequential shortcuts - Navigation
       'gi': {
@@ -228,7 +237,7 @@ export function useGlobalShortcuts({
         description: 'Set status to Done',
       },
     },
-    deps: [workspaceSlug, onCreateIssue, onShowHelp, onToggleViewMode, currentIssue, onIssueStatusChange, onNavigateToIssues, onNavigateToInbox],
+    deps: [workspaceSlug, onCreateIssue, onShowHelp, onToggleViewMode, onToggleSearch, currentIssue, onIssueStatusChange, onNavigateToIssues, onNavigateToInbox],
   })
   
   // Cleanup on unmount

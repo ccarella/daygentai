@@ -42,11 +42,11 @@ interface IssuesListProps {
 }
 
 const typeColors = {
-  feature: 'text-purple-700 bg-purple-50 border border-purple-200',
-  bug: 'text-red-700 bg-red-50 border border-red-200',
-  chore: 'text-blue-700 bg-blue-50 border border-blue-200',
-  design: 'text-pink-700 bg-pink-50 border border-pink-200',
-  'non-technical': 'text-gray-700 bg-gray-50 border border-gray-200'
+  feature: 'text-primary bg-primary/10 border border-primary/20',
+  bug: 'text-destructive bg-destructive/10 border border-destructive/20',
+  chore: 'text-primary bg-primary/10 border border-primary/20',
+  design: 'text-primary bg-primary/10 border border-primary/20',
+  'non-technical': 'text-muted-foreground bg-muted border border-border'
 }
 
 const typeLabels = {
@@ -58,10 +58,10 @@ const typeLabels = {
 }
 
 const priorityColors = {
-  critical: 'text-red-700 bg-red-50 border border-red-200',
-  high: 'text-orange-700 bg-orange-50 border border-orange-200',
-  medium: 'text-yellow-700 bg-yellow-50 border border-yellow-200',
-  low: 'text-green-700 bg-green-50 border border-green-200'
+  critical: 'text-destructive bg-destructive/10 border border-destructive/20',
+  high: 'text-destructive bg-destructive/10 border border-destructive/20',
+  medium: 'text-muted-foreground bg-muted border border-border',
+  low: 'text-chart-1 bg-chart-1/10 border border-chart-1/20'
 }
 
 const priorityLabels = {
@@ -375,18 +375,18 @@ export function IssuesList({
         <div className="text-center">
           <div className="mb-6 flex justify-center">
             <div className="relative">
-              <svg className="w-24 h-24 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-24 h-24 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <div className="absolute -top-2 -right-2">
-                <svg className="w-8 h-8 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-8 h-8 text-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
             </div>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No issues found</h3>
-          <p className="text-sm text-gray-500">
+          <h3 className="text-lg font-medium text-foreground mb-2">No issues found</h3>
+          <p className="text-sm text-muted-foreground">
             {statusFilter !== 'all' || priorityFilter !== 'all' || typeFilter !== 'all' || tagFilter !== 'all'
               ? 'Try adjusting your filters' 
               : 'Create your first issue to get started'}
@@ -397,11 +397,11 @@ export function IssuesList({
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-white">
+    <div className="flex-1 overflow-auto bg-background">
       <div ref={listContainerRef} className="">
         {/* Header with count */}
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-medium text-gray-600">
+        <div className="px-6 py-4 border-b border-border">
+          <h2 className="text-sm font-medium text-muted-foreground">
             {totalCount > 0 && issues.length < totalCount ? (
               <>Showing {issues.length} of {totalCount} {totalCount === 1 ? 'issue' : 'issues'}</>
             ) : (
@@ -411,7 +411,7 @@ export function IssuesList({
         </div>
         
         {/* Issues List */}
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-border">
           {issues.map((issue) => (
             <div
               key={issue.id}
@@ -422,7 +422,7 @@ export function IssuesList({
                   observerRef.current.observe(el)
                 }
               }}
-              className="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
+              className="px-6 py-4 hover:bg-accent cursor-pointer transition-colors"
               onClick={() => {
                 if (onIssueClick) {
                   onIssueClick(issue.id)
@@ -434,13 +434,13 @@ export function IssuesList({
               {/* Issue Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3">
-                  <h3 className="text-sm font-medium text-gray-900">
+                  <h3 className="text-sm font-medium text-foreground">
                     {issue.title}
                   </h3>
                 </div>
                 
                 {issue.description && (
-                  <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+                  <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
                     {truncateDescription(issue.description, 150)}
                   </p>
                 )}
@@ -457,7 +457,7 @@ export function IssuesList({
                   </span>
                   
                   {/* Status */}
-                  <span className="text-gray-500 capitalize ml-2">
+                  <span className="text-muted-foreground capitalize ml-2">
                     {issue.status.replace('_', ' ')}
                   </span>
                   
@@ -477,7 +477,7 @@ export function IssuesList({
                   )}
                   
                   {/* Created Date - Hidden on mobile */}
-                  <span className="hidden sm:inline text-gray-400 ml-2">
+                  <span className="hidden sm:inline text-muted-foreground ml-2">
                     {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
                   </span>
                 </div>
@@ -494,8 +494,8 @@ export function IssuesList({
               disabled={loadingMore}
               className={`px-6 py-2 rounded-lg font-medium transition-all ${
                 loadingMore
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                  ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                  : 'bg-background text-foreground border border-border hover:bg-accent hover:border-border'
               }`}
             >
               {loadingMore ? 'Loading...' : 'Load more'}
@@ -505,7 +505,7 @@ export function IssuesList({
         
         {/* End of list message */}
         {!hasMore && issues.length > 0 && (
-          <div className="px-6 py-8 text-center text-sm text-gray-500">
+          <div className="px-6 py-8 text-center text-sm text-muted-foreground">
             All issues loaded
           </div>
         )}

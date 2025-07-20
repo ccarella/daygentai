@@ -4,7 +4,7 @@ export function WorkspacePageSkeleton() {
   return (
     <div className="flex h-screen">
       {/* Header skeleton */}
-      <div className="fixed top-0 left-0 right-0 h-11 border-b bg-white z-50">
+      <div className="fixed top-0 left-0 right-0 h-11 border-b bg-card z-50">
         <div className="flex items-center h-full px-4">
           <Skeleton className="h-6 w-6 rounded md:hidden" />
           <Skeleton className="h-5 w-32 ml-4" />
@@ -18,7 +18,7 @@ export function WorkspacePageSkeleton() {
       <div className="pt-11 flex w-full">
         {/* Sidebar skeleton */}
         <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:pt-11">
-          <div className="flex-1 flex flex-col border-r bg-gray-50 px-4 py-4">
+          <div className="flex-1 flex flex-col border-r bg-sidebar px-4 py-4">
             {/* Workspace info */}
             <div className="flex items-center gap-3 mb-6">
               <Skeleton className="h-10 w-10 rounded-lg" />
@@ -56,7 +56,7 @@ export function WorkspacePageSkeleton() {
 
 export function HeaderSkeleton() {
   return (
-    <div className="fixed top-0 left-0 right-0 h-11 border-b bg-white z-50">
+    <div className="fixed top-0 left-0 right-0 h-11 border-b bg-card z-50">
       <div className="flex items-center h-full px-4">
         <Skeleton className="h-6 w-6 rounded md:hidden" />
         <Skeleton className="h-5 w-32 ml-4" />
@@ -70,7 +70,7 @@ export function HeaderSkeleton() {
 
 export function SidebarSkeleton() {
   return (
-    <div className="flex-1 flex flex-col border-r bg-gray-50 px-4 py-4">
+    <div className="flex-1 flex flex-col border-r bg-sidebar px-4 py-4">
       {/* Workspace info */}
       <div className="flex items-center gap-3 mb-6">
         <Skeleton className="h-10 w-10 rounded-lg" />

@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export function KanbanCardSkeleton() {
   return (
-    <div className="bg-white p-3 rounded-lg border shadow-sm">
+    <div className="bg-card p-3 rounded-lg border shadow-sm">
       <Skeleton className="h-5 w-full mb-2" />
       <Skeleton className="h-4 w-3/4 mb-2" />
       
@@ -19,14 +19,14 @@ export function KanbanCardSkeleton() {
 export function KanbanColumnSkeleton() {
   return (
     <div className="flex-shrink-0 w-72">
-      <div className="bg-gray-100 rounded-t-lg p-3 border border-b-0">
+      <div className="bg-secondary rounded-t-lg p-3 border border-b-0">
         <div className="flex items-center">
           <Skeleton className="h-5 w-20" />
           <Skeleton className="h-4 w-8 ml-2" />
         </div>
       </div>
       
-      <div className="bg-gray-50 border border-t-0 rounded-b-lg min-h-[400px] max-h-[calc(100vh-300px)] p-2 space-y-2">
+      <div className="bg-muted border border-t-0 rounded-b-lg min-h-[400px] max-h-[calc(100vh-300px)] p-2 space-y-2">
         <KanbanCardSkeleton />
         <KanbanCardSkeleton />
         <KanbanCardSkeleton />

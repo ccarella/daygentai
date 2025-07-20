@@ -145,7 +145,7 @@ export function ProfileSettings({ onAvatarUpdate }: ProfileSettingsProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -187,8 +187,8 @@ export function ProfileSettings({ onAvatarUpdate }: ProfileSettingsProps) {
                     onClick={() => setAvatarEmoji(emoji)}
                     className={`w-12 h-12 rounded-full text-2xl flex items-center justify-center transition-all ${
                       avatarEmoji === emoji
-                        ? 'bg-blue-100 ring-2 ring-blue-500'
-                        : 'bg-gray-100 hover:bg-gray-200'
+                        ? 'bg-primary/10 ring-2 ring-primary'
+                        : 'bg-muted hover:bg-accent'
                     }`}
                   >
                     {emoji}
@@ -220,7 +220,7 @@ export function ProfileSettings({ onAvatarUpdate }: ProfileSettingsProps) {
                 required
               />
               {email !== '' && !validateEmail(email) && (
-                <p className="text-sm text-red-500">Please enter a valid email address</p>
+                <p className="text-sm text-destructive">Please enter a valid email address</p>
               )}
             </div>
 

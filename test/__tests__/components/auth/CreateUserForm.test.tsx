@@ -68,7 +68,7 @@ describe('CreateUserForm', () => {
       await user.click(catAvatar)
       
       expect(screen.getByText('Selected: 🐱')).toBeInTheDocument()
-      expect(catAvatar).toHaveClass('border-blue-500', 'bg-blue-50')
+      expect(catAvatar).toHaveClass('border-primary', 'bg-primary/10')
     })
 
     it('allows changing avatar selection', async () => {
@@ -82,8 +82,8 @@ describe('CreateUserForm', () => {
       
       await user.click(dogAvatar)
       expect(screen.getByText('Selected: 🐶')).toBeInTheDocument()
-      expect(dogAvatar).toHaveClass('border-blue-500', 'bg-blue-50')
-      expect(catAvatar).not.toHaveClass('border-blue-500', 'bg-blue-50')
+      expect(dogAvatar).toHaveClass('border-primary', 'bg-primary/10')
+      expect(catAvatar).not.toHaveClass('border-primary', 'bg-primary/10')
     })
 
     it('uses default avatar if none selected', async () => {
