@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
 import { Search, FileText, Inbox, Plus, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle, Circle, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { 
@@ -69,7 +68,6 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       hasOnIssueStatusChange: !!onIssueStatusChange
     })
   }, [workspaceSlug, workspaceId, currentIssue, onIssueStatusChange])
-  const router = useRouter()
   const { isOpen, setIsOpen, mode } = useCommandPalette()
   const { toast } = useToast()
   const [search, setSearch] = React.useState("")
@@ -104,27 +102,23 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   
   const handleNavigateToIssues = React.useCallback(() => {
     setIsOpen(false)
-    // Always emit the event
+    // Always emit the event - the WorkspaceContent will handle navigation
     emitNavigateToIssues()
     // If callback is provided, call it too (for backwards compatibility)
     if (onNavigateToIssues) {
       onNavigateToIssues()
-    } else {
-      router.push(`/${workspaceSlug}`)
     }
-  }, [router, workspaceSlug, onNavigateToIssues, setIsOpen])
+  }, [onNavigateToIssues, setIsOpen])
   
   const handleNavigateToInbox = React.useCallback(() => {
     setIsOpen(false)
-    // Always emit the event
+    // Always emit the event - the WorkspaceContent will handle navigation
     emitNavigateToInbox()
     // If callback is provided, call it too (for backwards compatibility)
     if (onNavigateToInbox) {
       onNavigateToInbox()
-    } else {
-      router.push(`/${workspaceSlug}/inbox`)
     }
-  }, [router, workspaceSlug, onNavigateToInbox, setIsOpen])
+  }, [onNavigateToInbox, setIsOpen])
   
   
   const handleShowRecentIssues = React.useCallback(() => {
