@@ -674,6 +674,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
       ) : currentIssueId ? (
         <IssueDetails
           issueId={currentIssueId}
+          workspaceSlug={workspace.slug}
           onBack={handleBackToList}
           onDeleted={handleIssueDeleted}
         />

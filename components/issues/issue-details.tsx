@@ -66,6 +66,7 @@ interface Issue {
 
 interface IssueDetailsProps {
   issueId: string
+  workspaceSlug: string
   onBack: () => void
   onDeleted: () => void
 }
@@ -107,7 +108,7 @@ const typeOptions = [
   { value: 'non-technical', label: 'Non-technical', icon: '📝' },
 ]
 
-export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) {
+export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: IssueDetailsProps) {
   const { toast } = useToast()
   const { getIssue, updateIssue, removeIssue } = useIssueCache()
   const [issue, setIssue] = useState<Issue | null>(null)
@@ -225,55 +226,49 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
         return
       }
 
-      // If not in cache, fetch from database
-      // Issue not in cache, fetching from database
+      // If not in cache, fetch from API (which validates workspace access)
+      // Issue not in cache, fetching from API
       setLoading(true)
-      const supabase = createClient()
+      
+      try {
+        const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issueId}`)
+        
+        if (!response.ok) {
+          // Don't redirect, let the page handle the error
+          setLoading(false)
+          return
+        }
 
-      // Fetch issue data with creator info
-      const { data: issue, error } = await supabase
-        .from('issues')
-        .select(`
-          *,
-          issue_tags (
-            tags (
-              id,
-              name,
-              color
-            )
-          ),
-          creator:creator_id (
-            name,
-            avatar_url
-          )
-        `)
-        .eq('id', issueId)
-        .single()
+        const { issue, creator } = await response.json()
 
-      if (error || !issue) {
-        // Don't redirect, let the page handle the error
+        // Transform issue data to include issue_tags in expected format
+        const transformedIssue = {
+          ...issue,
+          issue_tags: issue.issue_tags || []
+        }
+
+        setIssue(transformedIssue)
+        setCreatedAt(issue.created_at)
+
+        // Use creator info from API response
+        if (creator) {
+          setCreatorName(creator.name?.trim() || 'Unknown')
+          setCreatorAvatar(creator.avatar_url || null)
+        } else {
+          setCreatorName('Unknown')
+          setCreatorAvatar(null)
+        }
+
         setLoading(false)
-        return
+        // Issue loaded from API
+      } catch (error) {
+        console.error('Error fetching issue:', error)
+        setLoading(false)
       }
-
-      setIssue(issue)
-      setCreatedAt(issue.created_at)
-
-      // Use creator info from joined query
-      if (issue.creator) {
-        setCreatorName(issue.creator.name?.trim() || 'Unknown')
-        setCreatorAvatar(issue.creator.avatar_url || null)
-      } else {
-        setCreatorName('Unknown')
-        setCreatorAvatar(null)
-      }
-
-      setLoading(false)
-      // Issue loaded from database
     }
 
     fetchIssue()
-  }, [issueId, onBack, getIssue])
+  }, [issueId, workspaceSlug, onBack, getIssue])
 
   // Subscribe to status updates
   useEffect(() => {

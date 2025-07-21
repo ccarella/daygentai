@@ -27,6 +27,7 @@ export default function IssuePageClient({ params }: { params: Promise<{ slug: st
         <div className="container mx-auto max-w-6xl p-6">
           <IssueDetails 
             issueId={id}
+            workspaceSlug={slug}
             onBack={handleBack}
             onDeleted={handleDeleted}
           />

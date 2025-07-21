@@ -10,25 +10,26 @@ export default async function IssuePageWrapper({
   const { slug, id } = await params
   const supabase = await createClient()
   
-  // Check if the issue exists
-  const { data: issue, error } = await supabase
-    .from('issues')
-    .select('id')
-    .eq('id', id)
-    .single()
-  
-  if (error || !issue) {
-    notFound()
-  }
-  
-  // Check if workspace exists
-  const { data: workspace } = await supabase
+  // First, check if workspace exists
+  const { data: workspace, error: workspaceError } = await supabase
     .from('workspaces')
     .select('id')
     .eq('slug', slug)
     .single()
     
-  if (!workspace) {
+  if (workspaceError || !workspace) {
+    notFound()
+  }
+  
+  // Check if the issue exists AND belongs to this workspace
+  const { data: issue, error: issueError } = await supabase
+    .from('issues')
+    .select('id, workspace_id')
+    .eq('id', id)
+    .eq('workspace_id', workspace.id)
+    .single()
+  
+  if (issueError || !issue) {
     notFound()
   }
   
