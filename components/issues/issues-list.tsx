@@ -98,6 +98,7 @@ export function IssuesList({
   const preloadedIssuesRef = useRef<Set<string>>(new Set())
   const listContainerRef = useRef<HTMLDivElement>(null)
   const preloadTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const fetchIssues = useCallback(async (pageNum: number, append = false, skipCache = false) => {
     if (isLoadingRef.current && !skipCache) return { issues: [], hasMore: false, totalCount: 0 }
@@ -420,16 +421,6 @@ export function IssuesList({
     }
   }, [preloadIssues])
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      // Clear any pending preload timeout on unmount
-      if (preloadTimeoutRef.current) {
-        clearTimeout(preloadTimeoutRef.current)
-      }
-    }
-  }, [])
-
   // Load more issues handler
   const handleLoadMore = async () => {
     if (loadingMore || !hasMore || isLoadingRef.current) return
@@ -448,6 +439,99 @@ export function IssuesList({
     
     setLoadingMore(false)
   }
+
+  // Hover handlers for prefetching
+  const handleMouseEnter = useCallback((issueId: string) => {
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+    }
+    
+    // Set a new timeout for prefetching after 150ms
+    hoverTimeoutRef.current = setTimeout(() => {
+      if (!preloadedIssuesRef.current.has(issueId)) {
+        console.log('[Performance] Hover prefetch triggered for issue:', issueId)
+        preloadedIssuesRef.current.add(issueId)
+        preloadIssues([issueId])
+      }
+    }, 150) // 150ms delay to avoid prefetching during quick mouse movements
+  }, [preloadIssues])
+
+  const handleMouseLeave = useCallback(() => {
+    // Clear the timeout if mouse leaves before prefetch triggers
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+      hoverTimeoutRef.current = null
+    }
+  }, [])
+
+  // Set up keyboard navigation prefetching
+  useEffect(() => {
+    if (!listContainerRef.current) return
+
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement
+      
+      // Check if the focused element is an issue row
+      if (target.hasAttribute('data-issue-row')) {
+        const issueId = target.getAttribute('data-issue-id')
+        if (issueId && !preloadedIssuesRef.current.has(issueId)) {
+          console.log('[Performance] Keyboard focus prefetch triggered for issue:', issueId)
+          preloadedIssuesRef.current.add(issueId)
+          preloadIssues([issueId])
+          
+          // Also prefetch adjacent issues for smoother navigation
+          const allRows = listContainerRef.current?.querySelectorAll('[data-issue-row]')
+          if (allRows) {
+            const currentIndex = Array.from(allRows).findIndex(row => row === target)
+            
+            // Prefetch next issue
+            if (currentIndex < allRows.length - 1) {
+              const nextRow = allRows[currentIndex + 1] as HTMLElement
+              const nextId = nextRow.getAttribute('data-issue-id')
+              if (nextId && !preloadedIssuesRef.current.has(nextId)) {
+                console.log('[Performance] Prefetching next issue:', nextId)
+                preloadedIssuesRef.current.add(nextId)
+                preloadIssues([nextId])
+              }
+            }
+            
+            // Prefetch previous issue
+            if (currentIndex > 0) {
+              const prevRow = allRows[currentIndex - 1] as HTMLElement
+              const prevId = prevRow.getAttribute('data-issue-id')
+              if (prevId && !preloadedIssuesRef.current.has(prevId)) {
+                console.log('[Performance] Prefetching previous issue:', prevId)
+                preloadedIssuesRef.current.add(prevId)
+                preloadIssues([prevId])
+              }
+            }
+          }
+        }
+      }
+    }
+
+    const container = listContainerRef.current
+    container.addEventListener('focusin', handleFocusIn)
+
+    return () => {
+      container.removeEventListener('focusin', handleFocusIn)
+    }
+  }, [preloadIssues])
+
+  // Combined cleanup effect for all timeouts on unmount
+  useEffect(() => {
+    return () => {
+      // Clear any pending preload timeout
+      if (preloadTimeoutRef.current) {
+        clearTimeout(preloadTimeoutRef.current)
+      }
+      // Clear any pending hover timeout
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const truncateDescription = (description: string | null, maxLength: number = 100) => {
     if (!description) return ''
@@ -535,6 +619,8 @@ export function IssuesList({
                   router.push(`/${workspaceSlug}/issue/${issue.id}`)
                 }
               }}
+              onMouseEnter={() => handleMouseEnter(issue.id)}
+              onMouseLeave={handleMouseLeave}
             >
               {/* Issue Content */}
               <div className="flex-1 min-w-0">
