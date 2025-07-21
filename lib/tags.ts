@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
+import { handleDatabaseError } from '@/lib/error-handler'
 
 export interface Tag {
   id: string
@@ -17,7 +18,7 @@ export async function getWorkspaceTags(workspaceId: string): Promise<Tag[]> {
     .order('name', { ascending: true })
   
   if (error) {
-    console.error('Error fetching tags:', error)
+    handleDatabaseError(error, 'fetch workspace tags')
     return []
   }
   
@@ -41,7 +42,7 @@ export async function createTag(workspaceId: string, name: string, color?: strin
     .single()
   
   if (error) {
-    console.error('Error creating tag:', error)
+    handleDatabaseError(error, 'create tag')
     return null
   }
   
@@ -65,7 +66,7 @@ export async function getIssueTags(issueId: string): Promise<Tag[]> {
     .eq('issue_id', issueId)
   
   if (error) {
-    console.error('Error fetching issue tags:', error)
+    handleDatabaseError(error, 'fetch issue tags')
     return []
   }
   
@@ -84,7 +85,7 @@ export async function updateIssueTags(issueId: string, tagIds: string[]): Promis
     .eq('issue_id', issueId)
   
   if (deleteError) {
-    console.error('Error deleting issue tags:', deleteError)
+    handleDatabaseError(deleteError, 'delete issue tags')
     return false
   }
   
@@ -104,7 +105,7 @@ export async function updateIssueTags(issueId: string, tagIds: string[]): Promis
     )
   
   if (insertError) {
-    console.error('Error inserting issue tags:', insertError)
+    handleDatabaseError(insertError, 'insert issue tags')
     return false
   }
   

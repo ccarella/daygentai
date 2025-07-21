@@ -28,6 +28,7 @@ import { useToast } from '@/components/ui/use-toast'
 import { useWorkspace } from '@/contexts/workspace-context'
 import { useIssueCache } from '@/contexts/issue-cache-context'
 import { TagInput, type TagOption } from '@/components/ui/tag-input'
+import { handleAIError } from '@/lib/error-handler'
 import { getWorkspaceTags, createTag, updateIssueTags } from '@/lib/tags'
 
 interface CreateIssueModalProps {
@@ -123,12 +124,14 @@ export function CreateIssueModal({
           })
           
           if (promptError) {
-            // Continue without prompt - don't block issue creation
+            // Show error to user but continue without prompt
+            handleAIError(promptError, "issue prompt generation")
           } else {
             generatedPrompt = prompt
           }
-        } catch {
-          // Continue without prompt
+        } catch (error) {
+          // Show error to user but continue without prompt
+          handleAIError(error, "issue prompt generation")
         } finally {
           setIsGeneratingPrompt(false)
         }

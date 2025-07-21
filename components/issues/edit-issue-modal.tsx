@@ -15,6 +15,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useWorkspace } from '@/contexts/workspace-context';
 import { TagInput, type TagOption } from '@/components/ui/tag-input';
 import { getWorkspaceTags, createTag, updateIssueTags, getIssueTags } from '@/lib/tags';
+import { handleAIError, handleDatabaseError, handleError } from '@/lib/error-handler';
 
 interface Issue {
   id: string;
@@ -146,12 +147,14 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
           });
           
           if (promptError) {
-            // Continue without updating prompt
+            // Show error to user but continue without updating prompt
+            handleAIError(promptError, "issue prompt generation");
           } else {
             generatedPrompt = prompt;
           }
-        } catch {
-          // Continue without updating prompt
+        } catch (error) {
+          // Show error to user but continue without updating prompt
+          handleAIError(error, "issue prompt generation");
         } finally {
           setIsGeneratingPrompt(false);
         }
@@ -173,7 +176,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
         .eq('id', issue.id);
 
       if (updateError) {
-        console.error('Failed to update issue:', updateError);
+        handleDatabaseError(updateError, 'update issue');
         toast({
           title: "Failed to update issue",
           description: updateError.message || "An error occurred while updating the issue.",
@@ -194,11 +197,10 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
       onOpenChange(false);
       onIssueUpdated?.();
     } catch (err) {
-      console.error('Unexpected error during issue update:', err);
-      toast({
-        title: "Unexpected error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
+      handleError(err, { 
+        type: 'unknown', 
+        title: 'Unexpected error',
+        context: { operation: 'update issue' } 
       });
       setError('An unexpected error occurred');
     } finally {
