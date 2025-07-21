@@ -38,7 +38,6 @@ interface WorkspaceLayoutProps {
   onNavigateToIssues?: () => void
   onNavigateToInbox?: () => void
   onNavigateToCookbook?: () => void
-  onNavigateToSettings?: () => void
   isMobileMenuOpen?: boolean
   setIsMobileMenuOpen?: (open: boolean) => void
   sidebarRef?: React.RefObject<HTMLDivElement | null>
@@ -52,7 +51,6 @@ export function WorkspaceLayout({
   onNavigateToIssues,
   onNavigateToInbox,
   onNavigateToCookbook,
-  onNavigateToSettings,
   isMobileMenuOpen: propIsMobileMenuOpen,
   setIsMobileMenuOpen: propSetIsMobileMenuOpen,
   sidebarRef: propSidebarRef
@@ -242,33 +240,18 @@ export function WorkspaceLayout({
           <span>Commands</span>
         </button>
         
-        {onNavigateToSettings ? (
-          <button
-            data-sidebar-item
-            onClick={onNavigateToSettings}
-            className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
-              pathname === `/${workspace.slug}/settings` 
-                ? 'bg-accent text-foreground' 
-                : 'hover:bg-accent text-foreground'
-            }`}
-          >
-            <Settings className="w-5 h-5" />
-            <span>Settings</span>
-          </button>
-        ) : (
-          <Link
-            data-sidebar-item
-            href={`/${workspace.slug}/settings`}
-            className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
-              pathname === `/${workspace.slug}/settings` 
-                ? 'bg-accent text-foreground' 
-                : 'hover:bg-accent text-foreground'
-            }`}
-          >
-            <Settings className="w-5 h-5" />
-            <span>Settings</span>
-          </Link>
-        )}
+        <Link
+          data-sidebar-item
+          href={`/${workspace.slug}/settings`}
+          className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
+            pathname === `/${workspace.slug}/settings` 
+              ? 'bg-accent text-foreground' 
+              : 'hover:bg-accent text-foreground'
+          }`}
+        >
+          <Settings className="w-5 h-5" />
+          <span>Settings</span>
+        </Link>
       </nav>
 
       {/* Info Icon at Bottom - Hidden on mobile */}
@@ -410,29 +393,17 @@ export function WorkspaceLayout({
               >
                 <Terminal className="w-5 h-5 text-muted-foreground" />
               </button>
-              {onNavigateToSettings ? (
-                <button
-                  onClick={onNavigateToSettings}
-                  className={`p-2 rounded transition-colors ${
-                    pathname === `/${workspace.slug}/settings` 
-                      ? 'bg-accent' 
-                      : 'hover:bg-accent'
-                  }`}
-                >
-                  <Settings className="w-5 h-5 text-muted-foreground" />
-                </button>
-              ) : (
-                <Link
-                  href={`/${workspace.slug}/settings`}
-                  className={`p-2 rounded transition-colors ${
-                    pathname === `/${workspace.slug}/settings` 
-                      ? 'bg-accent' 
-                      : 'hover:bg-accent'
-                  }`}
-                >
-                  <Settings className="w-5 h-5 text-muted-foreground" />
-                </Link>
-              )}
+              <Link
+                href={`/${workspace.slug}/settings`}
+                className={`p-2 rounded transition-colors ${
+                  pathname === `/${workspace.slug}/settings` 
+                    ? 'bg-accent' 
+                    : 'hover:bg-accent'
+                }`}
+                title="Settings"
+              >
+                <Settings className="w-5 h-5 text-muted-foreground" />
+              </Link>
               <button
                 onClick={() => openWithMode('help')}
                 className="p-2 rounded hover:bg-accent mt-auto"
