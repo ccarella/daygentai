@@ -48,14 +48,17 @@ describe('EditIssueModal - Prompt Generation', () => {
         update: vi.fn(() => ({
           eq: vi.fn(() => Promise.resolve({ error: null }))
         })),
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
+        select: vi.fn(() => {
+          // Support chained .eq() calls
+          const chainableQuery = {
+            eq: vi.fn(() => chainableQuery),
             single: vi.fn(() => Promise.resolve({ 
               data: { id: 'test-workspace-id', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
               error: null 
             }))
-          }))
-        }))
+          }
+          return chainableQuery
+        })
       }
     })
   }
@@ -130,14 +133,17 @@ describe('EditIssueModal - Prompt Generation', () => {
         update: vi.fn(() => ({
           eq: vi.fn(() => Promise.resolve({ error: null }))
         })),
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
+        select: vi.fn(() => {
+          // Support chained .eq() calls
+          const chainableQuery = {
+            eq: vi.fn(() => chainableQuery),
             single: vi.fn(() => Promise.resolve({ 
               data: { id: 'test-workspace-id', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
               error: null 
             }))
-          }))
-        }))
+          }
+          return chainableQuery
+        })
       }
     })
     

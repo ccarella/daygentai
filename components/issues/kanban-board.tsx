@@ -34,6 +34,7 @@ interface Issue {
 
 interface KanbanBoardProps {
   workspaceId: string
+  workspaceSlug: string
   onIssueClick: (issueId: string) => void
   statusFilter?: string
   priorityFilter?: string
@@ -73,7 +74,8 @@ const priorityColors = {
 }
 
 export function KanbanBoard({ 
-  workspaceId, 
+  workspaceId,
+  workspaceSlug, 
   onIssueClick,
   statusFilter = 'all',
   priorityFilter = 'all',
@@ -86,7 +88,7 @@ export function KanbanBoard({
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const supabase = createClient()
-  const { preloadIssues } = useIssueCache()
+  const { preloadIssues, updateIssue: updateCachedIssue } = useIssueCache()
   const loadingMoreRef = useRef(false)
   const kanbanContainerRef = useRef<HTMLDivElement>(null)
   const preloadedIssuesRef = useRef<Set<string>>(new Set())
@@ -253,15 +255,28 @@ export function KanbanBoard({
     e.preventDefault()
     const issueId = e.dataTransfer.getData('issueId')
     
-    const { error } = await supabase
-      .from('issues')
-      .update({ status: newStatus })
-      .eq('id', issueId)
+    try {
+      const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issueId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
 
-    if (!error) {
+      if (!response.ok) {
+        console.error('Failed to update issue status')
+        return
+      }
+
       setIssues(prev => prev.map(issue => 
         issue.id === issueId ? { ...issue, status: newStatus as Issue['status'] } : issue
       ))
+      
+      // Update cache to maintain consistency across components
+      updateCachedIssue(issueId, { status: newStatus as Issue['status'] })
+    } catch (error) {
+      console.error('Error updating issue status:', error)
     }
   }
 

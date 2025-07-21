@@ -67,17 +67,25 @@ export function AppCommandPalette({ workspace, onCreateIssue, onToggleViewMode, 
   const handleIssueStatusChange = async (newStatus: string) => {
     if (!currentIssue) return
     
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('issues')
-      .update({ status: newStatus })
-      .eq('id', currentIssue.id)
-      .eq('workspace_id', workspace.id)
+    try {
+      const response = await fetch(`/api/workspaces/${workspace.slug}/issues/${currentIssue.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
 
-    if (!error) {
+      if (!response.ok) {
+        console.error('Failed to update issue status')
+        return
+      }
+
       setCurrentIssue({ ...currentIssue, status: newStatus })
       // Emit event to notify other components
       emitIssueStatusUpdate(currentIssue.id, newStatus)
+    } catch (error) {
+      console.error('Error updating issue status:', error)
     }
   }
 

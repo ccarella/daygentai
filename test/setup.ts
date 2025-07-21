@@ -34,8 +34,14 @@ vi.mock('@/lib/supabase/client', () => ({
     auth: {
       signInWithOtp: vi.fn(),
       signOut: vi.fn(),
-      getUser: vi.fn(),
-      getSession: vi.fn(),
+      getUser: vi.fn().mockResolvedValue({
+        data: { user: { id: 'user-123' } },
+        error: null
+      }),
+      getSession: vi.fn().mockResolvedValue({
+        data: { session: { user: { id: 'user-123' } } },
+        error: null
+      }),
     },
     from: vi.fn(() => ({
       select: vi.fn().mockReturnThis(),
@@ -43,10 +49,30 @@ vi.mock('@/lib/supabase/client', () => ({
       update: vi.fn().mockReturnThis(),
       delete: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
-      single: vi.fn(),
+      single: vi.fn().mockResolvedValue({
+        data: null,
+        error: null
+      }),
     })),
   })),
 }))
+
+// Mock fetch for API calls
+global.fetch = vi.fn().mockImplementation((url) => {
+  // Mock cache invalidation API
+  if (url === '/api/cache/invalidate') {
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ success: true }),
+    })
+  }
+  
+  // Default fetch mock
+  return Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({}),
+  })
+})
 
 // Mock window.matchMedia (only in jsdom environment)
 if (typeof window !== 'undefined') {

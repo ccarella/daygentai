@@ -350,66 +350,76 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
     if (!issue || isUpdatingStatus) return
     
     setIsUpdatingStatus(true)
-    const supabase = createClient()
     
-    const { error } = await supabase
-      .from('issues')
-      .update({ status: newStatus })
-      .eq('id', issue.id)
+    try {
+      const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issue.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
 
-    if (error) {
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update status')
+      }
+
+      const { issue: updatedIssue } = await response.json()
+      setIssue(updatedIssue)
+      updateIssue(issue.id, { status: newStatus as Issue['status'] })
+      toast({
+        title: "Status updated",
+        description: `Issue status changed to ${newStatus.toLowerCase().replace('_', ' ')}.`,
+      })
+    } catch (error) {
       console.error('Failed to update issue status:', error)
       toast({
         title: "Failed to update status",
-        description: error.message || "An error occurred while updating the issue status.",
+        description: error instanceof Error ? error.message : "An error occurred while updating the issue status.",
         variant: "destructive",
       })
+    } finally {
       setIsUpdatingStatus(false)
-      return
     }
-    
-    const updatedIssue = { ...issue, status: newStatus as Issue['status'] }
-    setIssue(updatedIssue)
-    updateIssue(issue.id, { status: newStatus as Issue['status'] })
-    toast({
-      title: "Status updated",
-      description: `Issue status changed to ${newStatus.toLowerCase().replace('_', ' ')}.`,
-    })
-    
-    setIsUpdatingStatus(false)
   }
 
   const handleTypeChange = async (newType: string) => {
     if (!issue || isUpdatingType) return
     
     setIsUpdatingType(true)
-    const supabase = createClient()
     
-    const { error } = await supabase
-      .from('issues')
-      .update({ type: newType })
-      .eq('id', issue.id)
+    try {
+      const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issue.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ type: newType }),
+      })
 
-    if (error) {
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update type')
+      }
+
+      const { issue: updatedIssue } = await response.json()
+      setIssue(updatedIssue)
+      updateIssue(issue.id, { type: newType as Issue['type'] })
+      toast({
+        title: "Type updated",
+        description: `Issue type changed to ${newType.toLowerCase()}.`,
+      })
+    } catch (error) {
       console.error('Failed to update issue type:', error)
       toast({
         title: "Failed to update type",
-        description: error.message || "An error occurred while updating the issue type.",
+        description: error instanceof Error ? error.message : "An error occurred while updating the issue type.",
         variant: "destructive",
       })
+    } finally {
       setIsUpdatingType(false)
-      return
     }
-    
-    const updatedIssue = { ...issue, type: newType as Issue['type'] }
-    setIssue(updatedIssue)
-    updateIssue(issue.id, { type: newType as Issue['type'] })
-    toast({
-      title: "Type updated",
-      description: `Issue type changed to ${newType.toLowerCase()}.`,
-    })
-    
-    setIsUpdatingType(false)
   }
 
   const handleEdit = () => {

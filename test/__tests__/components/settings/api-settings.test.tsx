@@ -14,6 +14,10 @@ describe('ApiSettings', () => {
       getSession: vi.fn(() => Promise.resolve({ 
         data: { session: { user: { id: 'test-user' } } }, 
         error: null 
+      })),
+      getUser: vi.fn(() => Promise.resolve({ 
+        data: { user: { id: 'test-user' } }, 
+        error: null 
       }))
     },
     from: vi.fn(() => {
@@ -22,14 +26,15 @@ describe('ApiSettings', () => {
         return { eq: eqMock }
       })
       const selectMock = vi.fn(() => {
-        const eqMock = vi.fn(() => {
-          const singleMock = vi.fn(() => Promise.resolve({ 
+        // Support chained .eq() calls
+        const chainableQuery = {
+          eq: vi.fn(() => chainableQuery),
+          single: vi.fn(() => Promise.resolve({ 
             data: { api_key: null, api_provider: null, agents_content: null }, 
             error: null 
           }))
-          return { single: singleMock }
-        })
-        return { eq: eqMock }
+        }
+        return chainableQuery
       })
       return { update: updateMock, select: selectMock }
     })
