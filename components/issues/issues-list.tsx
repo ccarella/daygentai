@@ -223,10 +223,6 @@ export function IssuesList({
             name,
             color
           )
-        ),
-        creator:users!created_by (
-          name,
-          avatar_url
         )
       `)
       .eq('workspace_id', workspaceId)
