@@ -15,7 +15,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useWorkspace } from '@/contexts/workspace-context';
 import { TagInput, type TagOption } from '@/components/ui/tag-input';
 import { getWorkspaceTags, createTag, updateIssueTags, getIssueTags } from '@/lib/tags';
-import { handleAIError, handleDatabaseError } from '@/lib/error-handler';
+import { handleAIError, handleDatabaseError, handleError } from '@/lib/error-handler';
 
 interface Issue {
   id: string;
@@ -197,11 +197,10 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
       onOpenChange(false);
       onIssueUpdated?.();
     } catch (err) {
-      console.error('Unexpected error during issue update:', err);
-      toast({
-        title: "Unexpected error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
+      handleError(err, { 
+        type: 'unknown', 
+        title: 'Unexpected error',
+        context: { operation: 'update issue' } 
       });
       setError('An unexpected error occurred');
     } finally {

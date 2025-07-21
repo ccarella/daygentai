@@ -8,6 +8,7 @@ import { stripMarkdown } from '@/lib/markdown-utils'
 import { RecipeSkeleton } from './recipe-skeleton'
 import { Tag as TagComponent } from '@/components/ui/tag'
 import { RecipeWithTags } from '@/types/recipe'
+import { handleDatabaseError } from '@/lib/error-handler'
 
 interface RecipesListProps {
   workspaceId: string
@@ -122,7 +123,7 @@ export function RecipesList({
       const { data: allData, error: allError } = await query
       
       if (allError) {
-        console.error('Error fetching all recipes:', allError)
+        handleDatabaseError(allError, 'fetch all recipes')
         return { recipes: [], hasMore: false, totalCount: 0 }
       }
       
@@ -164,7 +165,7 @@ export function RecipesList({
       const { data, error } = await query
       
       if (error) {
-        console.error('Error fetching recipes:', error)
+        handleDatabaseError(error, 'fetch recipes')
         return { recipes: [], hasMore: false, totalCount: 0 }
       }
       
@@ -216,7 +217,7 @@ export function RecipesList({
       } catch (error) {
         // Ignore abort errors
         if (error instanceof Error && error.name !== 'AbortError') {
-          console.error('Error loading recipes:', error)
+          handleDatabaseError(error, 'load recipes')
           if (!abortController.signal.aborted) {
             setInitialLoading(false)
           }
@@ -264,7 +265,7 @@ export function RecipesList({
         setTotalCount(total)
       }
     } catch (error) {
-      console.error('Error loading more recipes:', error)
+      handleDatabaseError(error, 'load more recipes')
     } finally {
       setLoadingMore(false)
     }
