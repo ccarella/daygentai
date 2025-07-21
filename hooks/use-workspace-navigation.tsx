@@ -4,12 +4,14 @@ interface WorkspaceNavigationConfig {
   sidebarRef: React.RefObject<HTMLElement | null>
   mainContentRef: React.RefObject<HTMLElement | null>
   onItemSelect?: (element: HTMLElement, area: 'sidebar' | 'main') => void
+  onFocusChange?: (element: HTMLElement, area: 'sidebar' | 'main') => void
 }
 
 export function useWorkspaceNavigation({
   sidebarRef,
   mainContentRef,
   onItemSelect,
+  onFocusChange,
 }: WorkspaceNavigationConfig) {
   const currentAreaRef = useRef<'sidebar' | 'main'>('main')
   const currentIndexRef = useRef<number>(-1)
@@ -84,8 +86,13 @@ export function useWorkspaceNavigation({
       item.setAttribute('tabindex', '0')
       item.focus()
       item.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      
+      // Notify about focus change for prefetching
+      if (onFocusChange) {
+        onFocusChange(item, currentAreaRef.current)
+      }
     }
-  }, [clearAllFocus, focusClass])
+  }, [clearAllFocus, focusClass, onFocusChange])
 
   // Find the active sidebar item based on current route
   const findActiveSidebarItem = useCallback((): number => {

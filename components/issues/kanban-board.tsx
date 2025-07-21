@@ -87,6 +87,9 @@ export function KanbanBoard({
   const supabase = createClient()
   const { preloadIssues } = useIssueCache()
   const loadingMoreRef = useRef(false)
+  const kanbanContainerRef = useRef<HTMLDivElement>(null)
+  const preloadedIssuesRef = useRef<Set<string>>(new Set())
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const fetchIssues = useCallback(async (pageNum: number, append = false) => {
     if (loadingMoreRef.current && append) return
@@ -261,6 +264,93 @@ export function KanbanBoard({
     return issues.filter(issue => issue.status === status)
   }
 
+  // Hover handlers for prefetching
+  const handleMouseEnter = useCallback((issueId: string) => {
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+    }
+    
+    // Set a new timeout for prefetching after 150ms
+    hoverTimeoutRef.current = setTimeout(() => {
+      if (!preloadedIssuesRef.current.has(issueId)) {
+        console.log('[Performance] Hover prefetch triggered for kanban issue:', issueId)
+        preloadedIssuesRef.current.add(issueId)
+        preloadIssues([issueId])
+      }
+    }, 150) // 150ms delay to avoid prefetching during quick mouse movements
+  }, [preloadIssues])
+
+  const handleMouseLeave = useCallback(() => {
+    // Clear the timeout if mouse leaves before prefetch triggers
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+      hoverTimeoutRef.current = null
+    }
+  }, [])
+
+  // Set up keyboard navigation prefetching
+  useEffect(() => {
+    if (!kanbanContainerRef.current) return
+
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement
+      
+      // Check if the focused element is an issue card
+      if (target.hasAttribute('data-issue-card')) {
+        const issueId = target.getAttribute('data-issue-id')
+        if (issueId && !preloadedIssuesRef.current.has(issueId)) {
+          console.log('[Performance] Keyboard focus prefetch triggered for kanban issue:', issueId)
+          preloadedIssuesRef.current.add(issueId)
+          preloadIssues([issueId])
+          
+          // Find all visible issue cards to prefetch adjacent ones
+          const allCards = kanbanContainerRef.current?.querySelectorAll('[data-issue-card]')
+          if (allCards) {
+            const cardsArray = Array.from(allCards)
+            const currentIndex = cardsArray.findIndex(card => card === target)
+            
+            // Prefetch next 2 and previous 2 cards for smoother navigation
+            const adjacentIndices = [
+              currentIndex - 2,
+              currentIndex - 1,
+              currentIndex + 1,
+              currentIndex + 2
+            ]
+            
+            adjacentIndices.forEach(index => {
+              if (index >= 0 && index < cardsArray.length) {
+                const card = cardsArray[index] as HTMLElement
+                const adjacentId = card.getAttribute('data-issue-id')
+                if (adjacentId && !preloadedIssuesRef.current.has(adjacentId)) {
+                  console.log('[Performance] Prefetching adjacent kanban issue:', adjacentId)
+                  preloadedIssuesRef.current.add(adjacentId)
+                  preloadIssues([adjacentId])
+                }
+              }
+            })
+          }
+        }
+      }
+    }
+
+    const container = kanbanContainerRef.current
+    container.addEventListener('focusin', handleFocusIn)
+
+    return () => {
+      container.removeEventListener('focusin', handleFocusIn)
+    }
+  }, [preloadIssues])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+    }
+  }, [])
+
   if (loading) {
     return <KanbanBoardSkeleton />
   }
@@ -279,7 +369,7 @@ export function KanbanBoard({
         </div>
       )}
       
-      <div className="flex gap-4 h-full overflow-x-auto pb-4 px-4">
+      <div ref={kanbanContainerRef} className="flex gap-4 h-full overflow-x-auto pb-4 px-4">
         {columns.map((column) => {
           const columnIssues = getIssuesByStatus(column.id)
           
@@ -315,6 +405,8 @@ export function KanbanBoard({
                       draggable
                       onDragStart={(e) => handleDragStart(e, issue.id)}
                       onClick={() => onIssueClick(issue.id)}
+                      onMouseEnter={() => handleMouseEnter(issue.id)}
+                      onMouseLeave={handleMouseLeave}
                       className="bg-card p-3 rounded-lg border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                     >
                       <h4 className="font-medium text-foreground mb-2 line-clamp-2">

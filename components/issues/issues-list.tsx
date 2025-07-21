@@ -484,6 +484,60 @@ export function IssuesList({
     }
   }, [])
 
+  // Set up keyboard navigation prefetching
+  useEffect(() => {
+    if (!listContainerRef.current) return
+
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement
+      
+      // Check if the focused element is an issue row
+      if (target.hasAttribute('data-issue-row')) {
+        const issueId = target.getAttribute('data-issue-id')
+        if (issueId && !preloadedIssuesRef.current.has(issueId)) {
+          console.log('[Performance] Keyboard focus prefetch triggered for issue:', issueId)
+          preloadedIssuesRef.current.add(issueId)
+          preloadIssues([issueId])
+          
+          // Also prefetch adjacent issues for smoother navigation
+          const allRows = listContainerRef.current?.querySelectorAll('[data-issue-row]')
+          if (allRows) {
+            const currentIndex = Array.from(allRows).findIndex(row => row === target)
+            
+            // Prefetch next issue
+            if (currentIndex < allRows.length - 1) {
+              const nextRow = allRows[currentIndex + 1] as HTMLElement
+              const nextId = nextRow.getAttribute('data-issue-id')
+              if (nextId && !preloadedIssuesRef.current.has(nextId)) {
+                console.log('[Performance] Prefetching next issue:', nextId)
+                preloadedIssuesRef.current.add(nextId)
+                preloadIssues([nextId])
+              }
+            }
+            
+            // Prefetch previous issue
+            if (currentIndex > 0) {
+              const prevRow = allRows[currentIndex - 1] as HTMLElement
+              const prevId = prevRow.getAttribute('data-issue-id')
+              if (prevId && !preloadedIssuesRef.current.has(prevId)) {
+                console.log('[Performance] Prefetching previous issue:', prevId)
+                preloadedIssuesRef.current.add(prevId)
+                preloadIssues([prevId])
+              }
+            }
+          }
+        }
+      }
+    }
+
+    const container = listContainerRef.current
+    container.addEventListener('focusin', handleFocusIn)
+
+    return () => {
+      container.removeEventListener('focusin', handleFocusIn)
+    }
+  }, [preloadIssues])
+
   const truncateDescription = (description: string | null, maxLength: number = 100) => {
     if (!description) return ''
     const plainText = stripMarkdown(description)
