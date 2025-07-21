@@ -1,9 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { validateWorkspaceAccess } from '@/lib/validation/workspace-access'
+import { withTimeout, timeoutConfig } from '@/lib/middleware/timeout'
+import { 
+  withErrorHandler, 
+  createUnauthorizedError, 
+  createNotFoundError,
+  createForbiddenError,
+  createInternalServerError 
+} from '@/lib/middleware/error-handler'
 
-export async function GET(
-  _request: Request,
+async function handleGET(
+  _request: NextRequest,
   { params }: { params: Promise<{ slug: string; id: string }> }
 ) {
   try {
@@ -13,7 +21,7 @@ export async function GET(
     const { data: { user } } = await supabase.auth.getUser()
     
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return createUnauthorizedError()
     }
 
     // Verify workspace access
@@ -24,7 +32,7 @@ export async function GET(
       .single()
 
     if (!workspace) {
-      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+      return createNotFoundError('Workspace')
     }
 
     // Fetch issue data with creator info
@@ -39,7 +47,7 @@ export async function GET(
       .single()
 
     if (error || !issue) {
-      return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
+      return createNotFoundError('Issue')
     }
 
     return NextResponse.json({ 
@@ -48,12 +56,12 @@ export async function GET(
     })
   } catch (error) {
     console.error('Error fetching issue:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return createInternalServerError()
   }
 }
 
-export async function PATCH(
-  request: Request,
+async function handlePATCH(
+  request: NextRequest,
   { params }: { params: Promise<{ slug: string; id: string }> }
 ) {
   try {
@@ -63,7 +71,7 @@ export async function PATCH(
     const { data: { user } } = await supabase.auth.getUser()
     
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return createUnauthorizedError()
     }
 
     // Parse request body
@@ -78,13 +86,13 @@ export async function PATCH(
       .single()
 
     if (!workspace) {
-      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+      return createNotFoundError('Workspace')
     }
 
     // Validate workspace access for the user
     const hasAccess = await validateWorkspaceAccess(workspace.id, user.id)
     if (!hasAccess) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      return createForbiddenError('Access denied')
     }
 
     // Verify issue belongs to workspace before updating
@@ -96,7 +104,7 @@ export async function PATCH(
       .single()
 
     if (!existingIssue) {
-      return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
+      return createNotFoundError('Issue')
     }
 
     // Build update object with only provided fields
@@ -122,12 +130,16 @@ export async function PATCH(
 
     if (error) {
       console.error('Error updating issue:', error)
-      return NextResponse.json({ error: 'Failed to update issue' }, { status: 500 })
+      return createInternalServerError('Failed to update issue')
     }
 
     return NextResponse.json({ issue: updatedIssue })
   } catch (error) {
     console.error('Error updating issue:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return createInternalServerError()
   }
 }
+
+// Export the wrapped handlers with timeout and error handling
+export const GET = withTimeout(withErrorHandler(handleGET), timeoutConfig.standard)
+export const PATCH = withTimeout(withErrorHandler(handlePATCH), timeoutConfig.standard)

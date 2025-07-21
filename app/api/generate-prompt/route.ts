@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { withTimeout, timeoutConfig, withExternalTimeout } from '@/lib/middleware/timeout'
+import { 
+  withErrorHandler, 
+  createUnauthorizedError, 
+  createValidationError, 
+  createNotFoundError, 
+  createForbiddenError,
+  createInternalServerError 
+} from '@/lib/middleware/error-handler'
 
 interface GeneratePromptRequest {
   title: string
@@ -58,7 +67,7 @@ function validateInput(input: string): { isValid: boolean; error?: string } {
 
 async function generateWithOpenAI(userPrompt: string, apiKey: string): Promise<{ prompt: string; error?: string }> {
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const fetchPromise = fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -74,6 +83,12 @@ async function generateWithOpenAI(userPrompt: string, apiKey: string): Promise<{
         max_tokens: 500
       })
     })
+
+    const response = await withExternalTimeout(
+      fetchPromise,
+      60000, // 60 seconds for OpenAI API
+      'OpenAI API request timeout'
+    )
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
@@ -112,7 +127,7 @@ async function generateWithOpenAI(userPrompt: string, apiKey: string): Promise<{
   }
 }
 
-export async function POST(req: NextRequest) {
+async function handlePOST(req: NextRequest) {
   try {
     // Parse request body
     const body = await req.json() as GeneratePromptRequest
@@ -120,26 +135,26 @@ export async function POST(req: NextRequest) {
 
     // Validate required fields
     if (!title || !description || !workspaceId) {
-      return NextResponse.json(
-        { error: 'Missing required fields: title, description, or workspaceId' },
-        { status: 400 }
+      return createValidationError(
+        'Missing required fields: title, description, or workspaceId',
+        { requiredFields: ['title', 'description', 'workspaceId'] }
       )
     }
 
     // Validate inputs
     const titleValidation = validateInput(title)
     if (!titleValidation.isValid) {
-      return NextResponse.json(
-        { error: `Invalid title: ${titleValidation.error}` },
-        { status: 400 }
+      return createValidationError(
+        `Invalid title: ${titleValidation.error}`,
+        { field: 'title', value: title.substring(0, 100) }
       )
     }
 
     const descriptionValidation = validateInput(description)
     if (!descriptionValidation.isValid) {
-      return NextResponse.json(
-        { error: `Invalid description: ${descriptionValidation.error}` },
-        { status: 400 }
+      return createValidationError(
+        `Invalid description: ${descriptionValidation.error}`,
+        { field: 'description', value: description.substring(0, 100) }
       )
     }
 
@@ -149,10 +164,7 @@ export async function POST(req: NextRequest) {
     // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return createUnauthorizedError()
     }
 
     // Verify user has access to the workspace
@@ -163,10 +175,7 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (!userProfile) {
-      return NextResponse.json(
-        { error: 'User profile not found' },
-        { status: 404 }
-      )
+      return createNotFoundError('User profile')
     }
 
     // Check if user has access to workspace (either as owner or member)
@@ -188,17 +197,14 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (workspaceError || !workspace) {
-      return NextResponse.json(
-        { error: 'Workspace not found or access denied' },
-        { status: 403 }
-      )
+      return createForbiddenError('Workspace not found or access denied')
     }
 
     // Check if workspace has API key configured
     if (!workspace.api_key) {
-      return NextResponse.json(
-        { error: 'No API key configured for this workspace' },
-        { status: 400 }
+      return createValidationError(
+        'No API key configured for this workspace',
+        { suggestion: 'Please configure an API key in workspace settings' }
       )
     }
 
@@ -229,10 +235,7 @@ ${sanitizedAgentsContent}` : ''}`
     }
 
     if (result.error) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 500 }
-      )
+      return createInternalServerError(result.error)
     }
 
     // Return only the generated prompt, not the API key
@@ -240,9 +243,9 @@ ${sanitizedAgentsContent}` : ''}`
 
   } catch (error) {
     console.error('Error in generate-prompt route:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return createInternalServerError()
   }
 }
+
+// Export the wrapped handler with timeout and error handling
+export const POST = withTimeout(withErrorHandler(handlePOST), timeoutConfig.external)

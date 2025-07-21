@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { invalidateUserCache } from '@/middleware'
+import { withTimeout, timeoutConfig } from '@/lib/middleware/timeout'
+import { 
+  withErrorHandler, 
+  createUnauthorizedError, 
+  createForbiddenError,
+  createInternalServerError 
+} from '@/lib/middleware/error-handler'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     // Create Supabase client to verify authentication
     const supabase = createServerClient(
@@ -23,10 +30,7 @@ export async function POST(request: NextRequest) {
     // Verify the user is authenticated
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return createUnauthorizedError()
     }
 
     // Parse request body
@@ -35,10 +39,7 @@ export async function POST(request: NextRequest) {
 
     // Only allow users to invalidate their own cache
     if (userId && userId !== user.id) {
-      return NextResponse.json(
-        { error: 'Forbidden: Can only invalidate your own cache' },
-        { status: 403 }
-      )
+      return createForbiddenError('Can only invalidate your own cache')
     }
 
     // Invalidate the cache
@@ -47,9 +48,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error in cache invalidation:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return createInternalServerError()
   }
 }
+
+// Export the wrapped handler with timeout and error handling
+export const POST = withTimeout(withErrorHandler(handlePOST), timeoutConfig.quick)

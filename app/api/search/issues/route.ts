@@ -1,16 +1,25 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { withTimeout, timeoutConfig } from '@/lib/middleware/timeout'
+import { 
+  withErrorHandler, 
+  createUnauthorizedError, 
+  createValidationError,
+  createNotFoundError,
+  createForbiddenError,
+  createInternalServerError 
+} from '@/lib/middleware/error-handler'
 
-export async function GET(request: Request) {
+async function handleGET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const query = searchParams.get('q') || ''
   const workspaceId = searchParams.get('workspace_id')
   const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10), 1), 100)
 
   if (!workspaceId) {
-    return NextResponse.json(
-      { error: 'workspace_id is required' },
-      { status: 400 }
+    return createValidationError(
+      'workspace_id is required',
+      { requiredFields: ['workspace_id'] }
     )
   }
 
@@ -19,10 +28,7 @@ export async function GET(request: Request) {
   // Check authentication
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json(
-      { error: 'Authentication required' },
-      { status: 401 }
-    )
+    return createUnauthorizedError()
   }
   
   // Check authorization - verify user has access to this workspace
@@ -43,17 +49,11 @@ export async function GET(request: Request) {
       .single()
       
     if (workspaceError || !workspace) {
-      return NextResponse.json(
-        { error: 'Workspace not found' },
-        { status: 404 }
-      )
+      return createNotFoundError('Workspace')
     }
     
     // Workspace exists but user is not a member
-    return NextResponse.json(
-      { error: 'You do not have access to this workspace' },
-      { status: 403 }
-    )
+    return createForbiddenError('You do not have access to this workspace')
   }
 
   try {
@@ -66,18 +66,15 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error('Search error:', error)
-      return NextResponse.json(
-        { error: 'Failed to search issues' },
-        { status: 500 }
-      )
+      return createInternalServerError('Failed to search issues')
     }
 
     return NextResponse.json({ data })
   } catch (error) {
     console.error('Search error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return createInternalServerError()
   }
 }
+
+// Export the wrapped handler with timeout and error handling
+export const GET = withTimeout(withErrorHandler(handleGET), timeoutConfig.standard)
