@@ -42,7 +42,7 @@ export function useGlobalShortcuts({
   const { toast } = useToast()
 
   const handleStatusChange = async (newStatus: string) => {
-    console.log('Attempting status change:', { currentIssue, newStatus })
+    // Attempting status change
     if (!currentIssue || !onIssueStatusChange) return
     
     const supabase = createClient()
@@ -54,7 +54,7 @@ export function useGlobalShortcuts({
 
     if (!error) {
       onIssueStatusChange(newStatus)
-      console.log('Status changed successfully to:', newStatus)
+      // Status changed successfully
       emitIssueStatusUpdate(currentIssue.id, newStatus)
       toast({
         title: "Status updated",

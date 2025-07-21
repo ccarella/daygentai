@@ -187,7 +187,7 @@ export default function PromptGenerationDemo() {
         onOpenChange={setIsCreateModalOpen}
         workspaceId={demoWorkspaceId}
         onIssueCreated={() => {
-          console.log('Issue created with prompt!');
+          // Issue created with prompt
           setDemoPrompt(examplePrompt);
         }}
       />

@@ -101,7 +101,6 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isHydrated) return
     
-    const hydrateStart = Date.now()
     let hydratedIssues = 0
     let hydratedLists = 0
     
@@ -142,7 +141,7 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
           listSize: hydratedLists
         }))
         
-        console.log(`[Cache HYDRATED] ${hydratedIssues} issues and ${hydratedLists} lists in ${Date.now() - hydrateStart}ms`)
+        // Cache hydrated successfully
       } catch (error) {
         console.error('Error hydrating cache:', error)
       } finally {
@@ -174,19 +173,19 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
           newCache.set(issueId, storedIssue)
           return newCache
         })
-        console.log(`[Cache HIT - localStorage] Issue ${issueId}`)
+        // Issue loaded from localStorage
       }
     }
     
     if (issue) {
-      console.log(`[Cache HIT] Issue ${issueId}`)
+      // Cache hit
       setCacheStats(prev => ({
         ...prev,
         hits: prev.hits + 1,
         lastHit: issueId
       }))
     } else {
-      console.log(`[Cache MISS] Issue ${issueId}`)
+      // Cache miss
       setCacheStats(prev => ({
         ...prev,
         misses: prev.misses + 1,
@@ -213,20 +212,19 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
           newCache.set(cacheKey, storedEntry)
           return newCache
         })
-        console.log(`[List Cache HIT - localStorage] Key: ${cacheKey}`)
+        // List cache loaded from localStorage
       }
     }
     
     if (entry) {
-      const age = Date.now() - entry.timestamp
-      console.log(`[List Cache HIT] Key: ${cacheKey}, Age: ${age}ms`)
+      // List cache hit
       setCacheStats(prev => ({
         ...prev,
         listHits: prev.listHits + 1
       }))
       return entry
     } else {
-      console.log(`[List Cache MISS] Key: ${cacheKey}`)
+      // List cache miss
       setCacheStats(prev => ({
         ...prev,
         listMisses: prev.listMisses + 1
@@ -237,7 +235,7 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
 
   const setListCache = useCallback((key: ListCacheKey, data: ListCacheEntry) => {
     const cacheKey = generateListCacheKey(key)
-    console.log(`[List Cache SET] Key: ${cacheKey}, Issues: ${data.issues.length}`)
+    // Setting list cache
     
     setListCacheState(prev => {
       const newCache = new Map(prev)
@@ -273,7 +271,7 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
   }, [cache])
 
   const invalidateListCache = useCallback((workspaceId: string) => {
-    console.log(`[List Cache INVALIDATE] Workspace: ${workspaceId}`)
+    // Invalidating list cache for workspace
     setListCacheState(prev => {
       const newCache = new Map()
       prev.forEach((value, key) => {
@@ -296,8 +294,6 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
     }
 
     setLoadingIssues(prev => new Set(prev).add(issueId))
-
-    const startTime = Date.now()
     
     try {
       const supabase = createClient()
@@ -310,7 +306,7 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (!error && issue) {
-        console.log(`[Cache LOADED] Issue ${issueId} loaded in ${Date.now() - startTime}ms`)
+        // Issue loaded successfully
         const issueWithCreator = issue as IssueWithCreator
         setCache(prev => {
           const newCache = new Map(prev)
@@ -349,8 +345,6 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
       return newSet
     })
 
-    const startTime = Date.now()
-    
     try {
       const supabase = createClient()
 
@@ -361,7 +355,7 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
         .in('id', issuesToLoad)
 
       if (!error && issues) {
-        console.log(`[Cache BATCH LOADED] ${issues.length} issues loaded in ${Date.now() - startTime}ms`)
+        // Batch load completed
         const issuesWithCreator = issues as IssueWithCreator[]
         setCache(prev => {
           const newCache = new Map(prev)
@@ -388,7 +382,7 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
   }, [cache, loadingIssues])
 
   const clearCache = useCallback(() => {
-    console.log('[Cache CLEARED]')
+    // Clearing all cache
     setCache(new Map())
     setListCacheState(new Map())
     setCacheStats({ hits: 0, misses: 0, size: 0, listHits: 0, listMisses: 0, listSize: 0 })
@@ -397,8 +391,6 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const warmCache = useCallback(async (workspaceId: string) => {
-    const startTime = Date.now()
-    
     try {
       const supabase = createClient()
       
@@ -412,7 +404,7 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
         .limit(50)
 
       if (!error && issues) {
-        console.log(`[Cache WARMED] ${issues.length} issues pre-loaded in ${Date.now() - startTime}ms`)
+        // Cache warming completed
         const issuesWithCreator = issues as IssueWithCreator[]
         setCache(prev => {
           const newCache = new Map(prev)
@@ -450,7 +442,7 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
   }, [setListCache])
 
   const updateIssue = useCallback((issueId: string, updates: Partial<IssueWithCreator>) => {
-    console.log(`[Cache UPDATE] Issue ${issueId}`)
+    // Updating issue in cache
     let updatedIssue: IssueWithCreator | null = null
     
     setCache(prev => {
@@ -476,7 +468,7 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
   }, [cache, invalidateListCache])
 
   const removeIssue = useCallback((issueId: string) => {
-    console.log(`[Cache REMOVE] Issue ${issueId}`)
+    // Removing issue from cache
     
     // Get workspace ID before removing
     const issue = cache.get(issueId)

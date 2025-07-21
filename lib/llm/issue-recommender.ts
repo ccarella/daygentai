@@ -63,7 +63,7 @@ export async function recommendNextIssue(
       }
       
       lastError = result.error
-      console.log(`Attempt ${attempt + 1} failed: ${lastError}`)
+      // Attempt failed
       
       // If it's a UUID validation error, continue retrying
       // Otherwise, fail immediately
@@ -110,12 +110,7 @@ Issue #${index + 1}:
 `
   }).join('\n---\n')
   
-  // Log available todo issues for debugging
-  console.log('Available TODO issues for recommendation:', todoIssues.map(i => ({
-    id: i.id,
-    title: i.title,
-    status: i.status
-  })))
+  // Format available todo issues
 
   // Create a more strict prompt for retries
   const basePrompt = `You must recommend ONE issue from the following list. DO NOT create or reference any other issues.
@@ -227,23 +222,12 @@ async function getRecommendationFromOpenAI(
     const recommendedId = idMatch[1].trim()
     const justification = justificationMatch[1].trim()
 
-    // Log for debugging
-    console.log('LLM response content:', content)
-    console.log('LLM recommended ID:', recommendedId)
-    console.log('Available issue IDs:', issues.map(i => i.id))
-    // Log first issue to see format
-    if (issues.length > 0 && issues[0]) {
-      console.log('First issue format:', {
-        id: issues[0].id,
-        title: issues[0].title,
-        idLength: issues[0].id.length
-      })
-    }
+    // Validate LLM response
 
     // Validate UUID format
     const isValidUUID = validateUUID(recommendedId)
     if (!isValidUUID) {
-      console.warn(`Invalid UUID format returned by LLM: ${recommendedId}`)
+      // Invalid UUID format returned by LLM
     }
 
     // Find the recommended issue with multiple strategies
@@ -293,7 +277,7 @@ function findRecommendedIssue(recommendedId: string, issues: Issue[]): Issue | n
     issue => issue.id.toLowerCase() === recommendedId.toLowerCase()
   )
   if (caseInsensitiveMatch) {
-    console.log('Found issue with case-insensitive match')
+    // Found issue with case-insensitive match
     return caseInsensitiveMatch
   }
 
@@ -304,7 +288,7 @@ function findRecommendedIssue(recommendedId: string, issues: Issue[]): Issue | n
     return cleanedIssueId === cleanedRecommendedId
   })
   if (cleanedMatch) {
-    console.log('Found issue after cleaning whitespace')
+    // Found issue after cleaning whitespace
     return cleanedMatch
   }
 
@@ -312,14 +296,14 @@ function findRecommendedIssue(recommendedId: string, issues: Issue[]): Issue | n
   const similarIssue = issues.find(issue => {
     const similarity = calculateSimilarity(issue.id, recommendedId)
     if (similarity > 0.9) {
-      console.log(`Found similar UUID: ${issue.id} (similarity: ${(similarity * 100).toFixed(1)}%)`)
+      // Found similar UUID
       return true
     }
     return false
   })
   
   if (similarIssue) {
-    console.warn(`LLM returned UUID ${recommendedId} which closely matches ${similarIssue.id}`)
+    // LLM returned similar UUID
     return similarIssue
   }
 
@@ -329,7 +313,7 @@ function findRecommendedIssue(recommendedId: string, issues: Issue[]): Issue | n
       issue.id.toLowerCase().startsWith(recommendedId.toLowerCase())
     )
     if (partialMatch) {
-      console.warn(`Found issue with partial UUID match: ${partialMatch.id}`)
+      // Found issue with partial UUID match
       return partialMatch
     }
   }
@@ -383,11 +367,11 @@ function calculateSimilarity(str1: string, str2: string): number {
 }
 
 // Check if workspace has API key configured for issue recommendations
-export async function hasRecommendationApiKey(workspaceId: string): Promise<boolean> {
+export async function hasRecommendationApiKey(_workspaceId: string): Promise<boolean> {
   try {
     // TODO: Implement actual database check using workspaceId
     // This would check if the workspace has an API key configured for recommendations
-    console.log('Checking API key for workspace:', workspaceId)
+    // Checking API key for workspace
     return false
   } catch (error) {
     console.error('Error checking API key:', error)
@@ -396,11 +380,11 @@ export async function hasRecommendationApiKey(workspaceId: string): Promise<bool
 }
 
 // Get API key for workspace (for server-side use only)
-export async function getWorkspaceApiKey(workspaceId: string): Promise<string | null> {
+export async function getWorkspaceApiKey(_workspaceId: string): Promise<string | null> {
   try {
     // TODO: Implement secure API key retrieval from database
     // This should only be used server-side
-    console.log('Getting API key for workspace:', workspaceId)
+    // Getting API key for workspace
     return null
   } catch (error) {
     console.error('Error getting API key:', error)
