@@ -1,3 +1,5 @@
+import { handleApiError, handleAIError } from '@/lib/error-handler'
+
 interface Issue {
   id: string
   title: string
@@ -80,7 +82,7 @@ export async function recommendNextIssue(
       retryCount: maxRetries
     }
   } catch (error) {
-    console.error('Error recommending issue:', error)
+    handleAIError(error, 'issue recommendation')
     return {
       recommendedIssue: null,
       justification: '',
@@ -215,7 +217,7 @@ async function getRecommendationFromOpenAI(
     const justificationMatch = content.match(/JUSTIFICATION:\s*([\s\S]+)/)
 
     if (!idMatch || !justificationMatch) {
-      console.error('Failed to parse LLM response:', content)
+      handleAIError(new Error(`Failed to parse LLM response: ${content}`), 'issue recommendation')
       throw new Error('Invalid response format from LLM')
     }
 
@@ -251,7 +253,7 @@ async function getRecommendationFromOpenAI(
       justification
     }
   } catch (error) {
-    console.error('OpenAI API error:', error)
+    handleApiError(error, 'OpenAI recommendation')
     return {
       recommendedIssue: null,
       justification: '',
@@ -374,7 +376,7 @@ export async function hasRecommendationApiKey(_workspaceId: string): Promise<boo
     // Checking API key for workspace
     return false
   } catch (error) {
-    console.error('Error checking API key:', error)
+    handleApiError(error, 'check recommendation API key')
     return false
   }
 }
@@ -387,7 +389,7 @@ export async function getWorkspaceApiKey(_workspaceId: string): Promise<string |
     // Getting API key for workspace
     return null
   } catch (error) {
-    console.error('Error getting API key:', error)
+    handleApiError(error, 'get workspace API key')
     return null
   }
 }

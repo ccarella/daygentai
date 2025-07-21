@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { handleDatabaseError } from '@/lib/error-handler'
 
 export interface UserWorkspace {
   id: string
@@ -34,7 +35,7 @@ export async function getUserWorkspaces(): Promise<UserWorkspace[]> {
     .order('created_at', { ascending: true })
 
   if (error) {
-    console.error('Error fetching user workspaces:', error)
+    handleDatabaseError(error, 'fetch user workspaces')
     return []
   }
 
@@ -77,7 +78,7 @@ export async function addUserToWorkspace(workspaceId: string, userId: string, ro
     })
 
   if (error) {
-    console.error('Error adding user to workspace:', error)
+    handleDatabaseError(error, 'add user to workspace')
     throw error
   }
 }

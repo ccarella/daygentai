@@ -1,3 +1,5 @@
+import { handleApiError } from '@/lib/error-handler'
+
 interface GeneratePromptParams {
   title: string;
   description: string;
@@ -41,7 +43,7 @@ export async function generateIssuePrompt({
 
     return { prompt: data.prompt };
   } catch (error) {
-    console.error('Error generating prompt:', error);
+    handleApiError(error, 'generate prompt');
     return {
       prompt: '',
       error: error instanceof Error ? error.message : 'Failed to generate prompt'
@@ -61,14 +63,14 @@ export async function hasApiKey(workspaceId: string): Promise<boolean> {
     });
 
     if (!response.ok) {
-      console.error('Failed to check API key:', response.status);
+      handleApiError(response, 'check API key');
       return false;
     }
 
     const data = await response.json();
     return data.hasApiKey === true;
   } catch (error) {
-    console.error('Error checking API key:', error);
+    handleApiError(error, 'check API key');
     return false;
   }
 }
@@ -85,14 +87,14 @@ export async function getAgentsContent(workspaceId: string): Promise<string | nu
     });
 
     if (!response.ok) {
-      console.error('Failed to fetch agents content:', response.status);
+      handleApiError(response, 'fetch agents content');
       return null;
     }
 
     const data = await response.json();
     return data.agentsContent || null;
   } catch (error) {
-    console.error('Error fetching Agents.md:', error);
+    handleApiError(error, 'fetch Agents.md');
     return null;
   }
 }
