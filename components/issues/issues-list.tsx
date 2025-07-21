@@ -421,16 +421,6 @@ export function IssuesList({
     }
   }, [preloadIssues])
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      // Clear any pending preload timeout on unmount
-      if (preloadTimeoutRef.current) {
-        clearTimeout(preloadTimeoutRef.current)
-      }
-    }
-  }, [])
-
   // Load more issues handler
   const handleLoadMore = async () => {
     if (loadingMore || !hasMore || isLoadingRef.current) return
@@ -472,15 +462,6 @@ export function IssuesList({
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current)
       hoverTimeoutRef.current = null
-    }
-  }, [])
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current)
-      }
     }
   }, [])
 
@@ -537,6 +518,20 @@ export function IssuesList({
       container.removeEventListener('focusin', handleFocusIn)
     }
   }, [preloadIssues])
+
+  // Combined cleanup effect for all timeouts on unmount
+  useEffect(() => {
+    return () => {
+      // Clear any pending preload timeout
+      if (preloadTimeoutRef.current) {
+        clearTimeout(preloadTimeoutRef.current)
+      }
+      // Clear any pending hover timeout
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const truncateDescription = (description: string | null, maxLength: number = 100) => {
     if (!description) return ''
