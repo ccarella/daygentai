@@ -193,7 +193,7 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   // Protected routes that require authentication
-  const protectedRoutes = ['/success', '/CreateUser', '/CreateWorkspace']
+  const protectedRoutes = ['/success', '/CreateUser', '/CreateWorkspace', '/user']
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
   
   // Check if this is a workspace route (not one of the special routes)
@@ -202,7 +202,8 @@ export async function middleware(request: NextRequest) {
     !pathname.startsWith('/CreateUser') && 
     !pathname.startsWith('/CreateWorkspace') && 
     !pathname.startsWith('/success') &&
-    !pathname.startsWith('/checkemail')
+    !pathname.startsWith('/checkemail') &&
+    !pathname.startsWith('/user')
 
   if ((isProtectedRoute || isWorkspaceRoute) && !user) {
     return NextResponse.redirect(new URL('/', request.url))
@@ -284,6 +285,14 @@ export async function middleware(request: NextRequest) {
       }
     }
 
+    // If accessing user settings, ensure user has profile
+    if (pathname.startsWith('/user/settings')) {
+      if (!hasProfile) {
+        return NextResponse.redirect(new URL('/CreateUser', request.url))
+      }
+      // User settings doesn't require workspace, so we can proceed
+    }
+    
     // If accessing a workspace route, ensure user has profile
     if (isWorkspaceRoute) {
       if (!hasProfile) {
