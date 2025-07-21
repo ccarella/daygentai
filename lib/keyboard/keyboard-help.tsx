@@ -66,7 +66,7 @@ export function KeyboardShortcutsHelp() {
           group = 'Navigation'
         } else if (shortcut.key.startsWith('s')) {
           group = 'Status'
-        } else if (['c', 'cmd+k', 'ctrl+k', 'cmd+b', 'ctrl+b', 'cmd+n', 'ctrl+n', '/'].includes(shortcut.key)) {
+        } else if (['c', 'cmd+k', 'ctrl+k', 'cmd+b', 'ctrl+b', 'cmd+shift+;', 'ctrl+shift+;', 'cmd+n', 'ctrl+n', '/'].includes(shortcut.key)) {
           group = 'Actions'
         }
         

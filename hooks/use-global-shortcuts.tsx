@@ -105,6 +105,20 @@ export function useGlobalShortcuts({
         },
         description: 'Toggle view mode',
       },
+      'cmd+shift+;': {
+        handler: () => {
+          onToggleViewMode?.()
+          return true
+        },
+        description: 'Toggle view mode',
+      },
+      'ctrl+shift+;': {
+        handler: () => {
+          onToggleViewMode?.()
+          return true
+        },
+        description: 'Toggle view mode',
+      },
       'cmd+n': {
         handler: () => {
           // Prevent multiple simultaneous executions
