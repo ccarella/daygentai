@@ -448,6 +448,9 @@ describe('middleware', () => {
     })
 
     it('handles database errors gracefully', async () => {
+      // Mock console.error to verify error logging
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      
       mockSupabase.auth.getUser.mockResolvedValue({ 
         data: { user: mockUser }, 
         error: null 
@@ -471,8 +474,19 @@ describe('middleware', () => {
       
       mockRequest.nextUrl.pathname = '/success'
       
-      // Should throw the database error
-      await expect(middleware(mockRequest as NextRequest)).rejects.toThrow('Database error')
+      // Should handle error gracefully and redirect to CreateUser (safest default)
+      await middleware(mockRequest as NextRequest)
+      
+      // Verify error was logged
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Middleware database error:', expect.any(Error))
+      
+      // Should redirect to CreateUser since we default to hasProfile: false on error
+      expect(NextResponse.redirect).toHaveBeenCalledWith(
+        new URL('/CreateUser', mockRequest.url)
+      )
+      
+      // Cleanup
+      consoleErrorSpy.mockRestore()
     })
   })
 

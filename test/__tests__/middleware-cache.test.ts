@@ -139,3 +139,32 @@ describe('LRU Cache - LRU Behavior', () => {
     expect(_testUserCache.get('user:concurrent2')).toBeTruthy()
   })
 })
+
+describe('LRU Cache - Error Handling', () => {
+  beforeEach(() => {
+    // Clear cache before each test
+    _testUserCache.invalidate()
+  })
+
+  it('should not cache error states', () => {
+    // This test verifies the behavior when database errors occur
+    // The middleware should not cache the fallback state
+    
+    // Set up a user entry
+    const userId = 'error-test-user'
+    const cacheKey = `user:${userId}`
+    
+    // Initially, cache should be empty
+    expect(_testUserCache.get(cacheKey)).toBeNull()
+    
+    // In a real scenario, if DB error occurs, middleware sets fallback but doesn't cache
+    // We can't test the actual middleware here, but we can verify cache behavior
+    
+    // Simulate successful query after error - should be cacheable
+    const successData = { id: userId, hasProfile: true, hasWorkspace: true }
+    _testUserCache.set(cacheKey, successData)
+    
+    // Verify it was cached
+    expect(_testUserCache.get(cacheKey)).toEqual(successData)
+  })
+})

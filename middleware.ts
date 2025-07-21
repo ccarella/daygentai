@@ -151,27 +151,42 @@ export async function middleware(request: NextRequest) {
     
     if (!userProfile) {
       // Cache miss - fetch from database
-      const [profileResult, workspaceResult] = await Promise.all([
-        supabase
-          .from('users')
-          .select('id')
-          .eq('id', user.id)
-          .single(),
-        supabase
-          .from('workspace_members')
-          .select('workspace_id')
-          .eq('user_id', user.id)
-          .limit(1)
-      ])
+      try {
+        const [profileResult, workspaceResult] = await Promise.all([
+          supabase
+            .from('users')
+            .select('id')
+            .eq('id', user.id)
+            .single(),
+          supabase
+            .from('workspace_members')
+            .select('workspace_id')
+            .eq('user_id', user.id)
+            .limit(1)
+        ])
 
-      userProfile = {
-        id: user.id,
-        hasProfile: !!profileResult.data,
-        hasWorkspace: (workspaceResult.data?.length ?? 0) > 0
+        userProfile = {
+          id: user.id,
+          hasProfile: !!profileResult.data,
+          hasWorkspace: (workspaceResult.data?.length ?? 0) > 0
+        }
+
+        // Store in cache only if queries succeeded
+        userCache.set(cacheKey, userProfile)
+      } catch (error) {
+        // Database error - log and continue without caching
+        console.error('Middleware database error:', error)
+        
+        // Fallback: assume user has no profile/workspace to force onboarding flow
+        // This is the safest default that won't lock users out
+        userProfile = {
+          id: user.id,
+          hasProfile: false,
+          hasWorkspace: false
+        }
+        
+        // Don't cache error states
       }
-
-      // Store in cache
-      userCache.set(cacheKey, userProfile)
     }
 
     const { hasProfile, hasWorkspace } = userProfile
