@@ -8,6 +8,7 @@ import { useIssueCache } from '@/contexts/issue-cache-context'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { subscribeToIssueStatusUpdates } from '@/lib/events/issue-events'
+import { CommentList } from './comment-list'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,17 @@ import { PromptDisplay } from './prompt-display'
 import { useToast } from '@/components/ui/use-toast'
 import { IssueDetailsSkeleton } from './issue-skeleton'
 import { Tag as TagComponent } from '@/components/ui/tag'
+
+type Comment = {
+  id: string;
+  content: string;
+  created_at: string;
+  user_id: string;
+  user: {
+    name: string;
+    avatar_url: string | null;
+  };
+}
 
 interface TagData {
   id: string
@@ -106,6 +118,10 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   const [isUpdatingType, setIsUpdatingType] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [comments, setComments] = useState<Comment[]>([])
+  const [isLoadingComments, setIsLoadingComments] = useState(true)
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   // Handle ESC key to navigate back
   useEffect(() => {
@@ -119,6 +135,59 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onBack, isEditModalOpen])
+
+  // Get current user ID
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setCurrentUserId(user.id)
+      }
+    }
+    getCurrentUser()
+  }, [])
+
+  // Fetch comments
+  useEffect(() => {
+    const fetchComments = async () => {
+      setIsLoadingComments(true)
+      const supabase = createClient()
+      
+      const { data, error } = await supabase
+        .from('comments')
+        .select(`
+          id,
+          content,
+          created_at,
+          user_id,
+          user:users!user_id (
+            name,
+            avatar_url
+          )
+        `)
+        .eq('issue_id', issueId)
+        .order('created_at', { ascending: true })
+      
+      if (!error && data) {
+        // Transform the data to ensure user is an object, not an array
+        const formattedComments: Comment[] = data.map((comment) => {
+          const userObj = Array.isArray(comment.user) ? comment.user[0] : comment.user
+          return {
+            id: comment.id as string,
+            content: comment.content as string,
+            created_at: comment.created_at as string,
+            user_id: comment.user_id as string,
+            user: userObj || { name: 'Unknown', avatar_url: null }
+          }
+        })
+        setComments(formattedComments)
+      }
+      setIsLoadingComments(false)
+    }
+    
+    fetchComments()
+  }, [issueId])
 
   useEffect(() => {
     const fetchIssue = async () => {
@@ -309,6 +378,57 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
 
   const handleEdit = () => {
     setIsEditModalOpen(true)
+  }
+
+  const handleAddComment = async (content: string) => {
+    if (!currentUserId || !issue) return
+    
+    setIsSubmittingComment(true)
+    const supabase = createClient()
+    
+    const { data, error } = await supabase
+      .from('comments')
+      .insert({
+        issue_id: issue.id,
+        user_id: currentUserId,
+        content
+      })
+      .select(`
+        id,
+        content,
+        created_at,
+        user_id,
+        user:users!user_id (
+          name,
+          avatar_url
+        )
+      `)
+      .single()
+    
+    if (!error && data) {
+      // Transform the data to ensure user is an object, not an array
+      const userData = Array.isArray(data.user) ? data.user[0] : data.user
+      const formattedComment: Comment = {
+        id: data.id,
+        content: data.content,
+        created_at: data.created_at,
+        user_id: data.user_id,
+        user: userData || { name: 'Unknown', avatar_url: null }
+      }
+      setComments([...comments, formattedComment])
+      toast({
+        title: "Comment added",
+        description: "Your comment has been posted successfully.",
+      })
+    } else {
+      toast({
+        title: "Failed to add comment",
+        description: error?.message || "An error occurred while posting your comment.",
+        variant: "destructive",
+      })
+    }
+    
+    setIsSubmittingComment(false)
   }
 
   const handleIssueUpdated = async () => {
@@ -528,6 +648,18 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
                     {createdAt && formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
                   </p>
                 </div>
+              </div>
+              
+              {/* Comments Section */}
+              <div className="mt-6">
+                {currentUserId && (
+                  <CommentList
+                    comments={comments}
+                    onAddComment={handleAddComment}
+                    isLoading={isLoadingComments}
+                    isSubmitting={isSubmittingComment}
+                  />
+                )}
               </div>
             </div>
           </div>
