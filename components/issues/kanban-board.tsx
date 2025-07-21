@@ -26,7 +26,8 @@ interface Issue {
   assignee_id: string | null
   workspace_id: string
   creator?: {
-    full_name: string | null
+    name: string
+    avatar_url?: string | null
   }
   issue_tags?: Array<{ tags: TagData }>
 }
