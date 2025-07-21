@@ -379,7 +379,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
       unsubscribeToggleSearch()
       unsubscribeSetStatusFilter()
     }
-  }, [handleBackToList, handleNavigateToInbox, handleToggleViewMode])
+  }, [handleBackToList, handleNavigateToInbox, handleToggleViewMode, setIsSearchVisible, setStatusFilter])
 
 
   return (
