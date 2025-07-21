@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { validateWorkspaceAccess } from '@/lib/validation/workspace-access'
+import { validateIssueUpdate } from '@/lib/validation/issue-validation'
 import { withTimeout, timeoutConfig } from '@/lib/middleware/timeout'
 import { 
   withErrorHandler, 
@@ -74,9 +75,15 @@ async function handlePATCH(
       return createUnauthorizedError()
     }
 
-    // Parse request body
+    // Parse and validate request body
     const body = await request.json()
-    const { status, type, priority, title, description, generated_prompt } = body
+    const validation = validateIssueUpdate(body)
+    
+    if (!validation.valid) {
+      return validation.error
+    }
+    
+    const validatedData = validation.data
 
     // Validate workspace access and issue ownership
     const { data: workspace } = await supabase
@@ -107,17 +114,11 @@ async function handlePATCH(
       return createNotFoundError('Issue')
     }
 
-    // Build update object with only provided fields
-    const updateData: Record<string, string | null | undefined> = {}
-    if (status !== undefined) updateData['status'] = status
-    if (type !== undefined) updateData['type'] = type
-    if (priority !== undefined) updateData['priority'] = priority
-    if (title !== undefined) updateData['title'] = title
-    if (description !== undefined) updateData['description'] = description
-    if (generated_prompt !== undefined) updateData['generated_prompt'] = generated_prompt
-
-    // Add updated timestamp
-    updateData['updated_at'] = new Date().toISOString()
+    // Build update object from validated data
+    const updateData: Record<string, string | null | undefined> = {
+      ...validatedData,
+      updated_at: new Date().toISOString()
+    }
 
     // Update the issue with workspace validation
     const { data: updatedIssue, error } = await supabase

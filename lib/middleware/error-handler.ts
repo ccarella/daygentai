@@ -233,10 +233,14 @@ export function withErrorHandler<T extends (...args: never[]) => Promise<Respons
     try {
       return await handler(...args)
     } catch (error) {
+      // In production, avoid exposing stack traces
+      const isDevelopment = process.env['NODE_ENV'] !== 'production'
+      
       console.error('API route error:', {
         error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        timestamp: new Date().toISOString()
+        stack: isDevelopment && error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString(),
+        environment: process.env['NODE_ENV'] || 'unknown'
       })
 
       // Check for specific error types

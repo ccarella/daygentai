@@ -25,6 +25,17 @@ function cleanupRequest(req: NextRequest) {
   }
 }
 
+// Type guard to check if the first argument is a NextRequest
+function isNextRequest(arg: unknown): arg is NextRequest {
+  return (
+    arg !== null &&
+    typeof arg === 'object' &&
+    'method' in arg &&
+    'url' in arg &&
+    'headers' in arg
+  )
+}
+
 /**
  * Creates a timeout wrapper for API route handlers
  * @param handler - The original API route handler
@@ -38,7 +49,13 @@ export function withTimeout<T extends (...args: never[]) => Promise<Response>>(
   const { timeoutMs = DEFAULT_TIMEOUT_MS } = config
 
   const wrappedHandler = async (...args: Parameters<T>): Promise<Response> => {
-    const req = (args as unknown[])[0] as NextRequest
+    // Safely extract the request with type guard
+    const firstArg = args[0]
+    if (!isNextRequest(firstArg)) {
+      console.error('withTimeout: First argument is not a NextRequest')
+      throw new Error('Invalid handler signature for timeout middleware')
+    }
+    const req: NextRequest = firstArg
     
     // Check if request is already being tracked (shouldn't happen in normal flow)
     if (activeRequests.has(req)) {
@@ -62,6 +79,13 @@ export function withTimeout<T extends (...args: never[]) => Promise<Response>>(
       timeoutId,
       startTime: Date.now()
     })
+
+    // Save request details for error logging
+    const requestDetails = {
+      method: req.method,
+      pathname: new URL(req.url).pathname,
+      userAgent: req.headers.get('user-agent')
+    }
 
     try {
       // Create a promise that rejects on timeout
@@ -90,10 +114,13 @@ export function withTimeout<T extends (...args: never[]) => Promise<Response>>(
         const tracking = activeRequests.get(req)
         const duration = tracking ? Date.now() - tracking.startTime : timeoutMs
         
+        // Only log detailed information in development
+        const isDevelopment = process.env['NODE_ENV'] !== 'production'
+        
         console.warn(`API request timeout after ${duration}ms:`, {
-          method: req.method,
-          url: req.url,
-          userAgent: req.headers.get('user-agent'),
+          method: requestDetails.method,
+          path: requestDetails.pathname,
+          userAgent: isDevelopment ? requestDetails.userAgent : undefined,
           timestamp: new Date().toISOString(),
           configured: timeoutMs
         })
