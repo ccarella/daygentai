@@ -201,13 +201,18 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
   // Subscribe to status updates
   useEffect(() => {
     const unsubscribe = subscribeToIssueStatusUpdates((event) => {
-      if (issue && event.detail.issueId === issue.id) {
-        setIssue({ ...issue, status: event.detail.newStatus as Issue['status'] })
+      if (event.detail.issueId === issueId) {
+        setIssue(prevIssue => {
+          if (!prevIssue) return prevIssue
+          return { ...prevIssue, status: event.detail.newStatus as Issue['status'] }
+        })
+        // Update cache after state update
+        updateIssue(issueId, { status: event.detail.newStatus as Issue['status'] })
       }
     })
 
     return unsubscribe
-  }, [issue])
+  }, [issueId, updateIssue])
 
   const handleDelete = async () => {
     if (!issue) return
