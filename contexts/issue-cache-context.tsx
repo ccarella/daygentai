@@ -64,9 +64,9 @@ interface ListCacheKey {
 
 interface IssueCacheContextType {
   // Individual issue methods
-  getIssue: (issueId: string) => IssueWithCreator | null
-  preloadIssue: (issueId: string) => Promise<void>
-  preloadIssues: (issueIds: string[]) => Promise<void>
+  getIssue: (issueId: string, workspaceId?: string) => IssueWithCreator | null
+  preloadIssue: (issueId: string, workspaceId?: string) => Promise<void>
+  preloadIssues: (issueIds: string[], workspaceId?: string) => Promise<void>
   updateIssue: (issueId: string, updates: Partial<IssueWithCreator>) => void
   removeIssue: (issueId: string) => void
   
@@ -159,7 +159,7 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
     }
   }, [isHydrated])
 
-  const getIssue = useCallback((issueId: string): IssueWithCreator | null => {
+  const getIssue = useCallback((issueId: string, workspaceId?: string): IssueWithCreator | null => {
     // Try memory cache first
     let issue = cache.get(issueId)
     
@@ -176,6 +176,17 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
         })
         // Issue loaded from localStorage
       }
+    }
+    
+    // Validate workspace if provided
+    if (issue && workspaceId && issue.workspace_id !== workspaceId) {
+      // Issue does not belong to the requested workspace
+      setCacheStats(prev => ({
+        ...prev,
+        misses: prev.misses + 1,
+        lastMiss: `${issueId} (wrong workspace)`
+      }))
+      return null
     }
     
     if (issue) {
@@ -288,9 +299,19 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
     invalidateWorkspaceListCache(workspaceId)
   }, [])
 
-  const preloadIssue = useCallback(async (issueId: string) => {
+  const preloadIssue = useCallback(async (issueId: string, workspaceId?: string) => {
     // Skip if already cached or currently loading
-    if (cache.has(issueId) || loadingIssues.has(issueId)) {
+    if (loadingIssues.has(issueId)) {
+      return
+    }
+    
+    // If already cached, check workspace match
+    const cachedIssue = cache.get(issueId)
+    if (cachedIssue) {
+      if (!workspaceId || cachedIssue.workspace_id === workspaceId) {
+        return
+      }
+      // Issue exists but wrong workspace - don't load
       return
     }
 
@@ -299,8 +320,8 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
     try {
       const supabase = createClient()
 
-      // Fetch issue with creator info
-      const { data: issue, error } = await supabase
+      // Build query
+      let query = supabase
         .from('issues')
         .select(`
           *,
@@ -310,7 +331,13 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
           )
         `)
         .eq('id', issueId)
-        .single()
+      
+      // Add workspace filter if provided
+      if (workspaceId) {
+        query = query.eq('workspace_id', workspaceId)
+      }
+      
+      const { data: issue, error } = await query.single()
 
       if (!error && issue) {
         // Issue loaded successfully
@@ -337,11 +364,21 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
     }
   }, [cache, loadingIssues])
 
-  const preloadIssues = useCallback(async (issueIds: string[]) => {
+  const preloadIssues = useCallback(async (issueIds: string[], workspaceId?: string) => {
     // Filter out already cached or loading issues
-    const issuesToLoad = issueIds.filter(
-      id => !cache.has(id) && !loadingIssues.has(id)
-    )
+    const issuesToLoad = issueIds.filter(id => {
+      if (loadingIssues.has(id)) return false
+      
+      const cachedIssue = cache.get(id)
+      if (cachedIssue) {
+        // If workspace specified, only skip if it matches
+        if (workspaceId && cachedIssue.workspace_id !== workspaceId) {
+          return false // Don't load issues from wrong workspace
+        }
+        return false // Already cached
+      }
+      return true
+    })
 
     if (issuesToLoad.length === 0) return
 
@@ -355,8 +392,8 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
     try {
       const supabase = createClient()
 
-      // Batch fetch all issues with creator info
-      const { data: issues, error } = await supabase
+      // Build query
+      let query = supabase
         .from('issues')
         .select(`
           *,
@@ -366,6 +403,13 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
           )
         `)
         .in('id', issuesToLoad)
+      
+      // Add workspace filter if provided
+      if (workspaceId) {
+        query = query.eq('workspace_id', workspaceId)
+      }
+
+      const { data: issues, error } = await query
 
       if (!error && issues) {
         // Batch load completed

@@ -155,6 +155,34 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
       setIsLoadingComments(true)
       const supabase = createClient()
       
+      // First get workspace ID from slug
+      const { data: workspace, error: workspaceError } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('slug', workspaceSlug)
+        .single()
+      
+      if (workspaceError || !workspace) {
+        setComments([])
+        setIsLoadingComments(false)
+        return
+      }
+      
+      // Then verify the issue belongs to the current workspace
+      const { data: issueData, error: issueError } = await supabase
+        .from('issues')
+        .select('id, workspace_id')
+        .eq('id', issueId)
+        .eq('workspace_id', workspace.id)
+        .single()
+      
+      if (issueError || !issueData) {
+        // Issue doesn't exist or doesn't belong to workspace
+        setComments([])
+        setIsLoadingComments(false)
+        return
+      }
+      
       const { data, error } = await supabase
         .from('comments')
         .select(`
@@ -188,14 +216,27 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
     }
     
     fetchComments()
-  }, [issueId])
+  }, [issueId, workspaceSlug])
 
   useEffect(() => {
     const fetchIssue = async () => {
-      // Check cache first
-      const cachedIssue = getIssue(issueId)
+      // First get workspace ID from slug
+      const supabase = createClient()
+      const { data: workspace, error: workspaceError } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('slug', workspaceSlug)
+        .single()
+      
+      if (workspaceError || !workspace) {
+        setLoading(false)
+        return
+      }
+      
+      // Check cache first with workspace validation
+      const cachedIssue = getIssue(issueId, workspace.id)
       if (cachedIssue) {
-        // Issue loaded from cache
+        // Issue loaded from cache and validated for workspace
         setIssue(cachedIssue)
         setCreatedAt(cachedIssue.created_at)
         
