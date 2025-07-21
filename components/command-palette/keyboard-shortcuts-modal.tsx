@@ -43,6 +43,7 @@ export function KeyboardShortcutsModal({ open, onOpenChange }: KeyboardShortcuts
       title: "Actions",
       shortcuts: [
         { keys: ["C"], description: "Create new issue" },
+        { keys: ["⌘", "B"], description: "Toggle list/kanban view" },
       ]
     },
     {
