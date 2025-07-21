@@ -108,6 +108,19 @@ export function ProfileSettings({ onAvatarUpdate }: ProfileSettingsProps) {
 
       if (profileError) throw profileError
 
+      // Invalidate middleware cache for this user
+      if (typeof window !== 'undefined') {
+        try {
+          await fetch('/api/cache/invalidate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id })
+          })
+        } catch (cacheError) {
+          console.warn('Failed to invalidate cache:', cacheError)
+        }
+      }
+
       // Update email if changed
       if (email !== user.email) {
         const { error: emailError } = await supabase.auth.updateUser({

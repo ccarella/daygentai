@@ -109,6 +109,19 @@ export default function CreateWorkspaceForm() {
         // Don't throw here as workspace is already created
       }
 
+      // Invalidate middleware cache for this user
+      if (typeof window !== 'undefined') {
+        try {
+          await fetch('/api/cache/invalidate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id })
+          })
+        } catch (cacheError) {
+          console.warn('Failed to invalidate cache:', cacheError)
+        }
+      }
+
       router.push(`/${slug}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')

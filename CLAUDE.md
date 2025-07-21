@@ -119,11 +119,11 @@ users:
   - email
   - created_at
 
--- User profiles
-profiles:
+-- Users table (public schema)
+users:
   - id (uuid, primary key, references auth.users)
-  - first_name
-  - last_name
+  - name
+  - avatar_url
   - created_at
   - updated_at
 
@@ -132,7 +132,11 @@ workspaces:
   - id (uuid, primary key)
   - name
   - slug (unique)
-  - owner_id (references profiles.id)
+  - avatar_url
+  - owner_id (references auth.users)
+  - api_key (encrypted)
+  - api_provider
+  - agents_content
   - created_at
   - updated_at
 
@@ -142,11 +146,24 @@ issues:
   - workspace_id (references workspaces.id)
   - title
   - description (markdown supported)
-  - type (enum: BUG, FEATURE, IMPROVEMENT, TASK)
-  - priority (enum: LOW, MEDIUM, HIGH, URGENT)
-  - status (enum: OPEN, IN_PROGRESS, DONE, CLOSED)
-  - created_by (references profiles.id)
-  - assigned_to (references profiles.id, nullable)
+  - type (enum: bug, feature, task, epic, spike, chore, design, non-technical)
+  - priority (enum: critical, high, medium, low)
+  - status (enum: todo, in_progress, in_review, done)
+  - created_by (references auth.users)
+  - creator_id (references users.id)
+  - assignee_id (references auth.users, nullable)
+  - generated_prompt (AI-generated prompt)
+  - prompt_status (enum: pending, generating, completed, failed)
+  - prompt_generated_at
+  - created_at
+  - updated_at
+
+-- Workspace Members
+workspace_members:
+  - id (uuid, primary key)
+  - workspace_id (references workspaces.id)
+  - user_id (references auth.users)
+  - role (enum: owner, admin, member, viewer)
   - created_at
   - updated_at
 ```

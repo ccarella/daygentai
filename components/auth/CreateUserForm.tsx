@@ -41,6 +41,19 @@ export default function CreateUserForm() {
         throw insertError
       }
 
+      // Invalidate middleware cache for this user
+      if (typeof window !== 'undefined') {
+        try {
+          await fetch('/api/cache/invalidate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id })
+          })
+        } catch (cacheError) {
+          console.warn('Failed to invalidate cache:', cacheError)
+        }
+      }
+
       router.push('/CreateWorkspace')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')

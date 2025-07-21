@@ -50,6 +50,22 @@ export function ApiSettings({ workspaceId, initialSettings }: ApiSettingsProps) 
       
       // Update the workspace context with the new API key status
       updateApiKeyStatus(apiKey.length > 0, provider, agentsContent)
+
+      // Invalidate middleware cache for all users in this workspace
+      if (typeof window !== 'undefined') {
+        try {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            await fetch('/api/cache/invalidate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: user.id })
+            })
+          }
+        } catch (cacheError) {
+          console.warn('Failed to invalidate cache:', cacheError)
+        }
+      }
       
       setMessage({ type: 'success', text: 'API settings saved successfully!' })
     } catch (error) {
