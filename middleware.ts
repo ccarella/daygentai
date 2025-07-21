@@ -65,8 +65,10 @@ class LRUCache<T> {
     }
 
     // Remove entries matching pattern
+    // Use exact matching to prevent unintended invalidations
+    // e.g., "user:123" won't match "user:1234"
     for (const key of this.cache.keys()) {
-      if (key.includes(pattern)) {
+      if (key === pattern || key.startsWith(pattern + ':')) {
         this.cache.delete(key)
       }
     }
