@@ -23,7 +23,6 @@ interface Issue {
   status: 'todo' | 'in_progress' | 'in_review' | 'done'
   created_at: string
   created_by: string
-  creator_id?: string | null
   assignee_id: string | null
   workspace_id: string
 }
