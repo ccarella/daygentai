@@ -23,6 +23,7 @@ interface Issue {
   status: 'todo' | 'in_progress' | 'in_review' | 'done'
   created_at: string
   created_by: string
+  creator_id?: string | null
   assignee_id: string | null
   workspace_id: string
   creator?: {
@@ -159,6 +160,10 @@ export function KanbanBoard({
               name,
               color
             )
+          ),
+          creator:creator_id (
+            name,
+            avatar_url
           )
         `)
         .eq('workspace_id', workspaceId)

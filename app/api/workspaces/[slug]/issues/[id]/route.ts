@@ -30,7 +30,8 @@ export async function GET(
     const { data: issue, error } = await supabase
       .from('issues')
       .select(`
-        *
+        *,
+        creator:creator_id (name, avatar_url)
       `)
       .eq('id', id)
       .eq('workspace_id', workspace.id)
@@ -40,16 +41,9 @@ export async function GET(
       return NextResponse.json({ error: 'Issue not found' }, { status: 404 })
     }
 
-    // Fetch creator info
-    const { data: creator } = await supabase
-      .from('users')
-      .select('name, avatar_url')
-      .eq('id', issue.created_by)
-      .single()
-
     return NextResponse.json({ 
       issue,
-      creator: creator || { name: 'Unknown', avatar_url: null }
+      creator: issue.creator || { name: 'Unknown', avatar_url: null }
     })
   } catch (error) {
     console.error('Error fetching issue:', error)

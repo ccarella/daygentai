@@ -42,10 +42,15 @@ interface Issue {
   status: 'todo' | 'in_progress' | 'in_review' | 'done'
   created_at: string
   created_by: string
+  creator_id?: string | null
   assignee_id: string | null
   workspace_id: string
   generated_prompt?: string | null
   issue_tags?: Array<{ tags: TagData }>
+  creator?: {
+    name: string
+    avatar_url?: string | null
+  }
 }
 
 interface IssueDetailsProps {
@@ -127,20 +132,26 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
         setIssue(cachedIssue)
         setCreatedAt(cachedIssue.created_at)
         
-        // Still need to fetch creator info if not in cache
-        const supabase = createClient()
-        const { data: user } = await supabase
-          .from('users')
-          .select('name, avatar_url')
-          .eq('id', cachedIssue.created_by)
-          .single()
-
-        if (user) {
-          setCreatorName(user.name.trim() || 'Unknown')
-          setCreatorAvatar(user.avatar_url)
+        // Use creator info from cache if available
+        if (cachedIssue.creator) {
+          setCreatorName(cachedIssue.creator.name?.trim() || 'Unknown')
+          setCreatorAvatar(cachedIssue.creator.avatar_url || null)
         } else {
-          setCreatorName('Unknown')
-          setCreatorAvatar(null)
+          // Fallback: fetch creator info if not in cache
+          const supabase = createClient()
+          const { data: user } = await supabase
+            .from('users')
+            .select('name, avatar_url')
+            .eq('id', cachedIssue.created_by)
+            .single()
+
+          if (user) {
+            setCreatorName(user.name.trim() || 'Unknown')
+            setCreatorAvatar(user.avatar_url)
+          } else {
+            setCreatorName('Unknown')
+            setCreatorAvatar(null)
+          }
         }
         
         setLoading(false)
@@ -164,6 +175,10 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
               name,
               color
             )
+          ),
+          creator:creator_id (
+            name,
+            avatar_url
           )
         `)
         .eq('id', issueId)
@@ -178,16 +193,10 @@ export function IssueDetails({ issueId, onBack, onDeleted }: IssueDetailsProps) 
       setIssue(issue)
       setCreatedAt(issue.created_at)
 
-      // Fetch creator info
-      const { data: user } = await supabase
-        .from('users')
-        .select('name, avatar_url')
-        .eq('id', issue.created_by)
-        .single()
-
-      if (user) {
-        setCreatorName(user.name.trim() || 'Unknown')
-        setCreatorAvatar(user.avatar_url)
+      // Use creator info from joined query
+      if (issue.creator) {
+        setCreatorName(issue.creator.name?.trim() || 'Unknown')
+        setCreatorAvatar(issue.creator.avatar_url || null)
       } else {
         setCreatorName('Unknown')
         setCreatorAvatar(null)

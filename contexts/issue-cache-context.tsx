@@ -23,6 +23,7 @@ interface Issue {
   status: 'todo' | 'in_progress' | 'in_review' | 'done'
   created_at: string
   created_by: string
+  creator_id?: string | null
   assignee_id: string | null
   workspace_id: string
 }
@@ -30,6 +31,7 @@ interface Issue {
 interface IssueWithCreator extends Issue {
   creator?: {
     name: string
+    avatar_url?: string | null
   }
 }
 
@@ -306,7 +308,11 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
       const { data: issue, error } = await supabase
         .from('issues')
         .select(`
-          *
+          *,
+          creator:creator_id (
+            name,
+            avatar_url
+          )
         `)
         .eq('id', issueId)
         .single()
@@ -360,7 +366,11 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
       const { data: issues, error } = await supabase
         .from('issues')
         .select(`
-          *
+          *,
+          creator:creator_id (
+            name,
+            avatar_url
+          )
         `)
         .in('id', issuesToLoad)
 
@@ -410,7 +420,11 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
       const { data: issues, error } = await supabase
         .from('issues')
         .select(`
-          *
+          *,
+          creator:creator_id (
+            name,
+            avatar_url
+          )
         `)
         .eq('workspace_id', workspaceId)
         .neq('status', 'done')

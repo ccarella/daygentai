@@ -25,8 +25,13 @@ interface Issue {
   status: 'todo' | 'in_progress' | 'in_review' | 'done'
   created_at: string
   created_by: string
+  creator_id?: string | null
   assignee_id: string | null
   issue_tags?: Array<{ tags: TagData }>
+  creator?: {
+    name: string
+    avatar_url?: string | null
+  }
 }
 
 interface IssuesListProps {
@@ -223,6 +228,10 @@ export function IssuesList({
             name,
             color
           )
+        ),
+        creator:creator_id (
+          name,
+          avatar_url
         )
       `)
       .eq('workspace_id', workspaceId)
