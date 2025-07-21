@@ -650,6 +650,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
           <KanbanBoard
             key={`kanban-${refreshKey}`}
             workspaceId={workspace.id}
+            workspaceSlug={workspace.slug}
             onIssueClick={handleIssueClick}
             statusFilter={statusFilter}
             priorityFilter={priorityFilter}

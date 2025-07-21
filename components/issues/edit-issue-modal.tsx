@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +14,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useWorkspace } from '@/contexts/workspace-context';
 import { TagInput, type TagOption } from '@/components/ui/tag-input';
 import { getWorkspaceTags, createTag, updateIssueTags, getIssueTags } from '@/lib/tags';
-import { handleAIError, handleDatabaseError, handleError } from '@/lib/error-handler';
+import { handleAIError, handleError } from '@/lib/error-handler';
 
 interface Issue {
   id: string;
@@ -129,8 +128,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
     setIsSubmitDisabled(true);
     setError('');
 
-    try {
-      const supabase = createClient();
+    try {;
       
       let generatedPrompt = issue.generated_prompt; // Keep existing prompt by default
       
@@ -163,26 +161,30 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
         generatedPrompt = null;
       }
       
-      const { error: updateError } = await supabase
-        .from('issues')
-        .update({
+      const response = await fetch(`/api/workspaces/${workspace?.slug}/issues/${issue.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           title: title.trim(),
           description: description.trim(),
           type,
           priority,
           status,
           generated_prompt: generatedPrompt,
-        })
-        .eq('id', issue.id);
+        }),
+      })
 
-      if (updateError) {
-        handleDatabaseError(updateError, 'update issue');
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.error || 'Failed to update issue'
         toast({
           title: "Failed to update issue",
-          description: updateError.message || "An error occurred while updating the issue.",
+          description: errorMessage,
           variant: "destructive",
         });
-        setError('Failed to update issue: ' + updateError.message);
+        setError('Failed to update issue: ' + errorMessage);
         return;
       }
       

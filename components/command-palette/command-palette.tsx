@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { Search, FileText, Inbox, Plus, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle, Circle, Loader2 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { 
   emitIssueStatusUpdate, 
   emitCreateIssueRequest,
@@ -226,29 +225,34 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       handlers[option.value] = async () => {
         setIsOpen(false)
         setIsLoadingAction(true)
-        const supabase = createClient()
         
         try {
-          const { error } = await supabase
-            .from('issues')
-            .update({ status: option.value })
-            .eq('id', currentIssue.id)
+          const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${currentIssue.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: option.value }),
+          })
 
-          if (!error) {
-            onIssueStatusChange(option.value)
-            emitIssueStatusUpdate(currentIssue.id, option.value)
-            
-            toast({
-              title: "Status updated",
-              description: `Issue status changed to ${option.label}`,
-            })
-          } else {
-            toast({
-              title: "Error updating status",
-              description: error.message || "Failed to update issue status. Please try again.",
-              variant: "destructive",
-            })
+          if (!response.ok) {
+            const error = await response.json()
+            throw new Error(error.error || 'Failed to update status')
           }
+
+          onIssueStatusChange(option.value)
+          emitIssueStatusUpdate(currentIssue.id, option.value)
+          
+          toast({
+            title: "Status updated",
+            description: `Issue status changed to ${option.label}`,
+          })
+        } catch (error) {
+          toast({
+            title: "Error updating status",
+            description: error instanceof Error ? error.message : "Failed to update issue status. Please try again.",
+            variant: "destructive",
+          })
         } finally {
           setIsLoadingAction(false)
         }
@@ -256,7 +260,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
     })
     
     return handlers
-  }, [currentIssue?.id, onIssueStatusChange, setIsOpen, toast, currentIssue])
+  }, [currentIssue?.id, onIssueStatusChange, setIsOpen, toast, currentIssue, workspaceSlug])
   
   const commands: Command[] = React.useMemo(() => {
     const baseCommands: Command[] = []

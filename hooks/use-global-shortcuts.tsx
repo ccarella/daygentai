@@ -3,7 +3,6 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useCommandPalette } from '@/hooks/use-command-palette'
-import { createClient } from '@/lib/supabase/client'
 import { emitIssueStatusUpdate, emitToggleViewMode } from '@/lib/events/issue-events'
 import { useKeyboardContext, KeyboardPriority } from '@/lib/keyboard'
 import { useToast } from '@/components/ui/use-toast'
@@ -45,14 +44,20 @@ export function useGlobalShortcuts({
     // Attempting status change
     if (!currentIssue || !onIssueStatusChange) return
     
-    const supabase = createClient()
-    
-    const { error } = await supabase
-      .from('issues')
-      .update({ status: newStatus })
-      .eq('id', currentIssue.id)
+    try {
+      const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${currentIssue.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
 
-    if (!error) {
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update status')
+      }
+
       onIssueStatusChange(newStatus)
       // Status changed successfully
       emitIssueStatusUpdate(currentIssue.id, newStatus)
@@ -60,11 +65,11 @@ export function useGlobalShortcuts({
         title: "Status updated",
         description: `Issue status changed to ${newStatus.toLowerCase().replace('_', ' ')}.`,
       })
-    } else {
+    } catch (error) {
       console.error('Error changing status:', error)
       toast({
         title: "Failed to update status",
-        description: error.message || "An error occurred while updating the issue status.",
+        description: error instanceof Error ? error.message : "An error occurred while updating the issue status.",
         variant: "destructive",
       })
     }
