@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { KeyboardProvider } from "@/lib/keyboard";
 import { UserProfileProvider } from "@/contexts/user-profile-context";
+import { UserWorkspacesProvider } from "@/contexts/user-workspaces-context";
 import { MobileMenuProvider } from "@/contexts/mobile-menu-context";
 import { PersistentHeader } from "@/components/layout/persistent-header";
 
@@ -39,13 +40,15 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden`}
       >
         <UserProfileProvider>
-          <MobileMenuProvider>
-            <KeyboardProvider>
-              <PersistentHeader />
-              {children}
-              <Toaster />
-            </KeyboardProvider>
-          </MobileMenuProvider>
+          <UserWorkspacesProvider>
+            <MobileMenuProvider>
+              <KeyboardProvider>
+                <PersistentHeader />
+                {children}
+                <Toaster />
+              </KeyboardProvider>
+            </MobileMenuProvider>
+          </UserWorkspacesProvider>
         </UserProfileProvider>
       </body>
     </html>
