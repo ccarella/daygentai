@@ -98,6 +98,7 @@ export function IssuesList({
   const preloadedIssuesRef = useRef<Set<string>>(new Set())
   const listContainerRef = useRef<HTMLDivElement>(null)
   const preloadTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const fetchIssues = useCallback(async (pageNum: number, append = false, skipCache = false) => {
     if (isLoadingRef.current && !skipCache) return { issues: [], hasMore: false, totalCount: 0 }
@@ -449,6 +450,40 @@ export function IssuesList({
     setLoadingMore(false)
   }
 
+  // Hover handlers for prefetching
+  const handleMouseEnter = useCallback((issueId: string) => {
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+    }
+    
+    // Set a new timeout for prefetching after 150ms
+    hoverTimeoutRef.current = setTimeout(() => {
+      if (!preloadedIssuesRef.current.has(issueId)) {
+        console.log('[Performance] Hover prefetch triggered for issue:', issueId)
+        preloadedIssuesRef.current.add(issueId)
+        preloadIssues([issueId])
+      }
+    }, 150) // 150ms delay to avoid prefetching during quick mouse movements
+  }, [preloadIssues])
+
+  const handleMouseLeave = useCallback(() => {
+    // Clear the timeout if mouse leaves before prefetch triggers
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+      hoverTimeoutRef.current = null
+    }
+  }, [])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const truncateDescription = (description: string | null, maxLength: number = 100) => {
     if (!description) return ''
     const plainText = stripMarkdown(description)
@@ -529,6 +564,8 @@ export function IssuesList({
                   router.push(`/${workspaceSlug}/issue/${issue.id}`)
                 }
               }}
+              onMouseEnter={() => handleMouseEnter(issue.id)}
+              onMouseLeave={handleMouseLeave}
             >
               {/* Issue Content */}
               <div className="flex-1 min-w-0">
