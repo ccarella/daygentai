@@ -4,7 +4,7 @@ import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useCommandPalette } from '@/hooks/use-command-palette'
 import { createClient } from '@/lib/supabase/client'
-import { emitIssueStatusUpdate } from '@/lib/events/issue-events'
+import { emitIssueStatusUpdate, emitToggleViewMode } from '@/lib/events/issue-events'
 import { useKeyboardContext, KeyboardPriority } from '@/lib/keyboard'
 import { useToast } from '@/components/ui/use-toast'
 
@@ -93,14 +93,14 @@ export function useGlobalShortcuts({
       },
       'cmd+b': {
         handler: () => {
-          onToggleViewMode?.()
+          emitToggleViewMode()
           return true
         },
         description: 'Toggle view mode',
       },
       'ctrl+b': {
         handler: () => {
-          onToggleViewMode?.()
+          emitToggleViewMode()
           return true
         },
         description: 'Toggle view mode',
