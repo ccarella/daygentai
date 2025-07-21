@@ -118,12 +118,20 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
     // TODO: Implement recent issues
   }, [])
   
+  // Define refs first before using them
+  const nextIssueRequestRef = React.useRef<boolean>(false)
+  const isMountedRef = React.useRef<boolean>(true)
+  
   // Memoize the modal close handler
   const handleNextIssueModalChange = React.useCallback((open: boolean) => {
     setNextIssueModalOpen(open)
     if (!open) {
+      // Cancel any pending request when modal is closed
+      nextIssueRequestRef.current = false
       // Reset data when modal is closed
       setNextIssueData({})
+      // Reset loading state
+      setIsLoadingNextIssue(false)
     }
   }, [])
   
@@ -138,7 +146,6 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
     error?: string
   }>({})
   const [isLoadingNextIssue, setIsLoadingNextIssue] = React.useState(false)
-  const nextIssueRequestRef = React.useRef<boolean>(false)
 
   // Effect to track currentIssue changes
   React.useEffect(() => {
@@ -147,8 +154,10 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   
   // Cleanup effect to cancel pending requests
   React.useEffect(() => {
+    isMountedRef.current = true
     return () => {
       // Cancel any pending next issue request when component unmounts
+      isMountedRef.current = false
       nextIssueRequestRef.current = false
     }
   }, [])
@@ -169,28 +178,34 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       const result = await recommendNextIssueAction(workspaceId)
       
       // Check if component is still mounted and request wasn't cancelled
-      if (!nextIssueRequestRef.current) {
+      if (!isMountedRef.current || !nextIssueRequestRef.current) {
         return
       }
       
       if (result.error && result.retryCount !== undefined && result.retryCount >= 3) {
         // If we failed after retries, provide a more detailed error message
-        setNextIssueData({
-          ...result,
-          error: `${result.error} (Attempted ${result.retryCount} times with different prompting strategies)`
-        })
+        if (isMountedRef.current && nextIssueRequestRef.current) {
+          setNextIssueData({
+            ...result,
+            error: `${result.error} (Attempted ${result.retryCount} times with different prompting strategies)`
+          })
+        }
       } else {
-        setNextIssueData(result)
+        if (isMountedRef.current && nextIssueRequestRef.current) {
+          setNextIssueData(result)
+        }
       }
     } catch (error) {
       console.error('Error getting AI recommendation:', error)
-      if (nextIssueRequestRef.current) {
+      if (isMountedRef.current && nextIssueRequestRef.current) {
         setNextIssueData({
           error: 'Failed to get recommendation. Please try again.'
         })
       }
     } finally {
-      setIsLoadingNextIssue(false)
+      if (isMountedRef.current) {
+        setIsLoadingNextIssue(false)
+      }
       nextIssueRequestRef.current = false
     }
   }, [workspaceId, setIsOpen])
