@@ -1,9 +1,94 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Cache configuration
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+const CACHE_VERSION = 1
+
+interface CacheEntry<T> {
+  data: T
+  timestamp: number
+  version: number
+}
+
+interface UserProfile {
+  id: string
+  hasProfile: boolean
+  hasWorkspace: boolean
+}
+
+// Simple in-memory LRU cache implementation
+class LRUCache<T> {
+  private cache: Map<string, CacheEntry<T>> = new Map()
+  private maxSize: number
+
+  constructor(maxSize: number = 1000) {
+    this.maxSize = maxSize
+  }
+
+  get(key: string): T | null {
+    const entry = this.cache.get(key)
+    if (!entry) return null
+
+    // Check if expired or wrong version
+    const age = Date.now() - entry.timestamp
+    if (age > CACHE_TTL || entry.version !== CACHE_VERSION) {
+      this.cache.delete(key)
+      return null
+    }
+
+    // Move to end (most recently used)
+    this.cache.delete(key)
+    this.cache.set(key, entry)
+    
+    return entry.data
+  }
+
+  set(key: string, data: T): void {
+    // If at capacity, remove least recently used
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value
+      if (firstKey) this.cache.delete(firstKey)
+    }
+
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      version: CACHE_VERSION
+    })
+  }
+
+  invalidate(pattern?: string): void {
+    if (!pattern) {
+      this.cache.clear()
+      return
+    }
+
+    // Remove entries matching pattern
+    for (const key of this.cache.keys()) {
+      if (key.includes(pattern)) {
+        this.cache.delete(key)
+      }
+    }
+  }
+}
+
+// Global cache instance (persists across requests in the same process)
+const userCache = new LRUCache<UserProfile>()
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   
+  // Early exit for static assets and API routes
+  if (
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/api/') ||
+    pathname.includes('.') || // Any file with extension
+    pathname === '/favicon.ico'
+  ) {
+    return NextResponse.next()
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -44,9 +129,7 @@ export async function middleware(request: NextRequest) {
     !pathname.startsWith('/CreateUser') && 
     !pathname.startsWith('/CreateWorkspace') && 
     !pathname.startsWith('/success') &&
-    !pathname.startsWith('/checkemail') &&
-    !pathname.startsWith('/_next') &&
-    !pathname.includes('.')
+    !pathname.startsWith('/checkemail')
 
   if ((isProtectedRoute || isWorkspaceRoute) && !user) {
     return NextResponse.redirect(new URL('/', request.url))
@@ -54,31 +137,47 @@ export async function middleware(request: NextRequest) {
 
   // If user is authenticated, check their profile and workspace status
   if (user) {
-    const { data: profile } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', user.id)
-      .single()
+    const cacheKey = `user:${user.id}`
+    
+    // Try to get from cache first
+    let userProfile = userCache.get(cacheKey)
+    
+    if (!userProfile) {
+      // Cache miss - fetch from database
+      const [profileResult, workspaceResult] = await Promise.all([
+        supabase
+          .from('users')
+          .select('id')
+          .eq('id', user.id)
+          .single(),
+        supabase
+          .from('workspace_members')
+          .select('workspace_id')
+          .eq('user_id', user.id)
+          .limit(1)
+      ])
 
-    // Check if user has any workspaces through workspace_members
-    const { data: workspaceMemberships } = await supabase
-      .from('workspace_members')
-      .select('workspace_id')
-      .eq('user_id', user.id)
-      .limit(1)
+      userProfile = {
+        id: user.id,
+        hasProfile: !!profileResult.data,
+        hasWorkspace: (workspaceResult.data?.length ?? 0) > 0
+      }
 
+      // Store in cache
+      userCache.set(cacheKey, userProfile)
+    }
 
-    const hasWorkspace = (workspaceMemberships?.length ?? 0) > 0
+    const { hasProfile, hasWorkspace } = userProfile
 
     // Redirect logic based on user's progress
-    if (pathname === '/CreateUser' && profile) {
+    if (pathname === '/CreateUser' && hasProfile) {
       // User already has profile, send to workspace creation or success
       return NextResponse.redirect(new URL(hasWorkspace ? '/success' : '/CreateWorkspace', request.url))
     }
 
     if (pathname === '/CreateWorkspace') {
       // If no profile, redirect to create user first
-      if (!profile) {
+      if (!hasProfile) {
         return NextResponse.redirect(new URL('/CreateUser', request.url))
       }
       // If already has workspace, redirect to success
@@ -89,7 +188,7 @@ export async function middleware(request: NextRequest) {
 
     if (pathname === '/success') {
       // Ensure user has both profile and workspace
-      if (!profile) {
+      if (!hasProfile) {
         return NextResponse.redirect(new URL('/CreateUser', request.url))
       }
       if (!hasWorkspace) {
@@ -99,7 +198,7 @@ export async function middleware(request: NextRequest) {
 
     // If accessing a workspace route, ensure user has profile
     if (isWorkspaceRoute) {
-      if (!profile) {
+      if (!hasProfile) {
         return NextResponse.redirect(new URL('/CreateUser', request.url))
       }
       // For workspace routes, we'll check access in the page components
@@ -114,6 +213,18 @@ export async function middleware(request: NextRequest) {
 
   return supabaseResponse
 }
+
+// Export cache invalidation function for use in API routes
+export function invalidateUserCache(userId?: string) {
+  if (userId) {
+    userCache.invalidate(`user:${userId}`)
+  } else {
+    userCache.invalidate()
+  }
+}
+
+// Export cache for testing purposes
+export const _testUserCache = userCache
 
 export const config = {
   matcher: [

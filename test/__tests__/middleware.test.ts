@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest, NextResponse } from 'next/server'
-import { middleware } from '@/middleware'
+import { middleware, _testUserCache } from '@/middleware'
 import { createServerClient } from '@supabase/ssr'
 import { createMockUser } from '@/test/fixtures/users'
 
@@ -34,6 +34,9 @@ describe('middleware', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    
+    // Clear the middleware cache before each test
+    _testUserCache.invalidate()
     
     // Setup mock cookies
     mockCookies = {
@@ -106,7 +109,9 @@ describe('middleware', () => {
       for (const path of staticPaths) {
         mockRequest.nextUrl.pathname = path
         await middleware(mockRequest as NextRequest)
+        expect(createServerClient).not.toHaveBeenCalled()
         expect(NextResponse.redirect).not.toHaveBeenCalled()
+        vi.clearAllMocks() // Clear mocks between iterations
       }
     })
   })
@@ -448,15 +453,25 @@ describe('middleware', () => {
         error: null 
       })
       
-      mockSupabase.from.mockImplementation(() => ({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockRejectedValue(new Error('Database error')),
-      }))
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'workspace_members') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            limit: vi.fn().mockRejectedValue(new Error('Database error')),
+          }
+        } else {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockRejectedValue(new Error('Database error')),
+          }
+        }
+      })
       
       mockRequest.nextUrl.pathname = '/success'
       
-      // Should handle the error and not crash
+      // Should throw the database error
       await expect(middleware(mockRequest as NextRequest)).rejects.toThrow('Database error')
     })
   })
