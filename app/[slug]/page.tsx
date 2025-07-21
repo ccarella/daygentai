@@ -11,7 +11,6 @@ export default function WorkspacePage({ params }: { params: Promise<{ slug: stri
   const { workspace } = useWorkspace()
   const contentRef = useRef<WorkspaceContentRef>(null)
   const [refreshKey, setRefreshKey] = useState(0)
-  const [userAvatar, setUserAvatar] = useState<string | null>(null)
 
   const handleIssueCreated = () => {
     setRefreshKey(prev => prev + 1)
@@ -29,16 +28,8 @@ export default function WorkspacePage({ params }: { params: Promise<{ slug: stri
     contentRef.current?.navigateToCookbook()
   }
 
-  const handleNavigateToSettings = () => {
-    contentRef.current?.navigateToSettings()
-  }
-
   // These handlers were previously used with AppCommandPalette
   // which is now handled at the layout level
-
-  const handleAvatarUpdate = (newAvatar: string) => {
-    setUserAvatar(newAvatar)
-  }
 
   if (!workspace) return null
 
@@ -49,14 +40,11 @@ export default function WorkspacePage({ params }: { params: Promise<{ slug: stri
       onNavigateToIssues={handleNavigateToIssues}
       onNavigateToInbox={handleNavigateToInbox}
       onNavigateToCookbook={handleNavigateToCookbook}
-      onNavigateToSettings={handleNavigateToSettings}
-      userAvatar={userAvatar}
     >
       <WorkspaceContent 
         ref={contentRef}
         key={refreshKey} 
         workspace={workspace}
-        onAvatarUpdate={handleAvatarUpdate}
       />
     </WorkspaceWithMobileNav>
   )

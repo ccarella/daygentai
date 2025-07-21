@@ -2,7 +2,10 @@
 
 import { WorkspaceWithMobileNav } from '@/components/layout/workspace-with-mobile-nav'
 import { ApiSettings } from '@/components/settings/api-settings'
+import { DangerZoneSettings } from '@/components/settings/danger-zone-settings'
 import { useWorkspace } from '@/contexts/workspace-context'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 
 interface SettingsPageContentProps {
   workspace: {
@@ -21,9 +24,23 @@ interface SettingsPageContentProps {
 
 export function SettingsPageContent({ workspace: serverWorkspace, initialSettings }: SettingsPageContentProps) {
   const { workspace } = useWorkspace()
+  const [isOwner, setIsOwner] = useState(false)
   
   // Use the workspace from context if available, otherwise fall back to server data
   const currentWorkspace = workspace || serverWorkspace
+  
+  // Check if current user is the owner
+  useEffect(() => {
+    const checkOwnership = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      setIsOwner(user?.id === currentWorkspace?.owner_id)
+    }
+    
+    if (currentWorkspace) {
+      checkOwnership()
+    }
+  }, [currentWorkspace])
   
   if (!currentWorkspace) return null
   
@@ -35,7 +52,7 @@ export function SettingsPageContent({ workspace: serverWorkspace, initialSetting
 
   return (
     <WorkspaceWithMobileNav workspace={currentWorkspace}>
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto p-6 space-y-8">
         <div className="mb-8">
           <h1 className="text-2xl font-bold mb-2">Workspace Settings</h1>
           <p className="text-muted-foreground">Manage your workspace configuration and integrations</p>
@@ -45,6 +62,10 @@ export function SettingsPageContent({ workspace: serverWorkspace, initialSetting
           workspaceId={currentWorkspace.id}
           initialSettings={settings}
         />
+        
+        {isOwner && (
+          <DangerZoneSettings workspaceId={currentWorkspace.id} />
+        )}
       </div>
     </WorkspaceWithMobileNav>
   )

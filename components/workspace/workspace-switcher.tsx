@@ -28,7 +28,7 @@ interface WorkspaceSwitcherProps {
     name: string
     slug: string
     avatar_url: string | null
-  }
+  } | null
   workspaces: UserWorkspace[]
   collapsed?: boolean
 }
@@ -41,7 +41,7 @@ export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = fa
   const handleWorkspaceChange = (slug: string) => {
     if (slug === 'create-new') {
       setCreateModalOpen(true)
-    } else if (slug !== currentWorkspace.slug) {
+    } else if (!currentWorkspace || slug !== currentWorkspace.slug) {
       router.push(`/${slug}`)
     }
     setOpen(false)
@@ -63,7 +63,7 @@ export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = fa
             aria-expanded={open}
             className="w-10 h-10 p-0 hover:bg-accent"
           >
-            <span className="text-xl">{currentWorkspace.avatar_url || '🏢'}</span>
+            <span className="text-xl">{currentWorkspace?.avatar_url || '🏢'}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[240px] p-0" align="start">
@@ -87,11 +87,11 @@ export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = fa
                     <span className="text-lg mr-2">{workspace.avatar_url || '🏢'}</span>
                     <span className={cn(
                       "flex-1",
-                      workspace.slug === currentWorkspace.slug && "font-semibold"
+                      currentWorkspace && workspace.slug === currentWorkspace.slug && "font-semibold"
                     )}>
                       {workspace.name}
                     </span>
-                    {workspace.slug === currentWorkspace.slug && (
+                    {currentWorkspace && workspace.slug === currentWorkspace?.slug && (
                       <Check className="ml-2 h-4 w-4" />
                     )}
                   </CommandItem>
@@ -133,8 +133,8 @@ export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = fa
           className="w-full justify-between px-3 py-2 h-auto font-normal hover:bg-accent"
         >
           <div className="flex items-center space-x-3">
-            <span className="text-2xl">{currentWorkspace.avatar_url || '🏢'}</span>
-            <span className="font-semibold text-foreground">{currentWorkspace.name}</span>
+            <span className="text-2xl">{currentWorkspace?.avatar_url || '🏢'}</span>
+            <span className="font-semibold text-foreground">{currentWorkspace?.name || 'Select workspace'}</span>
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -160,13 +160,13 @@ export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = fa
                   <span className="text-lg mr-2">{workspace.avatar_url || '🏢'}</span>
                   <div className="flex flex-col flex-1">
                     <span className={cn(
-                      workspace.slug === currentWorkspace.slug && "font-semibold"
+                      currentWorkspace && workspace.slug === currentWorkspace.slug && "font-semibold"
                     )}>
                       {workspace.name}
                     </span>
                     <span className="text-xs text-muted-foreground">{workspace.role}</span>
                   </div>
-                  {workspace.slug === currentWorkspace.slug && (
+                  {currentWorkspace && workspace.slug === currentWorkspace.slug && (
                     <Check className="ml-2 h-4 w-4" />
                   )}
                 </CommandItem>
