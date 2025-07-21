@@ -40,19 +40,27 @@ export function AppCommandPalette({ workspace, onCreateIssue, onToggleViewMode, 
     } else {
       setCurrentIssue(null)
     }
-  }, [pathname])
+  }, [pathname, workspace.id])
 
   const fetchIssue = async (issueId: string) => {
     const supabase = createClient()
     const { data: issue, error } = await supabase
       .from('issues')
-      .select('id, title, status')
+      .select('id, title, status, workspace_id')
       .eq('id', issueId)
+      .eq('workspace_id', workspace.id)
       .single()
     
     if (issue && !error) {
-      // Fetched issue
-      setCurrentIssue(issue)
+      // Fetched issue - validated to belong to current workspace
+      setCurrentIssue({
+        id: issue.id,
+        title: issue.title,
+        status: issue.status
+      })
+    } else {
+      // Issue not found or doesn't belong to workspace
+      setCurrentIssue(null)
     }
   }
 
@@ -64,6 +72,7 @@ export function AppCommandPalette({ workspace, onCreateIssue, onToggleViewMode, 
       .from('issues')
       .update({ status: newStatus })
       .eq('id', currentIssue.id)
+      .eq('workspace_id', workspace.id)
 
     if (!error) {
       setCurrentIssue({ ...currentIssue, status: newStatus })

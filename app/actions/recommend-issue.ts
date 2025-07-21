@@ -25,6 +25,18 @@ export async function recommendNextIssueAction(
       return { error: 'Not authenticated' }
     }
 
+    // Check if user is a member of the workspace
+    const { data: member, error: memberError } = await supabase
+      .from('workspace_members')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (memberError || !member) {
+      return { error: 'Access denied to workspace' }
+    }
+
     // Get workspace to check for API key
     const { data: workspace, error: workspaceError } = await supabase
       .from('workspaces')
