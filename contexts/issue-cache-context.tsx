@@ -30,6 +30,7 @@ interface Issue {
 interface IssueWithCreator extends Issue {
   creator?: {
     name: string
+    avatar_url?: string | null
   }
 }
 
@@ -298,10 +299,16 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
     try {
       const supabase = createClient()
 
-      // Fetch issue
+      // Fetch issue with creator info
       const { data: issue, error } = await supabase
         .from('issues')
-        .select('*')
+        .select(`
+          *,
+          creator:creator_id (
+            name,
+            avatar_url
+          )
+        `)
         .eq('id', issueId)
         .single()
 
@@ -348,10 +355,16 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
     try {
       const supabase = createClient()
 
-      // Batch fetch all issues
+      // Batch fetch all issues with creator info
       const { data: issues, error } = await supabase
         .from('issues')
-        .select('*')
+        .select(`
+          *,
+          creator:creator_id (
+            name,
+            avatar_url
+          )
+        `)
         .in('id', issuesToLoad)
 
       if (!error && issues) {
@@ -394,10 +407,16 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
     try {
       const supabase = createClient()
       
-      // Fetch first 50 most recent issues for cache warming
+      // Fetch first 50 most recent issues for cache warming with creator info
       const { data: issues, error } = await supabase
         .from('issues')
-        .select('*')
+        .select(`
+          *,
+          creator:creator_id (
+            name,
+            avatar_url
+          )
+        `)
         .eq('workspace_id', workspaceId)
         .neq('status', 'done')
         .order('created_at', { ascending: false })

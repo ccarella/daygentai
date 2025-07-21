@@ -27,6 +27,10 @@ interface Issue {
   created_by: string
   assignee_id: string | null
   issue_tags?: Array<{ tags: TagData }>
+  creator?: {
+    name: string
+    avatar_url?: string | null
+  }
 }
 
 interface IssuesListProps {
@@ -210,7 +214,7 @@ export function IssuesList({
 
     const { count: totalFilteredCount } = await countQuery
 
-    // Now fetch the actual data
+    // Now fetch the actual data with creator info
     let query = supabase
       .from('issues')
       .select(`
@@ -221,6 +225,10 @@ export function IssuesList({
             name,
             color
           )
+        ),
+        creator:creator_id (
+          name,
+          avatar_url
         )
       `)
       .eq('workspace_id', workspaceId)

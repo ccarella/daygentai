@@ -26,7 +26,8 @@ interface Issue {
   assignee_id: string | null
   workspace_id: string
   creator?: {
-    full_name: string | null
+    name: string
+    avatar_url?: string | null
   }
   issue_tags?: Array<{ tags: TagData }>
 }
@@ -147,7 +148,7 @@ export function KanbanBoard({
         data = filteredData.slice(from, to + 1)
       }
     } else {
-      // Original query logic for non-search cases
+      // Original query logic for non-search cases with creator info
       let query = supabase
         .from('issues')
         .select(`
@@ -158,6 +159,10 @@ export function KanbanBoard({
               name,
               color
             )
+          ),
+          creator:creator_id (
+            name,
+            avatar_url
           )
         `)
         .eq('workspace_id', workspaceId)
