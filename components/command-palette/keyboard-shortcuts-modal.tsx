@@ -3,11 +3,12 @@
 import * as React from "react"
 import { Keyboard } from "lucide-react"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  Credenza,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaBody,
+} from "@/components/ui/credenza"
 
 interface KeyboardShortcutsModalProps {
   open: boolean
@@ -57,16 +58,17 @@ export function KeyboardShortcutsModal({ open, onOpenChange }: KeyboardShortcuts
   ]
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <Credenza open={open} onOpenChange={onOpenChange}>
+      <CredenzaContent className="max-w-2xl">
+        <CredenzaHeader>
+          <CredenzaTitle className="flex items-center gap-2">
             <Keyboard className="w-5 h-5" />
             Keyboard Shortcuts
-          </DialogTitle>
-        </DialogHeader>
+          </CredenzaTitle>
+        </CredenzaHeader>
         
-        <div className="mt-4 space-y-6">
+        <CredenzaBody>
+          <div className="space-y-6">
           {shortcutGroups.map((group) => (
             <div key={group.title}>
               <h3 className="text-sm font-medium text-foreground mb-3">{group.title}</h3>
@@ -104,8 +106,9 @@ export function KeyboardShortcutsModal({ open, onOpenChange }: KeyboardShortcuts
               <strong>Tip:</strong> Press <kbd className="px-1.5 py-0.5 text-xs font-semibold text-foreground bg-muted border border-border rounded">?</kbd> to show this help anytime
             </p>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+          </div>
+        </CredenzaBody>
+      </CredenzaContent>
+    </Credenza>
   )
 }

@@ -3,13 +3,14 @@
 import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
+  Credenza,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaDescription,
+  CredenzaFooter,
+  CredenzaBody,
+} from '@/components/ui/credenza'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
@@ -208,18 +209,18 @@ export function CreateIssueModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className="sm:max-w-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh] relative !fixed sm:!inset-auto sm:!left-[50%] sm:!top-[50%] sm:!translate-x-[-50%] sm:!translate-y-[-50%]"
+    <Credenza open={open} onOpenChange={onOpenChange}>
+      <CredenzaContent 
+        className="sm:max-w-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh]"
         onKeyDown={handleKeyDown}
       >
-        <DialogHeader className="shrink-0">
-          <DialogTitle>New issue</DialogTitle>
-          <DialogDescription>Create a new issue for your workspace</DialogDescription>
-        </DialogHeader>
+        <CredenzaHeader className="shrink-0">
+          <CredenzaTitle>New issue</CredenzaTitle>
+          <CredenzaDescription>Create a new issue for your workspace</CredenzaDescription>
+        </CredenzaHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 -mx-6 scrollbar-thin">
-          <div className="space-y-4 md:space-y-5 py-3 md:py-4 px-6">
+        <CredenzaBody className="flex-1 overflow-y-auto scrollbar-thin">
+          <div className="space-y-4 md:space-y-5 py-3 md:py-4">
             <div className="space-y-2">
               <Label htmlFor="title">Issue title</Label>
               <Input
@@ -318,9 +319,9 @@ export function CreateIssueModal({
               </div>
             )}
           </div>
-        </div>
+        </CredenzaBody>
 
-        <DialogFooter className="shrink-0 border-t pt-4">
+        <CredenzaFooter className="shrink-0 border-t pt-4">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
@@ -335,7 +336,7 @@ export function CreateIssueModal({
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isGeneratingPrompt ? 'Generating prompt...' : 'Create issue'}
           </Button>
-        </DialogFooter>
+        </CredenzaFooter>
         
         {/* Loading overlay */}
         {(isSubmitting || isGeneratingPrompt) && (
@@ -348,7 +349,7 @@ export function CreateIssueModal({
             </div>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </CredenzaContent>
+    </Credenza>
   )
 }

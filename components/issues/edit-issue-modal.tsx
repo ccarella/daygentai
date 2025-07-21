@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Credenza, CredenzaContent, CredenzaHeader, CredenzaTitle, CredenzaDescription, CredenzaFooter, CredenzaBody } from '@/components/ui/credenza';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MarkdownEditor } from '@/components/ui/markdown-editor';
@@ -232,18 +232,18 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
   ];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className="sm:max-w-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh] sm:!top-[50%] sm:!translate-y-[-50%]" 
+    <Credenza open={open} onOpenChange={onOpenChange}>
+      <CredenzaContent 
+        className="sm:max-w-2xl flex flex-col overflow-hidden max-h-[90vh] sm:max-h-[85vh]" 
         onKeyDown={handleKeyDown}
       >
-        <DialogHeader className="shrink-0">
-          <DialogTitle>Edit issue</DialogTitle>
-          <DialogDescription>Update the details of your issue</DialogDescription>
-        </DialogHeader>
+        <CredenzaHeader className="shrink-0">
+          <CredenzaTitle>Edit issue</CredenzaTitle>
+          <CredenzaDescription>Update the details of your issue</CredenzaDescription>
+        </CredenzaHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 -mx-6 scrollbar-thin">
-          <div className="space-y-4 md:space-y-5 py-3 md:py-4 px-6">
+        <CredenzaBody className="flex-1 overflow-y-auto scrollbar-thin">
+          <div className="space-y-4 md:space-y-5 py-3 md:py-4">
             <div className="space-y-2">
               <Label htmlFor="title">Issue title</Label>
               <Input 
@@ -352,9 +352,9 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
               </div>
             )}
           </div>
-        </div>
+        </CredenzaBody>
 
-        <DialogFooter className="shrink-0 border-t pt-4">
+        <CredenzaFooter className="shrink-0 border-t pt-4">
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)} 
@@ -369,8 +369,8 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
             {isGeneratingPrompt ? 'Generating prompt...' : 'Save changes'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </CredenzaFooter>
+      </CredenzaContent>
+    </Credenza>
   );
 }

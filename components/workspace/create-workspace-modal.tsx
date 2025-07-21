@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Credenza,
+  CredenzaContent,
+  CredenzaDescription,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaBody,
+  CredenzaFooter,
+} from '@/components/ui/credenza'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -157,16 +159,17 @@ export function CreateWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }:
   const isValidForm = name.length >= 3 && validateSlug(slug) && !slugError
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Create New Workspace</DialogTitle>
-          <DialogDescription>
+    <Credenza open={open} onOpenChange={onOpenChange}>
+      <CredenzaContent className="sm:max-w-lg">
+        <CredenzaHeader>
+          <CredenzaTitle>Create New Workspace</CredenzaTitle>
+          <CredenzaDescription>
             Set up a new workspace for your team or project.
-          </DialogDescription>
-        </DialogHeader>
+          </CredenzaDescription>
+        </CredenzaHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <CredenzaBody>
+          <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label>Choose a Workspace Avatar (Optional)</Label>
             <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
@@ -243,24 +246,26 @@ export function CreateWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }:
             </Alert>
           )}
 
-          <div className="flex justify-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={!isValidForm || isLoading}
-            >
-              {isLoading ? 'Creating...' : 'Create Workspace'}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </form>
+        </CredenzaBody>
+        <CredenzaFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={!isValidForm || isLoading}
+          >
+            {isLoading ? 'Creating...' : 'Create Workspace'}
+          </Button>
+        </CredenzaFooter>
+      </CredenzaContent>
+    </Credenza>
   )
 }

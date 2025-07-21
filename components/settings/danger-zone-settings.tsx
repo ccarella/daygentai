@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Credenza, CredenzaContent, CredenzaDescription, CredenzaFooter, CredenzaHeader, CredenzaTitle, CredenzaBody } from '@/components/ui/credenza'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertTriangle, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -99,17 +99,18 @@ export function DangerZoneSettings({ workspaceId }: DangerZoneSettingsProps) {
         </CardContent>
       </Card>
 
-      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Delete Workspace</DialogTitle>
-            <DialogDescription className="space-y-2 pt-2">
+      <Credenza open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <CredenzaContent className="sm:max-w-md">
+          <CredenzaHeader>
+            <CredenzaTitle>Delete Workspace</CredenzaTitle>
+            <CredenzaDescription className="space-y-2 pt-2">
               This action cannot be undone. This will permanently delete the <strong>{workspace?.name}</strong> workspace and remove all associated data.
               <span className="block pt-2">Please type <strong>{workspace?.name}</strong> to confirm:</span>
-            </DialogDescription>
-          </DialogHeader>
+            </CredenzaDescription>
+          </CredenzaHeader>
           
-          <div className="space-y-4 py-4">
+          <CredenzaBody>
+            <div className="space-y-4 py-4">
             <input
               type="text"
               value={confirmText}
@@ -125,9 +126,10 @@ export function DangerZoneSettings({ workspaceId }: DangerZoneSettingsProps) {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-          </div>
+            </div>
+          </CredenzaBody>
           
-          <DialogFooter>
+          <CredenzaFooter>
             <Button
               variant="ghost"
               onClick={() => {
@@ -146,9 +148,9 @@ export function DangerZoneSettings({ workspaceId }: DangerZoneSettingsProps) {
             >
               {deleting ? 'Deleting...' : 'Delete Workspace'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </CredenzaFooter>
+        </CredenzaContent>
+      </Credenza>
     </>
   )
 }

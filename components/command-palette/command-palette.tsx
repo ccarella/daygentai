@@ -13,11 +13,11 @@ import {
   emitSetStatusFilter
 } from "@/lib/events/issue-events"
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog"
+  Credenza,
+  CredenzaContent,
+  CredenzaTitle,
+  CredenzaDescription,
+} from "@/components/ui/credenza"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { CommandGroup } from "./command-group"
@@ -601,14 +601,14 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="p-0 max-w-2xl">
-          <DialogTitle className="sr-only">
+      <Credenza open={isOpen} onOpenChange={setIsOpen}>
+        <CredenzaContent className="p-0 max-w-2xl">
+          <CredenzaTitle className="sr-only">
             {mode === 'help' ? 'Keyboard Shortcuts & Help' : 'Command Palette'}
-          </DialogTitle>
-          <DialogDescription className="sr-only">
+          </CredenzaTitle>
+          <CredenzaDescription className="sr-only">
             {mode === 'help' ? 'View keyboard shortcuts and help information' : 'Search for commands and actions'}
-          </DialogDescription>
+          </CredenzaDescription>
           
           {mode === 'help' ? (
             <ScrollArea className="max-h-[600px]">
@@ -671,8 +671,8 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </CredenzaContent>
+      </Credenza>
 
       <NextIssueModal
         open={nextIssueModalOpen}

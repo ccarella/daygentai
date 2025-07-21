@@ -3,13 +3,14 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from '@/components/ui/dialog'
+  Credenza,
+  CredenzaContent,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaFooter,
+  CredenzaDescription,
+  CredenzaBody,
+} from '@/components/ui/credenza'
 import { Button } from '@/components/ui/button'
 import { ExternalLink, AlertCircle, Loader2 } from 'lucide-react'
 import { PromptDisplay } from '@/components/issues/prompt-display'
@@ -49,18 +50,19 @@ export function NextIssueModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl sm:!top-[50%] sm:!translate-y-[-50%]">
-        <DialogHeader>
-          <DialogTitle>AI Issue Recommendation</DialogTitle>
+    <Credenza open={open} onOpenChange={onOpenChange}>
+      <CredenzaContent className="sm:max-w-2xl">
+        <CredenzaHeader>
+          <CredenzaTitle>AI Issue Recommendation</CredenzaTitle>
           {!error && (
-            <DialogDescription>
+            <CredenzaDescription>
               Based on your current todo issues, here&apos;s what we recommend working on next.
-            </DialogDescription>
+            </CredenzaDescription>
           )}
-        </DialogHeader>
+        </CredenzaHeader>
 
-        <div className="space-y-4">
+        <CredenzaBody>
+          <div className="space-y-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -94,9 +96,10 @@ export function NextIssueModal({
               )}
             </>
           )}
-        </div>
+          </div>
+        </CredenzaBody>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+        <CredenzaFooter className="flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {isLoading ? 'Cancel' : 'Close'}
           </Button>
@@ -109,8 +112,8 @@ export function NextIssueModal({
               Go to Issue
             </Button>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </CredenzaFooter>
+      </CredenzaContent>
+    </Credenza>
   )
 }
