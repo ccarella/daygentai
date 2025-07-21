@@ -3,6 +3,22 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 
 const WORKSPACE_AVATARS = [
   '🏢', '🚀', '💼', '🎯', '🌟', '💡', '🔧', '🎨',
@@ -17,45 +33,48 @@ function generateSlug(name: string): string {
     .substring(0, 50)
 }
 
+const formSchema = z.object({
+  name: z.string()
+    .min(3, { message: "Name must be at least 3 characters long" })
+    .max(50, { message: "Name must be less than 50 characters" }),
+  slug: z.string()
+    .min(3, { message: "URL must be at least 3 characters long" })
+    .max(50, { message: "URL must be less than 50 characters" })
+    .regex(/^[a-z0-9-]+$/, { message: "URL can only contain lowercase letters, numbers, and hyphens" })
+    .regex(/^[^-].*[^-]$/, { message: "URL cannot start or end with a hyphen" }),
+  avatar: z.string().optional()
+})
+
+type FormData = z.infer<typeof formSchema>
+
 export default function CreateWorkspaceForm() {
-  const [name, setName] = useState('')
-  const [slug, setSlug] = useState('')
-  const [selectedAvatar, setSelectedAvatar] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [slugError, setSlugError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      slug: '',
+      avatar: ''
+    }
+  })
+
+  const watchName = form.watch('name')
+
   useEffect(() => {
-    if (name) {
-      const generatedSlug = generateSlug(name)
-      setSlug(generatedSlug)
-    } else {
-      setSlug('')
+    if (!form.formState.dirtyFields.slug) {
+      if (watchName) {
+        const generatedSlug = generateSlug(watchName)
+        form.setValue('slug', generatedSlug)
+      } else {
+        form.setValue('slug', '')
+      }
     }
-  }, [name])
+  }, [watchName, form])
 
-  const validateSlug = (value: string): boolean => {
-    if (!value) return false
-    if (value.length < 3) return false
-    if (!/^[a-z0-9-]+$/.test(value)) return false
-    if (value.startsWith('-') || value.endsWith('-')) return false
-    return true
-  }
-
-  const handleSlugChange = (value: string) => {
-    setSlug(value.toLowerCase())
-    
-    if (value && !validateSlug(value)) {
-      setSlugError('Slug must be at least 3 characters, contain only lowercase letters, numbers, and hyphens')
-    } else {
-      setSlugError(null)
-    }
-  }
-
-  const handleNext = async () => {
-    setIsLoading(true)
+  const onSubmit = async (values: FormData) => {
     setError(null)
 
     try {
@@ -70,12 +89,11 @@ export default function CreateWorkspaceForm() {
       const { data: existingWorkspace } = await supabase
         .from('workspaces')
         .select('id')
-        .eq('slug', slug)
+        .eq('slug', values.slug)
         .single()
 
       if (existingWorkspace) {
         setError('This workspace URL is already taken. Please choose a different one.')
-        setIsLoading(false)
         return
       }
 
@@ -83,9 +101,9 @@ export default function CreateWorkspaceForm() {
       const { data: newWorkspace, error: insertError } = await supabase
         .from('workspaces')
         .insert({
-          name: name,
-          slug: slug,
-          avatar_url: selectedAvatar || '🏢',
+          name: values.name,
+          slug: values.slug,
+          avatar_url: values.avatar || '🏢',
           owner_id: user.id
         })
         .select()
@@ -109,122 +127,127 @@ export default function CreateWorkspaceForm() {
         // Don't throw here as workspace is already created
       }
 
-      router.push(`/${slug}`)
+      router.push(`/${values.slug}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
-    } finally {
-      setIsLoading(false)
     }
   }
 
-  const isValidForm = name.length >= 3 && validateSlug(slug) && !slugError
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && isValidForm && !isLoading) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
-      handleNext()
+      form.handleSubmit(onSubmit)()
     }
   }
 
   return (
-    <div className="bg-white p-4 md:p-6 lg:p-8 rounded-lg shadow-lg max-w-md w-full" onKeyDown={handleKeyDown}>
+    <Card className="p-4 md:p-6 lg:p-8 max-w-md w-full" onKeyDown={handleKeyDown}>
       <h1 className="text-2xl font-bold text-center mb-8">Create Your Workspace</h1>
       
-      <div className="mb-4 md:mb-6">
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Choose a Workspace Avatar (Optional)
-        </label>
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 md:gap-3">
-          {WORKSPACE_AVATARS.map((avatar) => (
-            <button
-              key={avatar}
-              onClick={() => setSelectedAvatar(avatar)}
-              className={`min-h-[44px] min-w-[44px] p-2 md:p-3 text-2xl rounded-lg border-2 transition-all ${
-                selectedAvatar === avatar
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border hover:border-border'
-              }`}
-            >
-              {avatar}
-            </button>
-          ))}
-        </div>
-        {selectedAvatar && (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Selected: {selectedAvatar}
-          </p>
-        )}
-      </div>
-
-      <div className="mb-4 md:mb-6">
-        <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
-          Workspace Name (Required)
-        </label>
-        <input
-          id="name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="My Awesome Workspace"
-          autoComplete="organization"
-          autoCapitalize="words"
-          className="w-full px-3 py-2 md:px-4 md:py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-        {name.length > 0 && name.length < 3 && (
-          <p className="mt-1 text-sm text-red-600">
-            Name must be at least 3 characters long
-          </p>
-        )}
-      </div>
-
-      <div className="mb-4 md:mb-6">
-        <label htmlFor="slug" className="block text-sm font-medium text-foreground mb-2">
-          Workspace URL (Required)
-        </label>
-        <div className="flex items-center">
-          <span className="text-muted-foreground text-sm mr-1">daygent.ai/</span>
-          <input
-            id="slug"
-            type="text"
-            value={slug}
-            onChange={(e) => handleSlugChange(e.target.value)}
-            placeholder={name ? generateSlug(name) : "workspace-url"}
-            autoComplete="off"
-            autoCapitalize="off"
-            autoCorrect="off"
-            spellCheck={false}
-            className="flex-1 px-3 py-2 md:px-4 md:py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="avatar"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Choose a Workspace Avatar</FormLabel>
+                <FormDescription>
+                  Select an avatar to represent your workspace (optional)
+                </FormDescription>
+                <FormControl>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 md:gap-3">
+                    {WORKSPACE_AVATARS.map((avatar) => (
+                      <button
+                        key={avatar}
+                        type="button"
+                        onClick={() => field.onChange(avatar)}
+                        className={`min-h-[44px] min-w-[44px] p-2 md:p-3 text-2xl rounded-lg border-2 transition-all ${
+                          field.value === avatar
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border hover:border-border'
+                        }`}
+                      >
+                        {avatar}
+                      </button>
+                    ))}
+                  </div>
+                </FormControl>
+                {field.value && (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Selected: {field.value}
+                  </p>
+                )}
+              </FormItem>
+            )}
           />
-        </div>
-        {slugError && (
-          <p className="mt-1 text-sm text-red-600">
-            {slugError}
-          </p>
-        )}
-        {slug && !slugError && (
-          <p className="mt-1 text-sm text-green-600">
-            Your workspace will be available at: daygent.ai/{slug}
-          </p>
-        )}
-      </div>
 
-      {error && (
-        <div className="mb-4 p-2 md:p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
-        </div>
-      )}
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Workspace Name</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="My Awesome Workspace"
+                    autoComplete="organization"
+                    autoCapitalize="words"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-      <button
-        onClick={handleNext}
-        disabled={!isValidForm || isLoading}
-        className={`w-full py-2 px-4 md:py-2.5 md:px-5 rounded-lg font-medium transition-all ${
-          isValidForm && !isLoading
-            ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-            : 'bg-muted text-muted-foreground cursor-not-allowed'
-        }`}
-      >
-        {isLoading ? 'Creating...' : 'Next'}
-      </button>
-    </div>
+          <FormField
+            control={form.control}
+            name="slug"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Workspace URL</FormLabel>
+                <div className="flex items-center">
+                  <span className="text-muted-foreground text-sm mr-1">daygent.ai/</span>
+                  <FormControl>
+                    <Input
+                      placeholder="workspace-url"
+                      autoComplete="off"
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.value.toLowerCase())}
+                    />
+                  </FormControl>
+                </div>
+                <FormDescription>
+                  {field.value && !form.formState.errors.slug && (
+                    <span className="text-green-600">
+                      Your workspace will be available at: daygent.ai/{field.value}
+                    </span>
+                  )}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={form.formState.isSubmitting}
+          >
+            {form.formState.isSubmitting ? 'Creating...' : 'Next'}
+          </Button>
+        </form>
+      </Form>
+    </Card>
   )
 }

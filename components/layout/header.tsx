@@ -4,7 +4,15 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, Settings, LogOut } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface UserProfile {
   name: string
@@ -18,9 +26,7 @@ interface HeaderProps {
 }
 
 export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: HeaderProps) {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(initialProfile || null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
   const settingsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const router = useRouter()
   const supabase = createClient()
@@ -47,15 +53,7 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
   }, [initialProfile, fetchUserProfile])
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
       // Clear timeout on unmount
       if (settingsTimeoutRef.current) {
         clearTimeout(settingsTimeoutRef.current)
@@ -101,23 +99,21 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
           
           {/* Right Section - Avatar */}
           <div className="flex items-center flex-1 justify-end gap-2">
-            <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center justify-center w-11 h-11 md:w-10 md:h-10 rounded-full bg-secondary hover:bg-secondary/80 transition-colors text-xl"
-            >
-              {userProfile.avatar_url || '👤'}
-            </button>
-            
-            {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-background rounded-lg shadow-lg border border-border py-1 md:py-1.5">
-                <div className="px-3 py-1.5 md:px-4 md:py-2 border-b border-border">
-                  <p className="text-sm font-medium text-foreground">{userProfile.name}</p>
-                </div>
-                
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <button
+                  className="flex items-center justify-center w-11 h-11 md:w-10 md:h-10 rounded-full bg-secondary hover:bg-secondary/80 transition-colors text-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  {userProfile.avatar_url || '👤'}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel className="font-medium">
+                  {userProfile.name}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
                   onClick={() => {
-                    setIsDropdownOpen(false)
                     // Clear any existing timeout
                     if (settingsTimeoutRef.current) {
                       clearTimeout(settingsTimeoutRef.current)
@@ -134,20 +130,16 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
                       settingsTimeoutRef.current = null
                     }, 100)
                   }}
-                  className="block w-full text-left px-4 py-3 md:px-4 md:py-2 text-sm text-muted-foreground hover:bg-accent"
                 >
+                  <Settings className="mr-2 h-4 w-4" />
                   Profile Settings
-                </button>
-                
-                <button
-                  onClick={handleLogout}
-                  className="block w-full text-left px-4 py-3 md:px-4 md:py-2 text-sm text-muted-foreground hover:bg-accent"
-                >
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
                   Logout
-                </button>
-              </div>
-            )}
-            </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

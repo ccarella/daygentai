@@ -33,8 +33,8 @@ describe('CreateUserForm', () => {
       render(<CreateUserForm />)
       
       expect(screen.getByText('Complete Your Profile')).toBeInTheDocument()
-      expect(screen.getByText('Choose an Avatar (Optional)')).toBeInTheDocument()
-      expect(screen.getByLabelText('Your Name (Required)')).toBeInTheDocument()
+      expect(screen.getByText('Choose an Avatar')).toBeInTheDocument()
+      expect(screen.getByLabelText('Your Name')).toBeInTheDocument()
       expect(screen.getByPlaceholderText('Enter your name')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
     })
@@ -53,7 +53,7 @@ describe('CreateUserForm', () => {
     it('has correct input attributes', () => {
       render(<CreateUserForm />)
       
-      const nameInput = screen.getByLabelText('Your Name (Required)')
+      const nameInput = screen.getByLabelText('Your Name')
       expect(nameInput).toHaveAttribute('type', 'text')
       expect(nameInput).toHaveAttribute('autoComplete', 'name')
       expect(nameInput).toHaveAttribute('autoCapitalize', 'words')
@@ -93,7 +93,7 @@ describe('CreateUserForm', () => {
 
       render(<CreateUserForm />)
       
-      const nameInput = screen.getByLabelText('Your Name (Required)')
+      const nameInput = screen.getByLabelText('Your Name')
       await user.type(nameInput, 'Test User')
       
       const saveButton = screen.getByRole('button', { name: 'Save' })
@@ -114,7 +114,7 @@ describe('CreateUserForm', () => {
     it('shows validation error for short names', async () => {
       render(<CreateUserForm />)
       
-      const nameInput = screen.getByLabelText('Your Name (Required)')
+      const nameInput = screen.getByLabelText('Your Name')
       await user.type(nameInput, 'AB')
       
       expect(screen.getByText('Name must be at least 3 characters long')).toBeInTheDocument()
@@ -124,7 +124,7 @@ describe('CreateUserForm', () => {
     it('hides validation error for valid names', async () => {
       render(<CreateUserForm />)
       
-      const nameInput = screen.getByLabelText('Your Name (Required)')
+      const nameInput = screen.getByLabelText('Your Name')
       await user.type(nameInput, 'ABC')
       
       expect(screen.queryByText('Name must be at least 3 characters long')).not.toBeInTheDocument()
@@ -146,7 +146,7 @@ describe('CreateUserForm', () => {
 
       render(<CreateUserForm />)
       
-      const nameInput = screen.getByLabelText('Your Name (Required)')
+      const nameInput = screen.getByLabelText('Your Name')
       await user.type(nameInput, 'Test User')
       
       const catAvatar = screen.getByRole('button', { name: '🐱' })
@@ -175,7 +175,7 @@ describe('CreateUserForm', () => {
 
       render(<CreateUserForm />)
       
-      const nameInput = screen.getByLabelText('Your Name (Required)')
+      const nameInput = screen.getByLabelText('Your Name')
       await user.type(nameInput, 'Test User')
       
       const saveButton = screen.getByRole('button', { name: 'Save' })
@@ -198,7 +198,7 @@ describe('CreateUserForm', () => {
 
       render(<CreateUserForm />)
       
-      const nameInput = screen.getByLabelText('Your Name (Required)')
+      const nameInput = screen.getByLabelText('Your Name')
       await user.type(nameInput, 'Test User')
       
       // Simulate Cmd+Enter on the container
@@ -223,7 +223,7 @@ describe('CreateUserForm', () => {
 
       render(<CreateUserForm />)
       
-      const nameInput = screen.getByLabelText('Your Name (Required)')
+      const nameInput = screen.getByLabelText('Your Name')
       await user.type(nameInput, 'Test User')
       
       const saveButton = screen.getByRole('button', { name: 'Save' })
@@ -243,7 +243,7 @@ describe('CreateUserForm', () => {
 
       render(<CreateUserForm />)
       
-      const nameInput = screen.getByLabelText('Your Name (Required)')
+      const nameInput = screen.getByLabelText('Your Name')
       await user.type(nameInput, 'Test User')
       
       const saveButton = screen.getByRole('button', { name: 'Save' })
@@ -263,7 +263,7 @@ describe('CreateUserForm', () => {
 
       render(<CreateUserForm />)
       
-      const nameInput = screen.getByLabelText('Your Name (Required)')
+      const nameInput = screen.getByLabelText('Your Name')
       await user.type(nameInput, 'Test User')
       
       const saveButton = screen.getByRole('button', { name: 'Save' })
@@ -282,7 +282,7 @@ describe('CreateUserForm', () => {
 
       render(<CreateUserForm />)
       
-      const nameInput = screen.getByLabelText('Your Name (Required)')
+      const nameInput = screen.getByLabelText('Your Name')
       await user.type(nameInput, 'Test User')
       
       const saveButton = screen.getByRole('button', { name: 'Save' })
@@ -315,7 +315,7 @@ describe('CreateUserForm', () => {
 
       render(<CreateUserForm />)
       
-      const nameInput = screen.getByLabelText('Your Name (Required)')
+      const nameInput = screen.getByLabelText('Your Name')
       await user.type(nameInput, 'Test User')
       
       const saveButton = screen.getByRole('button', { name: 'Save' })
@@ -346,7 +346,7 @@ describe('CreateUserForm', () => {
 
       render(<CreateUserForm />)
       
-      const nameInput = screen.getByLabelText('Your Name (Required)')
+      const nameInput = screen.getByLabelText('Your Name')
       const longName = 'A'.repeat(100)
       await user.type(nameInput, longName)
       
@@ -369,7 +369,7 @@ describe('CreateUserForm', () => {
 
       render(<CreateUserForm />)
       
-      const nameInput = screen.getByLabelText('Your Name (Required)')
+      const nameInput = screen.getByLabelText('Your Name')
       await user.type(nameInput, '  Test User  ')
       
       // Validation should work with trimmed value

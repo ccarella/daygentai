@@ -64,9 +64,9 @@ describe('CreateWorkspaceForm', () => {
       render(<CreateWorkspaceForm />)
       
       expect(screen.getByText('Create Your Workspace')).toBeInTheDocument()
-      expect(screen.getByText('Choose a Workspace Avatar (Optional)')).toBeInTheDocument()
-      expect(screen.getByLabelText('Workspace Name (Required)')).toBeInTheDocument()
-      expect(screen.getByLabelText('Workspace URL (Required)')).toBeInTheDocument()
+      expect(screen.getByText('Choose a Workspace Avatar')).toBeInTheDocument()
+      expect(screen.getByLabelText('Workspace Name')).toBeInTheDocument()
+      expect(screen.getByLabelText('Workspace URL')).toBeInTheDocument()
       expect(screen.getByPlaceholderText('My Awesome Workspace')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument()
     })
@@ -120,8 +120,8 @@ describe('CreateWorkspaceForm', () => {
     it('auto-generates slug from workspace name', async () => {
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
+      const slugInput = screen.getByLabelText('Workspace URL')
       
       await user.type(nameInput, 'My Awesome Workspace')
       
@@ -133,8 +133,8 @@ describe('CreateWorkspaceForm', () => {
     it('handles special characters in slug generation', async () => {
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
+      const slugInput = screen.getByLabelText('Workspace URL')
       
       await user.type(nameInput, 'Test@#$%^&*()_+Workspace!')
       
@@ -146,8 +146,8 @@ describe('CreateWorkspaceForm', () => {
     it('limits slug length to 50 characters', async () => {
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
+      const slugInput = screen.getByLabelText('Workspace URL')
       
       const longName = 'This is a very long workspace name that exceeds fifty characters limit'
       await user.type(nameInput, longName)
@@ -161,8 +161,8 @@ describe('CreateWorkspaceForm', () => {
     it('allows manual slug editing', async () => {
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
+      const slugInput = screen.getByLabelText('Workspace URL')
       
       await user.type(nameInput, 'My Workspace')
       await waitFor(() => {
@@ -180,7 +180,7 @@ describe('CreateWorkspaceForm', () => {
     it('validates workspace name length', async () => {
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
       await user.type(nameInput, 'AB')
       
       expect(screen.getByText('Name must be at least 3 characters long')).toBeInTheDocument()
@@ -190,13 +190,13 @@ describe('CreateWorkspaceForm', () => {
     it('validates slug format', async () => {
       render(<CreateWorkspaceForm />)
       
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
+      const slugInput = screen.getByLabelText('Workspace URL')
       
       // Test invalid slug with special characters
       await user.type(slugInput, 'invalid@slug!')
       
       await waitFor(() => {
-        expect(screen.getByText(/Slug must be at least 3 characters/)).toBeInTheDocument()
+        expect(screen.getByText(/URL can only contain lowercase letters, numbers, and hyphens/)).toBeInTheDocument()
         expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
       })
     })
@@ -204,35 +204,35 @@ describe('CreateWorkspaceForm', () => {
     it('validates slug minimum length', async () => {
       render(<CreateWorkspaceForm />)
       
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
+      const slugInput = screen.getByLabelText('Workspace URL')
       await user.type(slugInput, 'ab')
       
       await waitFor(() => {
-        expect(screen.getByText(/Slug must be at least 3 characters/)).toBeInTheDocument()
+        expect(screen.getByText(/URL must be at least 3 characters long/)).toBeInTheDocument()
       })
     })
 
     it('validates slug cannot start or end with hyphen', async () => {
       render(<CreateWorkspaceForm />)
       
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
+      const slugInput = screen.getByLabelText('Workspace URL')
       
       await user.type(slugInput, '-invalid')
       await waitFor(() => {
-        expect(screen.getByText(/Slug must be at least 3 characters/)).toBeInTheDocument()
+        expect(screen.getByText(/URL cannot start or end with a hyphen/)).toBeInTheDocument()
       })
       
       await user.clear(slugInput)
       await user.type(slugInput, 'invalid-')
       await waitFor(() => {
-        expect(screen.getByText(/Slug must be at least 3 characters/)).toBeInTheDocument()
+        expect(screen.getByText(/URL cannot start or end with a hyphen/)).toBeInTheDocument()
       })
     })
 
     it('shows success message for valid slug', async () => {
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
       await user.type(nameInput, 'Valid Workspace')
       
       await waitFor(() => {
@@ -245,7 +245,7 @@ describe('CreateWorkspaceForm', () => {
     it('creates workspace on successful submission', async () => {
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
       await user.type(nameInput, 'Test Workspace')
       
       const rocketAvatar = screen.getByRole('button', { name: '🚀' })
@@ -270,7 +270,7 @@ describe('CreateWorkspaceForm', () => {
     it('uses default avatar if none selected', async () => {
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
       await user.type(nameInput, 'Test Workspace')
       
       const nextButton = screen.getByRole('button', { name: 'Next' })
@@ -308,7 +308,7 @@ describe('CreateWorkspaceForm', () => {
 
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
       await user.type(nameInput, 'Test Workspace')
       
       const nextButton = screen.getByRole('button', { name: 'Next' })
@@ -332,11 +332,11 @@ describe('CreateWorkspaceForm', () => {
     it('handles Cmd+Enter keyboard shortcut', async () => {
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
       await user.type(nameInput, 'Test Workspace')
       
       await waitFor(() => {
-        expect(screen.getByLabelText('Workspace URL (Required)')).toHaveValue('test-workspace')
+        expect(screen.getByLabelText('Workspace URL')).toHaveValue('test-workspace')
       })
       
       // Simulate Cmd+Enter on the container
@@ -361,7 +361,7 @@ describe('CreateWorkspaceForm', () => {
 
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
       await user.type(nameInput, 'Test Workspace')
       
       const nextButton = screen.getByRole('button', { name: 'Next' })
@@ -394,7 +394,7 @@ describe('CreateWorkspaceForm', () => {
 
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
       await user.type(nameInput, 'Test Workspace')
       
       const nextButton = screen.getByRole('button', { name: 'Next' })
@@ -427,7 +427,7 @@ describe('CreateWorkspaceForm', () => {
 
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
       await user.type(nameInput, 'Test Workspace')
       
       const nextButton = screen.getByRole('button', { name: 'Next' })
@@ -457,7 +457,7 @@ describe('CreateWorkspaceForm', () => {
 
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
       await user.type(nameInput, 'Test Workspace')
       
       const nextButton = screen.getByRole('button', { name: 'Next' })
@@ -510,7 +510,7 @@ describe('CreateWorkspaceForm', () => {
 
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
       await user.type(nameInput, 'Test Workspace')
       
       const nextButton = screen.getByRole('button', { name: 'Next' })
@@ -542,7 +542,7 @@ describe('CreateWorkspaceForm', () => {
     it('converts slug to lowercase automatically', async () => {
       render(<CreateWorkspaceForm />)
       
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
+      const slugInput = screen.getByLabelText('Workspace URL')
       await user.type(slugInput, 'MixedCaseSlug')
       
       expect(slugInput).toHaveValue('mixedcaseslug')
@@ -551,8 +551,8 @@ describe('CreateWorkspaceForm', () => {
     it('clears slug when name is cleared', async () => {
       render(<CreateWorkspaceForm />)
       
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
+      const nameInput = screen.getByLabelText('Workspace Name')
+      const slugInput = screen.getByLabelText('Workspace URL')
       
       await user.type(nameInput, 'Test Workspace')
       await waitFor(() => {

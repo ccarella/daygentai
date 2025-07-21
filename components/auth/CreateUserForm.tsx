@@ -3,22 +3,51 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 
 const AVATAR_OPTIONS = [
   '🐱', '🐶', '🦊', '🐻', '🐼', '🐨', '🐸', '🦁', 
   '🐵', '🦄', '🐙', '🦋', '🌟', '🎨', '🚀', '🌈'
 ]
 
+const formSchema = z.object({
+  name: z.string()
+    .min(3, { message: "Name must be at least 3 characters long" })
+    .max(50, { message: "Name must be less than 50 characters" }),
+  avatar: z.string().optional()
+})
+
+type FormData = z.infer<typeof formSchema>
+
 export default function CreateUserForm() {
-  const [name, setName] = useState('')
-  const [selectedAvatar, setSelectedAvatar] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
-  const handleSave = async () => {
-    setIsLoading(true)
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      avatar: ''
+    }
+  })
+
+  const onSubmit = async (values: FormData) => {
     setError(null)
 
     try {
@@ -33,8 +62,8 @@ export default function CreateUserForm() {
         .from('users')
         .insert({
           id: user.id,
-          name: name,
-          avatar_url: selectedAvatar || '👤'
+          name: values.name,
+          avatar_url: values.avatar || '👤'
         })
 
       if (insertError) {
@@ -44,88 +73,92 @@ export default function CreateUserForm() {
       router.push('/CreateWorkspace')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
-    } finally {
-      setIsLoading(false)
     }
   }
 
-  const isValidName = name.length >= 3
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && isValidName && !isLoading) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
-      handleSave()
+      form.handleSubmit(onSubmit)()
     }
   }
 
   return (
-    <div className="bg-card p-4 md:p-6 lg:p-8 rounded-lg shadow-lg max-w-md w-full" onKeyDown={handleKeyDown}>
+    <Card className="p-4 md:p-6 lg:p-8 max-w-md w-full" onKeyDown={handleKeyDown}>
       <h1 className="text-2xl font-bold text-center mb-8">Complete Your Profile</h1>
       
-      <div className="mb-4 md:mb-6">
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Choose an Avatar (Optional)
-        </label>
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 md:gap-3">
-          {AVATAR_OPTIONS.map((avatar) => (
-            <button
-              key={avatar}
-              onClick={() => setSelectedAvatar(avatar)}
-              className={`min-h-[44px] min-w-[44px] p-2 md:p-3 text-2xl rounded-lg border-2 transition-all ${
-                selectedAvatar === avatar
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border hover:border-border'
-              }`}
-            >
-              {avatar}
-            </button>
-          ))}
-        </div>
-        {selectedAvatar && (
-          <p className="mt-2 text-sm text-muted-foreground">
-            Selected: {selectedAvatar}
-          </p>
-        )}
-      </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="avatar"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Choose an Avatar</FormLabel>
+                <FormDescription>
+                  Select an avatar to personalize your profile (optional)
+                </FormDescription>
+                <FormControl>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 md:gap-3">
+                    {AVATAR_OPTIONS.map((avatar) => (
+                      <button
+                        key={avatar}
+                        type="button"
+                        onClick={() => field.onChange(avatar)}
+                        className={`min-h-[44px] min-w-[44px] p-2 md:p-3 text-2xl rounded-lg border-2 transition-all ${
+                          field.value === avatar
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border hover:border-border'
+                        }`}
+                      >
+                        {avatar}
+                      </button>
+                    ))}
+                  </div>
+                </FormControl>
+                {field.value && (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Selected: {field.value}
+                  </p>
+                )}
+              </FormItem>
+            )}
+          />
 
-      <div className="mb-4 md:mb-6">
-        <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
-          Your Name (Required)
-        </label>
-        <input
-          id="name"
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Enter your name"
-          autoComplete="name"
-          autoCapitalize="words"
-          className="w-full px-3 py-2 md:px-4 md:py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-        {name.length > 0 && !isValidName && (
-          <p className="mt-1 text-sm text-red-600">
-            Name must be at least 3 characters long
-          </p>
-        )}
-      </div>
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Your Name</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Enter your name"
+                    autoComplete="name"
+                    autoCapitalize="words"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-      {error && (
-        <div className="mb-4 p-2 md:p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
-        </div>
-      )}
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-      <button
-        onClick={handleSave}
-        disabled={!isValidName || isLoading}
-        className={`w-full py-2 px-4 md:py-2.5 md:px-5 rounded-lg font-medium transition-all ${
-          isValidName && !isLoading
-            ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-            : 'bg-muted text-muted-foreground cursor-not-allowed'
-        }`}
-      >
-        {isLoading ? 'Saving...' : 'Save'}
-      </button>
-    </div>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={form.formState.isSubmitting}
+          >
+            {form.formState.isSubmitting ? 'Saving...' : 'Save'}
+          </Button>
+        </form>
+      </Form>
+    </Card>
   )
 }
