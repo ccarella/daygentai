@@ -102,8 +102,6 @@ export function IssuesList({
   const fetchIssues = useCallback(async (pageNum: number, append = false, skipCache = false) => {
     if (isLoadingRef.current && !skipCache) return { issues: [], hasMore: false, totalCount: 0 }
     
-    const startTime = Date.now()
-    
     // Generate cache key
     const cacheKey: ListCacheKey = {
       workspaceId,
@@ -121,7 +119,7 @@ export function IssuesList({
       if (cachedData) {
         // Check if cache is fresh (less than 30 seconds old)
         const isFresh = Date.now() - cachedData.timestamp < 30000
-        console.log(`[Performance] List loaded from cache in ${Date.now() - startTime}ms (${isFresh ? 'fresh' : 'stale'})`)
+        // List loaded from cache
         
         if (isFresh) {
           // Return fresh cached data immediately
@@ -293,7 +291,7 @@ export function IssuesList({
     
     // Cache the result
     if (!append) {
-      console.log(`[Performance] List fetched from database in ${Date.now() - startTime}ms`)
+      // List fetched from database
       setListCache(cacheKey, {
         ...result,
         timestamp: Date.now()
@@ -309,8 +307,6 @@ export function IssuesList({
     let cancelled = false
 
     const loadInitialData = async () => {
-      const startTime = Date.now()
-      
       // First, try to load from cache
       const cacheKey: ListCacheKey = {
         workspaceId,
@@ -325,7 +321,7 @@ export function IssuesList({
       const cachedData = getListCache(cacheKey)
       if (cachedData) {
         // Show cached data immediately
-        console.log(`[Performance] Showing cached list data immediately (${Date.now() - startTime}ms)`)
+        // Showing cached list data immediately
         setIssues(cachedData.issues)
         setHasMore(cachedData.hasMore)
         setTotalCount(cachedData.totalCount)
@@ -339,14 +335,14 @@ export function IssuesList({
         // Check if cache is stale (older than 30 seconds)
         const isStale = Date.now() - cachedData.timestamp > 30000
         if (isStale) {
-          console.log('[Performance] Cache is stale, fetching fresh data in background...')
+          // Cache is stale, fetching fresh data in background
           setIsStale(true)
           
           // Fetch fresh data in background
           const { issues: freshIssues, hasMore: freshHasMore, totalCount: freshTotal } = await fetchIssues(0, false, true)
           
           if (!cancelled) {
-            console.log(`[Performance] Fresh data loaded, updating UI (${Date.now() - startTime}ms total)`)
+            // Fresh data loaded, updating UI
             setIssues(freshIssues)
             setHasMore(freshHasMore)
             setTotalCount(freshTotal)

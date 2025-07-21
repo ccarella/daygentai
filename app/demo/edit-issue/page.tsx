@@ -30,7 +30,7 @@ We'll be using NextAuth.js for the authentication implementation.`,
   };
 
   const handleIssueUpdated = () => {
-    console.log('Issue updated successfully!');
+    // Issue updated successfully
     // In a real app, this would refresh the issue data
   };
 

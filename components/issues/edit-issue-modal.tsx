@@ -150,7 +150,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
           } else {
             generatedPrompt = prompt;
           }
-        } catch (error) {
+        } catch {
           // Continue without updating prompt
         } finally {
           setIsGeneratingPrompt(false);

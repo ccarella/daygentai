@@ -57,16 +57,9 @@ interface CommandPaletteProps {
 }
 
 export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onToggleViewMode, onToggleSearch, onSetStatusFilter, getCurrentView, currentIssue, onIssueStatusChange, onNavigateToIssues, onNavigateToInbox }: CommandPaletteProps) {
-  // Log props on mount
+  // Component mounted
   React.useEffect(() => {
-    const location = typeof window !== 'undefined' ? window.location.pathname : 'unknown'
-    console.log(`CommandPalette [${location}] props:`, {
-      workspaceSlug,
-      workspaceId,
-      hasCurrentIssue: !!currentIssue,
-      currentIssue,
-      hasOnIssueStatusChange: !!onIssueStatusChange
-    })
+    // Component props initialized
   }, [workspaceSlug, workspaceId, currentIssue, onIssueStatusChange])
   const { isOpen, setIsOpen, mode } = useCommandPalette()
   const { toast } = useToast()
@@ -123,7 +116,6 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   
   const handleShowRecentIssues = React.useCallback(() => {
     // TODO: Implement recent issues
-    console.log("Show recent issues")
   }, [])
   
   // Memoize the modal close handler
@@ -148,11 +140,9 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
   const [isLoadingNextIssue, setIsLoadingNextIssue] = React.useState(false)
   const nextIssueRequestRef = React.useRef<boolean>(false)
 
-  // Debug effect to see when currentIssue changes
+  // Effect to track currentIssue changes
   React.useEffect(() => {
-    const location = typeof window !== 'undefined' ? window.location.pathname : 'unknown'
-    console.log(`CommandPalette [${location}] mounted/updated - currentIssue:`, currentIssue)
-    console.log(`CommandPalette [${location}] - onIssueStatusChange defined:`, !!onIssueStatusChange)
+    // Track issue state changes
   }, [currentIssue, onIssueStatusChange])
   
   // Cleanup effect to cancel pending requests
@@ -265,11 +255,8 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
         { value: 'done', label: 'Done' },
       ]
 
-      console.log('Current issue status:', currentIssue.status)
-      
       statusOptions.forEach(option => {
         if (option.value !== currentIssue.status) {
-          console.log('Adding status option:', option.label, 'for status:', option.value)
           baseCommands.push({
             id: `change-status-${option.value}`,
             title: `Change Status to ${option.label}`,
@@ -396,13 +383,6 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       group: "Filters"
     })
 
-    const location = typeof window !== 'undefined' ? window.location.pathname : 'unknown'
-    console.log(`Total commands generated [${location}]:`, baseCommands.length)
-    console.log(`Commands by group [${location}]:`, baseCommands.reduce((acc, cmd) => {
-      acc[cmd.group] = (acc[cmd.group] || 0) + 1
-      return acc
-    }, {} as Record<string, number>))
-    
     return baseCommands
   }, [workspaceSlug, currentIssue, onIssueStatusChange, statusChangeHandlers, handleCreateIssue, handleNextIssue, handleNavigateToIssues, handleNavigateToInbox, handleToggleViewMode, handleToggleSearch, handleShowRecentIssues, onSetStatusFilter, getCurrentView, setIsOpen, toast])
 

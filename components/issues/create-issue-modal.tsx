@@ -123,13 +123,11 @@ export function CreateIssueModal({
           })
           
           if (promptError) {
-            console.error('Error generating prompt:', promptError)
             // Continue without prompt - don't block issue creation
           } else {
             generatedPrompt = prompt
           }
-        } catch (error) {
-          console.error('Error generating prompt:', error)
+        } catch {
           // Continue without prompt
         } finally {
           setIsGeneratingPrompt(false)

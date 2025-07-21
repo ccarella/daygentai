@@ -51,7 +51,7 @@ export function AppCommandPalette({ workspace, onCreateIssue, onToggleViewMode, 
       .single()
     
     if (issue && !error) {
-      console.log('AppCommandPalette - Fetched issue:', issue)
+      // Fetched issue
       setCurrentIssue(issue)
     }
   }
