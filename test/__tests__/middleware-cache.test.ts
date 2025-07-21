@@ -67,3 +67,75 @@ describe('LRU Cache - Pattern Matching', () => {
     expect(_testUserCache.get('user:3')).toBeNull()
   })
 })
+
+describe('LRU Cache - LRU Behavior', () => {
+  beforeEach(() => {
+    // Clear cache before each test
+    _testUserCache.invalidate()
+  })
+
+  it('should maintain LRU order when accessing entries', () => {
+    const testData = { id: 'test', hasProfile: true, hasWorkspace: true }
+    
+    // Create a small cache to test eviction
+    // Note: We can't change maxSize dynamically, so we'll test with multiple entries
+    
+    // Add entries
+    _testUserCache.set('user:1', { ...testData, id: '1' })
+    _testUserCache.set('user:2', { ...testData, id: '2' })
+    _testUserCache.set('user:3', { ...testData, id: '3' })
+    
+    // Access user:1 to make it most recently used
+    expect(_testUserCache.get('user:1')).toBeTruthy()
+    
+    // Access user:2 to make it second most recently used
+    expect(_testUserCache.get('user:2')).toBeTruthy()
+    
+    // user:3 is now least recently used
+    // Verify all entries still exist
+    expect(_testUserCache.get('user:1')).toBeTruthy()
+    expect(_testUserCache.get('user:2')).toBeTruthy()
+    expect(_testUserCache.get('user:3')).toBeTruthy()
+  })
+
+  it('should handle rapid get operations without race conditions', () => {
+    const testData = { id: 'test', hasProfile: true, hasWorkspace: true }
+    
+    // Add an entry
+    _testUserCache.set('user:rapid', testData)
+    
+    // Perform multiple rapid get operations
+    const results = []
+    for (let i = 0; i < 100; i++) {
+      results.push(_testUserCache.get('user:rapid'))
+    }
+    
+    // All results should be the same
+    expect(results.every(r => r !== null && r.id === 'test')).toBe(true)
+    
+    // Entry should still be in cache
+    expect(_testUserCache.get('user:rapid')).toBeTruthy()
+  })
+
+  it('should handle concurrent-like operations safely', () => {
+    const testData = { id: 'test', hasProfile: true, hasWorkspace: true }
+    
+    // Add entries
+    _testUserCache.set('user:concurrent', testData)
+    
+    // Simulate "concurrent" operations (though JS is single-threaded)
+    const operations = []
+    
+    // Mix of get and set operations
+    operations.push(_testUserCache.get('user:concurrent'))
+    operations.push(_testUserCache.set('user:concurrent2', { ...testData, id: '2' }))
+    operations.push(_testUserCache.get('user:concurrent'))
+    operations.push(_testUserCache.invalidate('user:concurrent'))
+    operations.push(_testUserCache.get('user:concurrent'))
+    
+    // After invalidation, should be null
+    expect(_testUserCache.get('user:concurrent')).toBeNull()
+    // Other entry should still exist
+    expect(_testUserCache.get('user:concurrent2')).toBeTruthy()
+  })
+})

@@ -37,11 +37,16 @@ class LRUCache<T> {
       return null
     }
 
-    // Move to end (most recently used)
+    // Move to end (most recently used) atomically
+    // JavaScript Map operations are synchronous, so this is safe
+    // We store the data first to avoid any potential issues
+    const data = entry.data
+    
+    // Delete and re-insert to move to end of iteration order
     this.cache.delete(key)
     this.cache.set(key, entry)
     
-    return entry.data
+    return data
   }
 
   set(key: string, data: T): void {
