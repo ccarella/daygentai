@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { signInWithMagicLink } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/use-toast'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export function EmailLogin() {
   const [email, setEmail] = useState('')
@@ -52,11 +55,9 @@ export function EmailLogin() {
   return (
     <div className="w-full max-w-md mx-auto">
       <form onSubmit={handleLogin} onKeyDown={handleKeyDown} className="space-y-4 md:space-y-5">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-2">
-            Email address
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="email">Email address</Label>
+          <Input
             id="email"
             type="email"
             value={email}
@@ -66,18 +67,17 @@ export function EmailLogin() {
             autoComplete="email"
             autoCapitalize="off"
             autoCorrect="off"
-            className="w-full px-3 py-2 md:px-4 md:py-2.5 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             disabled={loading}
           />
         </div>
 
-        <button
+        <Button
           type="submit"
           disabled={loading}
-          className="w-full px-4 py-2 md:px-5 md:py-2.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full"
         >
           {loading ? 'Sending...' : 'Send login link'}
-        </button>
+        </Button>
       </form>
     </div>
   )
