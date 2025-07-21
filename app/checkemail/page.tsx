@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
+import { PageContainer } from '@/components/layout/page-container'
 
 export const metadata: Metadata = {
   title: 'Check Your Email - Daygent',
@@ -14,7 +15,8 @@ export default async function CheckEmailPage(props: {
   const isGmailUser = email?.toLowerCase().endsWith('@gmail.com')
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 md:p-6 lg:p-8">
+    <PageContainer>
+      <div className="min-h-screen flex items-center justify-center p-4 md:p-6 lg:p-8">
       <div className="max-w-md w-full text-center space-y-8">
         {/* Large Mailbox Icon */}
         <div className="mx-auto w-32 h-32 flex items-center justify-center">
@@ -90,5 +92,6 @@ export default async function CheckEmailPage(props: {
         </div>
       </div>
     </div>
+    </PageContainer>
   )
 }

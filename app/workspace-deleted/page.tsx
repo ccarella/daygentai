@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import { PageContainer } from '@/components/layout/page-container'
 import { WorkspaceSwitcher } from '@/components/workspace/workspace-switcher'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -78,7 +78,7 @@ export default async function WorkspaceDeletedPage() {
     : []
 
   return (
-    <AuthenticatedLayout>
+    <PageContainer>
       <div className="min-h-screen flex items-center justify-center p-4 md:p-6 lg:p-8 bg-background">
         <div className="max-w-md w-full bg-card rounded-lg shadow-lg p-4 md:p-6 lg:p-8">
           <div className="text-center space-y-6">
@@ -129,6 +129,6 @@ export default async function WorkspaceDeletedPage() {
           </div>
         </div>
       </div>
-    </AuthenticatedLayout>
+    </PageContainer>
   )
 }

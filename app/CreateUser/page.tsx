@@ -1,6 +1,7 @@
 import CreateUserForm from '@/components/auth/CreateUserForm'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { PageContainer } from '@/components/layout/page-container'
 
 export default async function CreateUserPage() {
   const supabase = await createClient()
@@ -22,8 +23,10 @@ export default async function CreateUserPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <CreateUserForm />
-    </div>
+    <PageContainer>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <CreateUserForm />
+      </div>
+    </PageContainer>
   )
 }

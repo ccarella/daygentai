@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Header } from './header'
 import { WorkspaceLayout } from './workspace-layout'
 import { useWorkspaceNavigation } from '@/hooks/use-workspace-navigation'
+import { useMobileMenu } from '@/contexts/mobile-menu-context'
+import { PageContainer } from './page-container'
 import type { UserWorkspace } from '@/lib/supabase/workspaces'
 
 interface WorkspaceWithMobileNavProps {
@@ -23,9 +24,8 @@ interface WorkspaceWithMobileNavProps {
 }
 
 export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, onNavigateToIssues, onNavigateToInbox, onNavigateToCookbook }: WorkspaceWithMobileNavProps) {
-  const [profile, setProfile] = useState<{ name: string; avatar_url: string | null } | null>(null)
   const [workspaces, setWorkspaces] = useState<UserWorkspace[]>([])
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { isMobileMenuOpen, setIsMobileMenuOpen } = useMobileMenu()
   const sidebarRef = useRef<HTMLDivElement>(null)
   const mainContentRef = useRef<HTMLDivElement>(null)
 
@@ -35,15 +35,6 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) return
-      
-      // Fetch profile
-      const { data: profile } = await supabase
-        .from('users')
-        .select('name, avatar_url')
-        .eq('id', user.id)
-        .single()
-      
-      setProfile(profile)
       
       // Fetch workspaces
       const { data: workspacesData, error: workspacesError } = await supabase
@@ -100,10 +91,6 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
     fetchData()
   }, [])
 
-  const handleMenuToggle = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen)
-  }
-
   // Set up unified workspace navigation
   useWorkspaceNavigation({
     sidebarRef,
@@ -111,21 +98,8 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
   })
 
   return (
-    <>
-      {profile ? (
-        <Header 
-          initialProfile={profile} 
-          onMenuToggle={handleMenuToggle}
-          isMobileMenuOpen={isMobileMenuOpen}
-        />
-      ) : (
-        <Header 
-          onMenuToggle={handleMenuToggle}
-          isMobileMenuOpen={isMobileMenuOpen}
-        />
-      )}
-      <div className="pt-11">
-        <WorkspaceLayout 
+    <PageContainer>
+      <WorkspaceLayout 
           workspace={workspace}
           workspaces={workspaces}
           {...(onIssueCreated && { onIssueCreated })}
@@ -140,7 +114,6 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
             {children}
           </div>
         </WorkspaceLayout>
-      </div>
-    </>
+    </PageContainer>
   )
 }

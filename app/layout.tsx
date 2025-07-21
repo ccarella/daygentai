@@ -3,6 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { KeyboardProvider } from "@/lib/keyboard";
+import { UserProfileProvider } from "@/contexts/user-profile-context";
+import { MobileMenuProvider } from "@/contexts/mobile-menu-context";
+import { PersistentHeader } from "@/components/layout/persistent-header";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,10 +38,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden`}
       >
-        <KeyboardProvider>
-          {children}
-          <Toaster />
-        </KeyboardProvider>
+        <UserProfileProvider>
+          <MobileMenuProvider>
+            <KeyboardProvider>
+              <PersistentHeader />
+              {children}
+              <Toaster />
+            </KeyboardProvider>
+          </MobileMenuProvider>
+        </UserProfileProvider>
       </body>
     </html>
   );

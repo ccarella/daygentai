@@ -1,6 +1,7 @@
 import CreateWorkspaceForm from '@/components/auth/CreateWorkspaceForm'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { PageContainer } from '@/components/layout/page-container'
 import type { WorkspaceMemberSlugQueryResponse } from '@/types/supabase-helpers'
 
 export default async function CreateWorkspacePage() {
@@ -42,8 +43,10 @@ export default async function CreateWorkspacePage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <CreateWorkspaceForm />
-    </div>
+    <PageContainer>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <CreateWorkspaceForm />
+      </div>
+    </PageContainer>
   )
 }

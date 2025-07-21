@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Building2, Plus, Settings } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { PageContainer } from '@/components/layout/page-container'
 
 interface Workspace {
   id: string
@@ -37,7 +38,8 @@ export function UserSettingsContent({ user, workspaces }: UserSettingsContentPro
   const defaultWorkspace = workspaces.find(ws => ws.userRole === 'owner') || workspaces[0]
   
   return (
-    <div className="min-h-screen bg-background">
+    <PageContainer>
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b">
         <div className="container max-w-6xl mx-auto px-4 py-4">
@@ -165,5 +167,6 @@ export function UserSettingsContent({ user, workspaces }: UserSettingsContentPro
         </div>
       </div>
     </div>
+    </PageContainer>
   )
 }
