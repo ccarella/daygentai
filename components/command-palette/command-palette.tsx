@@ -330,17 +330,15 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
     })
 
     // View Section
-    if (onToggleViewMode) {
-      baseCommands.push({
-        id: "toggle-view",
-        title: "Toggle List/Kanban View",
-        icon: <LayoutGrid className="w-4 h-4" />,
-        shortcut: getPlatformShortcut("⌘B", "Ctrl+B"),
-        action: handleToggleViewMode,
-        keywords: ["view", "switch", "kanban", "list", "board", "toggle"],
-        group: "View"
-      })
-    }
+    baseCommands.push({
+      id: "toggle-view",
+      title: "Toggle List/Kanban View",
+      icon: <LayoutGrid className="w-4 h-4" />,
+      shortcut: getPlatformShortcut("⌘B", "Ctrl+B"),
+      action: handleToggleViewMode,
+      keywords: ["view", "switch", "kanban", "list", "board", "toggle"],
+      group: "View"
+    })
 
     if (onToggleSearch) {
       baseCommands.push({
@@ -537,12 +535,12 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
           { keys: ["S", "then", "D"], description: "Change status to Done" },
         ]
       }] : []),
-      ...(onToggleViewMode ? [{
+      {
         title: "View",
         shortcuts: [
           { keys: [modKey, "B"], description: "Toggle List/Kanban view" },
         ]
-      }] : []),
+      },
       {
         title: "Command Palette",
         shortcuts: [
