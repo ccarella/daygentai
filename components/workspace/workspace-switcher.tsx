@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Check, ChevronsUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { sanitizeImageUrl } from '@/lib/url-validation'
 import {
   Command,
   CommandEmpty,
@@ -63,7 +64,20 @@ export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = fa
             aria-expanded={open}
             className="w-10 h-10 p-0 hover:bg-accent"
           >
-            <span className="text-xl">{currentWorkspace?.avatar_url || '🏢'}</span>
+            <span className="text-xl">{(() => {
+              const safeAvatarUrl = sanitizeImageUrl(currentWorkspace?.avatar_url);
+              return safeAvatarUrl ? (
+                <img 
+                  src={safeAvatarUrl} 
+                  alt={currentWorkspace?.name}
+                  className="h-6 w-6 object-cover rounded"
+                />
+              ) : currentWorkspace?.avatar_url && currentWorkspace.avatar_url.length <= 2 ? (
+                currentWorkspace.avatar_url
+              ) : (
+                '🏢'
+              );
+            })()}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[240px] p-0" align="start">
@@ -84,7 +98,20 @@ export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = fa
                     onSelect={handleWorkspaceChange}
                     className="cursor-pointer"
                   >
-                    <span className="text-lg mr-2">{workspace.avatar_url || '🏢'}</span>
+                    <span className="text-lg mr-2">{(() => {
+                      const safeAvatarUrl = sanitizeImageUrl(workspace.avatar_url);
+                      return safeAvatarUrl ? (
+                        <img 
+                          src={safeAvatarUrl} 
+                          alt={workspace.name}
+                          className="h-5 w-5 object-cover rounded inline-block"
+                        />
+                      ) : workspace.avatar_url && workspace.avatar_url.length <= 2 ? (
+                        workspace.avatar_url
+                      ) : (
+                        '🏢'
+                      );
+                    })()}</span>
                     <span className={cn(
                       "flex-1",
                       currentWorkspace && workspace.slug === currentWorkspace.slug && "font-semibold"
@@ -133,7 +160,20 @@ export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = fa
           className="w-full justify-between px-3 py-2 h-auto font-normal hover:bg-accent"
         >
           <div className="flex items-center space-x-3">
-            <span className="text-2xl">{currentWorkspace?.avatar_url || '🏢'}</span>
+            <span className="text-2xl">{(() => {
+              const safeAvatarUrl = sanitizeImageUrl(currentWorkspace?.avatar_url);
+              return safeAvatarUrl ? (
+                <img 
+                  src={safeAvatarUrl} 
+                  alt={currentWorkspace?.name}
+                  className="h-8 w-8 object-cover rounded inline-block"
+                />
+              ) : currentWorkspace?.avatar_url && currentWorkspace.avatar_url.length <= 2 ? (
+                currentWorkspace.avatar_url
+              ) : (
+                '🏢'
+              );
+            })()}</span>
             <span className="font-semibold text-foreground">{currentWorkspace?.name || 'Select workspace'}</span>
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
+import { sanitizeImageUrl } from '@/lib/url-validation'
 
 interface UserProfile {
   name: string
@@ -101,7 +102,20 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="flex items-center justify-center w-11 h-11 md:w-10 md:h-10 rounded-full bg-secondary hover:bg-secondary/80 transition-colors text-xl"
             >
-              {userProfile.avatar_url || '👤'}
+              {(() => {
+                const safeAvatarUrl = sanitizeImageUrl(userProfile.avatar_url);
+                return safeAvatarUrl ? (
+                  <img 
+                    src={safeAvatarUrl} 
+                    alt={userProfile.name}
+                    className="h-full w-full object-cover rounded-full"
+                  />
+                ) : userProfile.avatar_url && userProfile.avatar_url.length <= 2 ? (
+                  userProfile.avatar_url
+                ) : (
+                  '👤'
+                );
+              })()}
             </button>
             
             {isDropdownOpen && (

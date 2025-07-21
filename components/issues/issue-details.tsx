@@ -9,6 +9,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { subscribeToIssueStatusUpdates } from '@/lib/events/issue-events'
 import { CommentList } from './comment-list'
+import { sanitizeImageUrl } from '@/lib/url-validation'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -670,19 +671,22 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0">
                   <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                    {creatorAvatar && creatorAvatar.startsWith('http') ? (
-                      <img 
-                        src={creatorAvatar} 
-                        alt={creatorName}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : creatorAvatar && creatorAvatar.length <= 2 ? (
-                      <span className="text-lg">{creatorAvatar}</span>
-                    ) : (
+                    {(() => {
+                      const safeAvatarUrl = sanitizeImageUrl(creatorAvatar);
+                      return safeAvatarUrl ? (
+                        <img 
+                          src={safeAvatarUrl} 
+                          alt={creatorName}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : creatorAvatar && creatorAvatar.length <= 2 ? (
+                        <span className="text-lg">{creatorAvatar}</span>
+                      ) : (
                       <svg className="h-5 w-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    )}
+                        </svg>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">

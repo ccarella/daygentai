@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Building2, Plus, Settings } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { sanitizeImageUrl } from '@/lib/url-validation'
 
 interface Workspace {
   id: string
@@ -100,7 +101,20 @@ export function UserSettingsContent({ user, workspaces }: UserSettingsContentPro
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-base">
-                            {workspace.avatar_url || '🏢'}
+                            {(() => {
+                              const safeAvatarUrl = sanitizeImageUrl(workspace.avatar_url);
+                              return safeAvatarUrl ? (
+                                <img 
+                                  src={safeAvatarUrl} 
+                                  alt={workspace.name}
+                                  className="h-5 w-5 object-cover rounded inline-block"
+                                />
+                              ) : workspace.avatar_url && workspace.avatar_url.length <= 2 ? (
+                                workspace.avatar_url
+                              ) : (
+                                '🏢'
+                              );
+                            })()}
                           </span>
                           <span className="truncate">{workspace.name}</span>
                         </div>

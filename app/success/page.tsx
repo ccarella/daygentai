@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
 import type { WorkspaceMemberDetailsQueryResponse } from '@/types/supabase-helpers'
+import { SuccessContent } from './success-content'
 
 export default async function SuccessPage({
   searchParams,
@@ -61,55 +62,7 @@ export default async function SuccessPage({
 
   return (
     <AuthenticatedLayout>
-      <div className="min-h-screen flex items-center justify-center p-4 md:p-6 lg:p-8 bg-background">
-        <div className="max-w-md w-full bg-card rounded-lg shadow-lg p-4 md:p-6 lg:p-8">
-          <div className="text-center space-y-6">
-            <h1 className="text-3xl font-bold text-foreground">
-              Welcome!
-            </h1>
-            
-            <div className="flex flex-col items-center space-y-4">
-              <div className="text-6xl">
-                {profile.avatar_url || '👤'}
-              </div>
-              
-              <div className="space-y-2">
-                <p className="text-xl font-semibold text-foreground">
-                  {profile.name}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {user.email}
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-4 md:pt-6 border-t border-border">
-              <h2 className="text-lg font-semibold text-foreground mb-4">Your Workspace</h2>
-              
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="text-3xl">
-                  {workspace.avatar_url || '🏢'}
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">{workspace.name}</p>
-                  <a 
-                    href={`/${workspace.slug}`}
-                    className="text-sm text-primary hover:text-primary"
-                  >
-                    daygent.ai/{workspace.slug}
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 md:pt-6 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                You have successfully set up your profile and workspace.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <SuccessContent profile={profile} user={user} workspace={workspace} />
     </AuthenticatedLayout>
   )
 }
