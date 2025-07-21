@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { validateWorkspaceAccessOptimized } from '@/lib/validation/workspace-access-optimized'
 import { withTimeout, timeoutConfig } from '@/lib/middleware/timeout'
 import { 
   withErrorHandler, 
@@ -31,28 +32,19 @@ async function handleGET(request: NextRequest) {
     return createUnauthorizedError()
   }
   
-  // Check authorization - verify user has access to this workspace
-  // Check if user is a member of the workspace (owner, admin, member, or viewer)
-  const { data: membership, error: membershipError } = await supabase
-    .from('workspace_members')
-    .select('role')
-    .eq('workspace_id', workspaceId)
-    .eq('user_id', user.id)
-    .single()
-    
-  if (membershipError || !membership) {
-    // If not a member, check if the workspace exists
-    const { data: workspace, error: workspaceError } = await supabase
-      .from('workspaces')
-      .select('id')
-      .eq('id', workspaceId)
-      .single()
-      
-    if (workspaceError || !workspace) {
-      return createNotFoundError('Workspace')
-    }
-    
-    // Workspace exists but user is not a member
+  // Optimized workspace access validation - single query instead of two
+  const accessResult = await validateWorkspaceAccessOptimized(
+    supabase,
+    workspaceId,
+    user.id,
+    false // workspaceId is an ID, not a slug
+  )
+
+  if (!accessResult.workspaceExists) {
+    return createNotFoundError('Workspace')
+  }
+
+  if (!accessResult.hasAccess) {
     return createForbiddenError('You do not have access to this workspace')
   }
 

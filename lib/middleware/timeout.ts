@@ -41,6 +41,8 @@ function isNextRequest(arg: unknown): arg is NextRequest {
  * @param handler - The original API route handler
  * @param config - Timeout configuration options
  * @returns Wrapped handler with timeout functionality
+ * 
+ * Note: Handlers should check for req.signal?.aborted to properly cancel operations
  */
 export function withTimeout<T extends (...args: never[]) => Promise<Response>>(
   handler: T,
@@ -87,6 +89,16 @@ export function withTimeout<T extends (...args: never[]) => Promise<Response>>(
       userAgent: req.headers.get('user-agent')
     }
 
+    // Create a modified request with the abort signal
+    // This allows handlers to check req.signal?.aborted and cancel operations
+    const modifiedReq = Object.assign(Object.create(Object.getPrototypeOf(req)), req, {
+      signal: controller.signal
+    })
+
+    // Replace the original request with the modified one in args
+    const modifiedArgs = [...args] as unknown[]
+    modifiedArgs[0] = modifiedReq
+
     try {
       // Create a promise that rejects on timeout
       const timeoutPromise = new Promise<never>((_, reject) => {
@@ -97,7 +109,7 @@ export function withTimeout<T extends (...args: never[]) => Promise<Response>>(
 
       // Race between the handler and timeout
       const response = await Promise.race([
-        handler(...args),
+        handler(...(modifiedArgs as Parameters<T>)),
         timeoutPromise
       ])
 

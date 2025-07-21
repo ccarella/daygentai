@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { validateWorkspaceAccess } from '@/lib/validation/workspace-access'
+import { validateWorkspaceAccessOptimized } from '@/lib/validation/workspace-access-optimized'
 import { validateIssueUpdate } from '@/lib/validation/issue-validation'
 import { withTimeout, timeoutConfig } from '@/lib/middleware/timeout'
 import { 
@@ -25,18 +25,23 @@ async function handleGET(
       return createUnauthorizedError()
     }
 
-    // Verify workspace access
-    const { data: workspace } = await supabase
-      .from('workspaces')
-      .select('id')
-      .eq('slug', slug)
-      .single()
+    // Optimized: Verify workspace access and get workspace ID in one query
+    const accessResult = await validateWorkspaceAccessOptimized(
+      supabase,
+      slug,
+      user.id,
+      true // slug is a slug, not an ID
+    )
 
-    if (!workspace) {
+    if (!accessResult.workspaceExists) {
       return createNotFoundError('Workspace')
     }
 
-    // Fetch issue data with creator info
+    if (!accessResult.hasAccess) {
+      return createForbiddenError('Access denied')
+    }
+
+    // Fetch issue data with creator info using the workspace ID from access check
     const { data: issue, error } = await supabase
       .from('issues')
       .select(`
@@ -44,7 +49,7 @@ async function handleGET(
         creator:creator_id (name, avatar_url)
       `)
       .eq('id', id)
-      .eq('workspace_id', workspace.id)
+      .eq('workspace_id', accessResult.workspaceId!)
       .single()
 
     if (error || !issue) {
@@ -85,29 +90,30 @@ async function handlePATCH(
     
     const validatedData = validation.data
 
-    // Validate workspace access and issue ownership
-    const { data: workspace } = await supabase
-      .from('workspaces')
-      .select('id')
-      .eq('slug', slug)
-      .single()
+    // Optimized: Validate workspace access and get workspace ID in one query
+    const accessResult = await validateWorkspaceAccessOptimized(
+      supabase,
+      slug,
+      user.id,
+      true // slug is a slug, not an ID
+    )
 
-    if (!workspace) {
+    if (!accessResult.workspaceExists) {
       return createNotFoundError('Workspace')
     }
 
-    // Validate workspace access for the user
-    const hasAccess = await validateWorkspaceAccess(workspace.id, user.id)
-    if (!hasAccess) {
+    if (!accessResult.hasAccess) {
       return createForbiddenError('Access denied')
     }
+
+    const workspaceId = accessResult.workspaceId!
 
     // Verify issue belongs to workspace before updating
     const { data: existingIssue } = await supabase
       .from('issues')
       .select('id, workspace_id')
       .eq('id', id)
-      .eq('workspace_id', workspace.id)
+      .eq('workspace_id', workspaceId)
       .single()
 
     if (!existingIssue) {
@@ -125,7 +131,7 @@ async function handlePATCH(
       .from('issues')
       .update(updateData)
       .eq('id', id)
-      .eq('workspace_id', workspace.id)
+      .eq('workspace_id', workspaceId)
       .select()
       .single()
 
