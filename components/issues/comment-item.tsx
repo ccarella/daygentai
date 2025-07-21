@@ -1,6 +1,8 @@
 'use client';
 
+import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
+import { sanitizeImageUrl } from '@/lib/url-validation';
 
 interface CommentItemProps {
   comment: {
@@ -16,20 +18,28 @@ interface CommentItemProps {
 }
 
 export function CommentItem({ comment }: CommentItemProps) {
+  const safeAvatarUrl = sanitizeImageUrl(comment.user.avatar_url);
+  const initials = comment.user.name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
     <div className="flex gap-3 py-3">
       <div className="flex-shrink-0 w-8 h-8 bg-muted rounded-full flex items-center justify-center overflow-hidden">
-        {comment.user.avatar_url && comment.user.avatar_url.startsWith('http') ? (
-          <img 
-            src={comment.user.avatar_url} 
+        {safeAvatarUrl ? (
+          <Image 
+            src={safeAvatarUrl} 
             alt={comment.user.name}
+            width={32}
+            height={32}
             className="h-full w-full object-cover"
           />
-        ) : comment.user.avatar_url && comment.user.avatar_url.length <= 2 ? (
-          <span className="text-sm">{comment.user.avatar_url}</span>
         ) : (
           <span className="text-xs font-medium">
-            {comment.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+            {initials}
           </span>
         )}
       </div>
