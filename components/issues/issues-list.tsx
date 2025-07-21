@@ -212,7 +212,7 @@ export function IssuesList({
 
     const { count: totalFilteredCount } = await countQuery
 
-    // Now fetch the actual data
+    // Now fetch the actual data with creator info
     let query = supabase
       .from('issues')
       .select(`
@@ -223,6 +223,10 @@ export function IssuesList({
             name,
             color
           )
+        ),
+        creator:users!created_by (
+          name,
+          avatar_url
         )
       `)
       .eq('workspace_id', workspaceId)

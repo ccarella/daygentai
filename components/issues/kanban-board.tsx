@@ -147,7 +147,7 @@ export function KanbanBoard({
         data = filteredData.slice(from, to + 1)
       }
     } else {
-      // Original query logic for non-search cases
+      // Original query logic for non-search cases with creator info
       let query = supabase
         .from('issues')
         .select(`
@@ -158,6 +158,10 @@ export function KanbanBoard({
               name,
               color
             )
+          ),
+          creator:users!created_by (
+            name,
+            avatar_url
           )
         `)
         .eq('workspace_id', workspaceId)
