@@ -7,6 +7,24 @@ export interface TimeoutConfig {
 
 const DEFAULT_TIMEOUT_MS = 30000 // 30 seconds
 
+// Request tracking to prevent memory leaks
+// Using WeakMap ensures automatic garbage collection when requests are no longer referenced
+// This prevents DoS attacks that could exhaust memory by creating many AbortControllers
+const activeRequests = new WeakMap<NextRequest, {
+  controller: AbortController
+  timeoutId: NodeJS.Timeout
+  startTime: number
+}>()
+
+// Cleanup function to ensure resources are freed
+function cleanupRequest(req: NextRequest) {
+  const tracking = activeRequests.get(req)
+  if (tracking) {
+    clearTimeout(tracking.timeoutId)
+    activeRequests.delete(req)
+  }
+}
+
 /**
  * Creates a timeout wrapper for API route handlers
  * @param handler - The original API route handler
@@ -21,13 +39,29 @@ export function withTimeout<T extends (...args: never[]) => Promise<Response>>(
 
   const wrappedHandler = async (...args: Parameters<T>): Promise<Response> => {
     const req = (args as unknown[])[0] as NextRequest
+    
+    // Check if request is already being tracked (shouldn't happen in normal flow)
+    if (activeRequests.has(req)) {
+      console.warn('Request already has active timeout tracking')
+      cleanupRequest(req)
+    }
+    
     // Create an AbortController for cancellation
     const controller = new AbortController()
     
     // Set up the timeout
     const timeoutId = setTimeout(() => {
       controller.abort()
+      // Ensure cleanup happens after abort
+      cleanupRequest(req)
     }, timeoutMs)
+    
+    // Track the request
+    activeRequests.set(req, {
+      controller,
+      timeoutId,
+      startTime: Date.now()
+    })
 
     try {
       // Create a promise that rejects on timeout
@@ -43,21 +77,25 @@ export function withTimeout<T extends (...args: never[]) => Promise<Response>>(
         timeoutPromise
       ])
 
-      // Clear timeout if request completed successfully
-      clearTimeout(timeoutId)
+      // Clear timeout and tracking if request completed successfully
+      cleanupRequest(req)
       
       return response
     } catch (error) {
-      // Clear timeout on any error
-      clearTimeout(timeoutId)
+      // Ensure cleanup on any error
+      cleanupRequest(req)
       
       // Check if error is timeout-related
       if (error instanceof Error && error.message === 'TIMEOUT') {
-        console.warn(`API request timeout after ${timeoutMs}ms:`, {
+        const tracking = activeRequests.get(req)
+        const duration = tracking ? Date.now() - tracking.startTime : timeoutMs
+        
+        console.warn(`API request timeout after ${duration}ms:`, {
           method: req.method,
           url: req.url,
           userAgent: req.headers.get('user-agent'),
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          configured: timeoutMs
         })
         
         return createTimeoutError(timeoutMs, 'operation')

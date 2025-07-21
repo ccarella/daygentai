@@ -117,6 +117,35 @@ export function createRouteSizeLimit(sizeInMB: number): string {
 }
 
 /**
+ * Validates request origin for CSRF protection
+ */
+function validateOrigin(req: NextRequest): boolean {
+  const origin = req.headers.get('origin')
+  const referer = req.headers.get('referer')
+  
+  // In production, validate against allowed origins
+  if (process.env['NODE_ENV'] === 'production') {
+    const allowedOrigins = [
+      process.env['NEXT_PUBLIC_SITE_URL'],
+      'https://vercel.app', // For preview deployments
+    ].filter(Boolean)
+    
+    if (origin && allowedOrigins.some(allowed => origin.startsWith(allowed!))) {
+      return true
+    }
+    
+    if (referer && allowedOrigins.some(allowed => referer.startsWith(allowed!))) {
+      return true
+    }
+    
+    return false
+  }
+  
+  // In development, allow localhost
+  return true
+}
+
+/**
  * Validates file upload request
  */
 export async function validateFileUpload(
@@ -138,11 +167,41 @@ export async function validateFileUpload(
     }
   }
   
-  // For multipart uploads, extract the boundary
+  // Validate origin for CSRF protection
+  if (!validateOrigin(req)) {
+    return {
+      valid: false,
+      error: createValidationError(
+        'Invalid request origin',
+        { 
+          message: 'Cross-origin file uploads are not allowed',
+          suggestion: 'Please upload files from the application interface'
+        }
+      )
+    }
+  }
+  
+  // For multipart uploads, validate boundary and apply same security checks
   const isMultipart = contentType.includes('multipart/form-data')
   if (isMultipart) {
-    // Multipart validation is handled separately
-    return { valid: true }
+    // Ensure boundary is present to prevent malformed requests
+    const boundary = parseMultipartBoundary(contentType)
+    if (!boundary) {
+      return {
+        valid: false,
+        error: createValidationError(
+          'Invalid multipart/form-data: missing boundary',
+          { 
+            message: 'Multipart requests must include a boundary parameter',
+            contentType 
+          }
+        )
+      }
+    }
+    
+    // Continue with standard validations for multipart
+    // Size limits, MIME type, and extension checks still apply below
+    // This ensures multipart uploads have the same security constraints as direct uploads
   }
   
   // Validate MIME type for direct uploads
