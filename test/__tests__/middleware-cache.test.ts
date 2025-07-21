@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { _testUserCache } from '@/middleware'
 
 describe('LRU Cache - Pattern Matching', () => {
@@ -166,5 +166,85 @@ describe('LRU Cache - Error Handling', () => {
     
     // Verify it was cached
     expect(_testUserCache.get(cacheKey)).toEqual(successData)
+  })
+})
+
+describe('LRU Cache - Size Limit Enforcement', () => {
+  beforeEach(() => {
+    // Clear cache before each test
+    _testUserCache.invalidate()
+  })
+
+  it('should handle updates without removing entries unnecessarily', () => {
+    const testData = { id: 'test', hasProfile: true, hasWorkspace: true }
+    
+    // Add an entry
+    _testUserCache.set('user:update-test', testData)
+    
+    // Update the same entry multiple times
+    for (let i = 0; i < 10; i++) {
+      _testUserCache.set('user:update-test', { ...testData, id: `updated-${i}` })
+    }
+    
+    // Entry should still exist with latest value
+    const result = _testUserCache.get('user:update-test')
+    expect(result).toBeTruthy()
+    expect(result?.id).toBe('updated-9')
+  })
+
+  it('should maintain size limit when adding many entries', () => {
+    const testData = { id: 'test', hasProfile: true, hasWorkspace: true }
+    
+    // Note: We can't directly test maxSize enforcement without access to cache size
+    // But we can verify behavior by adding many entries
+    
+    // Add more entries than typical cache size
+    const numEntries = 1100 // More than default maxSize of 1000
+    for (let i = 0; i < numEntries; i++) {
+      _testUserCache.set(`user:bulk-${i}`, { ...testData, id: `${i}` })
+    }
+    
+    // Recent entries should be retrievable
+    expect(_testUserCache.get(`user:bulk-${numEntries - 1}`)).toBeTruthy()
+    expect(_testUserCache.get(`user:bulk-${numEntries - 2}`)).toBeTruthy()
+    
+    // Very old entries might have been evicted (depending on maxSize)
+    // We can't guarantee this without knowing exact maxSize
+  })
+
+  it('should handle edge case of updating at capacity', () => {
+    const testData = { id: 'test', hasProfile: true, hasWorkspace: true }
+    
+    // Fill cache with many entries
+    for (let i = 0; i < 1000; i++) {
+      _testUserCache.set(`user:fill-${i}`, { ...testData, id: `${i}` })
+    }
+    
+    // Now update one of the existing entries
+    _testUserCache.set('user:fill-500', { ...testData, id: 'updated-500' })
+    
+    // The updated entry should exist
+    expect(_testUserCache.get('user:fill-500')?.id).toBe('updated-500')
+    
+    // Other recent entries should still exist
+    expect(_testUserCache.get('user:fill-999')).toBeTruthy()
+  })
+
+  it('should handle rapid additions at capacity', () => {
+    const testData = { id: 'test', hasProfile: true, hasWorkspace: true }
+    
+    // Mock console.error to check if size limit is exceeded
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    
+    // Rapidly add many entries
+    for (let i = 0; i < 2000; i++) {
+      _testUserCache.set(`user:rapid-add-${i}`, { ...testData, id: `${i}` })
+    }
+    
+    // Should not have logged any size limit errors
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
+    
+    // Cleanup
+    consoleErrorSpy.mockRestore()
   })
 })

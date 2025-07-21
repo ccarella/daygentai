@@ -50,10 +50,21 @@ class LRUCache<T> {
   }
 
   set(key: string, data: T): void {
-    // If at capacity, remove least recently used
-    if (this.cache.size >= this.maxSize) {
-      const firstKey = this.cache.keys().next().value
-      if (firstKey) this.cache.delete(firstKey)
+    // Check if key already exists (update scenario)
+    const isUpdate = this.cache.has(key)
+    
+    // Only need to make room if adding new key and at capacity
+    if (!isUpdate && this.cache.size >= this.maxSize) {
+      // Remove oldest entries until we have room
+      // In practice, we only need to remove one, but this ensures size limit
+      while (this.cache.size >= this.maxSize) {
+        const firstKey = this.cache.keys().next().value
+        if (firstKey) {
+          this.cache.delete(firstKey)
+        } else {
+          break // Safety check to prevent infinite loop
+        }
+      }
     }
 
     this.cache.set(key, {
@@ -61,6 +72,11 @@ class LRUCache<T> {
       timestamp: Date.now(),
       version: CACHE_VERSION
     })
+    
+    // Ensure we never exceed maxSize (defensive check)
+    if (this.cache.size > this.maxSize) {
+      console.error(`Cache size ${this.cache.size} exceeds max ${this.maxSize}`)
+    }
   }
 
   invalidate(pattern?: string): void {
