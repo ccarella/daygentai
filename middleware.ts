@@ -21,9 +21,11 @@ interface UserProfile {
 class LRUCache<T> {
   private cache: Map<string, CacheEntry<T>> = new Map()
   private maxSize: number
+  private cleanupInterval: NodeJS.Timeout | null = null
 
   constructor(maxSize: number = 1000) {
     this.maxSize = maxSize
+    this.startPeriodicCleanup()
   }
 
   get(key: string): T | null {
@@ -93,6 +95,54 @@ class LRUCache<T> {
         this.cache.delete(key)
       }
     }
+  }
+
+  private startPeriodicCleanup(): void {
+    // Run cleanup every minute
+    const CLEANUP_INTERVAL = 60 * 1000 // 1 minute
+    
+    // Clear any existing interval (safety measure)
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval)
+    }
+    
+    // Set up periodic cleanup
+    this.cleanupInterval = setInterval(() => {
+      this.removeExpiredEntries()
+    }, CLEANUP_INTERVAL)
+    
+    // In Node.js environments, allow the process to exit even if interval is active
+    if (this.cleanupInterval.unref) {
+      this.cleanupInterval.unref()
+    }
+  }
+  
+  private removeExpiredEntries(): void {
+    const now = Date.now()
+    let removedCount = 0
+    
+    // Remove expired entries
+    for (const [key, entry] of this.cache.entries()) {
+      const age = now - entry.timestamp
+      if (age > CACHE_TTL || entry.version !== CACHE_VERSION) {
+        this.cache.delete(key)
+        removedCount++
+      }
+    }
+    
+    // Log cleanup activity (only if entries were removed)
+    if (removedCount > 0) {
+      console.log(`Cache cleanup: removed ${removedCount} expired entries`)
+    }
+  }
+  
+  // Clean up method for graceful shutdown
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval)
+      this.cleanupInterval = null
+    }
+    this.cache.clear()
   }
 }
 
