@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus, ChevronLeft, ChevronRight, HelpCircle, Settings, Terminal, BookOpen } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, HelpCircle, Settings, Terminal, BookOpen, Search } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import type { UserWorkspace } from '@/lib/supabase/workspaces'
-import { subscribeToCreateIssueRequests } from '@/lib/events/issue-events'
+import { subscribeToCreateIssueRequests, emitToggleSearch } from '@/lib/events/issue-events'
 
 const CreateIssueModal = dynamic(
   () => import('@/components/issues/create-issue-modal').then(mod => ({ default: mod.CreateIssueModal })),
@@ -135,6 +135,16 @@ export function WorkspaceLayout({
         >
           <Plus className="w-5 h-5" />
           <span>Create Issue</span>
+        </button>
+        
+        {/* Search button - mobile only */}
+        <button
+          data-sidebar-item
+          onClick={() => emitToggleSearch()}
+          className="md:hidden w-full flex items-center space-x-2 px-3 min-h-[44px] rounded-lg transition-colors hover:bg-accent text-foreground mb-1 focus:outline-none"
+        >
+          <Search className="w-5 h-5" />
+          <span>Search</span>
         </button>
         
         {onNavigateToInbox ? (
