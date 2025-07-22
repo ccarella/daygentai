@@ -30,10 +30,15 @@ export class LLMProxyService {
     // Validate and sanitize the request
     const sanitizedRequest = validateAndSanitizeRequest(request.request);
     
-    // Check rate limits
-    const rateLimitStatus = await this.rateLimiter.checkRateLimit(request.workspaceId);
-    if (!rateLimitStatus.allowed) {
-      throw new Error('Rate limit exceeded. Please try again later.');
+    // Check rate limits (with graceful fallback if table doesn't exist)
+    try {
+      const rateLimitStatus = await this.rateLimiter.checkRateLimit(request.workspaceId);
+      if (!rateLimitStatus.allowed) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+      }
+    } catch (rateLimitError) {
+      // If rate limit check fails (e.g., table doesn't exist), log but continue
+      console.warn('[LLM Proxy] Rate limit check failed, continuing without rate limiting:', rateLimitError);
     }
     
     // Check cache first (only for non-streaming requests)
@@ -114,21 +119,29 @@ export class LLMProxyService {
       ),
     };
     
-    // Log usage to database
-    await this.logUsage({
-      workspaceId: request.workspaceId,
-      userId,
-      model: sanitizedRequest.model,
-      provider: request.provider,
-      ...usage,
-      endpoint: request.endpoint,
-      requestId,
-      responseTimeMs: responseTime,
-      cacheHit: false,
-    });
+    // Log usage to database (with graceful fallback)
+    try {
+      await this.logUsage({
+        workspaceId: request.workspaceId,
+        userId,
+        model: sanitizedRequest.model,
+        provider: request.provider,
+        ...usage,
+        endpoint: request.endpoint,
+        requestId,
+        responseTimeMs: responseTime,
+        cacheHit: false,
+      });
+    } catch (error) {
+      console.warn('[LLM Proxy] Failed to log usage (table may not exist):', error);
+    }
     
-    // Increment rate limit counter
-    await this.rateLimiter.incrementCounter(request.workspaceId);
+    // Increment rate limit counter (with graceful fallback)
+    try {
+      await this.rateLimiter.incrementCounter(request.workspaceId);
+    } catch (error) {
+      console.warn('[LLM Proxy] Failed to increment rate limit counter:', error);
+    }
     
     return {
       data: response,
