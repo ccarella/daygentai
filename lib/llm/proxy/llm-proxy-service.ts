@@ -139,6 +139,7 @@ export class LLMProxyService {
   }
   
   private async getApiKey(workspaceId: string, provider: string): Promise<string> {
+    console.log('[LLM Proxy] Getting API key for workspace:', workspaceId);
     const supabase = await createClient();
     
     const { data, error } = await supabase
@@ -148,8 +149,16 @@ export class LLMProxyService {
       .single();
     
     if (error || !data) {
+      console.error('[LLM Proxy] Workspace query error:', error);
       throw new Error('Workspace not found or no API key configured');
     }
+    
+    console.log('[LLM Proxy] Workspace data:', {
+      hasApiKey: !!data.api_key,
+      apiKeyLength: data.api_key?.length,
+      provider: data.api_provider,
+      requestedProvider: provider
+    });
     
     if (data.api_provider !== provider) {
       throw new Error(`This workspace is configured for ${data.api_provider}, not ${provider}`);
@@ -168,10 +177,19 @@ export class LLMProxyService {
     
     // Decrypt the API key
     try {
+      console.log('[LLM Proxy] Attempting to decrypt API key...');
       const encryptionSecret = getEncryptionSecret();
-      return decryptApiKey(data.api_key, encryptionSecret);
+      console.log('[LLM Proxy] Got encryption secret, length:', encryptionSecret.length);
+      const decryptedKey = decryptApiKey(data.api_key, encryptionSecret);
+      console.log('[LLM Proxy] Successfully decrypted API key');
+      return decryptedKey;
     } catch (error) {
       console.error('[LLM Proxy] Failed to decrypt API key:', error);
+      console.error('[LLM Proxy] Decryption error details:', {
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        hasEncryptionSecret: !!process.env['API_KEY_ENCRYPTION_SECRET'],
+        encryptedKeyLength: data.api_key.length
+      });
       throw new Error('Failed to decrypt API key. Please re-enter your API key in settings.');
     }
   }

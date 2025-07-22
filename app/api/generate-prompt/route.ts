@@ -60,12 +60,21 @@ async function generateWithProxy(
 
 async function handlePOST(req: NextRequest) {
   try {
+    console.log('[Generate Prompt] Starting request processing')
+    
     // Parse request body
     const body = await req.json() as GeneratePromptRequest
     const { title, description, workspaceId } = body
 
+    console.log('[Generate Prompt] Request params:', { 
+      hasTitle: !!title, 
+      hasDescription: !!description, 
+      workspaceId 
+    })
+
     // Validate required fields
     if (!title || !description || !workspaceId) {
+      console.error('[Generate Prompt] Missing required fields')
       return NextResponse.json({ 
         error: 'Missing required fields: title, description, or workspaceId' 
       }, { status: 400 })
@@ -73,6 +82,7 @@ async function handlePOST(req: NextRequest) {
 
     // Basic validation
     if (title.length > 10000 || description.length > 10000) {
+      console.error('[Generate Prompt] Input exceeds max length')
       return NextResponse.json({ 
         error: 'Input exceeds maximum length of 10000 characters' 
       }, { status: 400 })
@@ -84,8 +94,11 @@ async function handlePOST(req: NextRequest) {
     // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
+      console.error('[Generate Prompt] Auth error:', authError?.message || 'No user')
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
+
+    console.log('[Generate Prompt] User authenticated:', user.id)
 
     // Verify user has access to the workspace
     const { data: userProfile } = await supabase
@@ -99,6 +112,9 @@ async function handlePOST(req: NextRequest) {
     }
 
     // Check if user has access to workspace (either as owner or member)
+    console.log('[Generate Prompt] Checking workspace access for:', { workspaceId, userId: user.id })
+    
+    // First, get the workspace
     const { data: workspace, error: workspaceError } = await supabase
       .from('workspaces')
       .select(`
@@ -106,19 +122,42 @@ async function handlePOST(req: NextRequest) {
         owner_id, 
         api_key, 
         api_provider, 
-        agents_content,
-        workspace_members!inner (
-          user_id,
-          role
-        )
+        agents_content
       `)
       .eq('id', workspaceId)
-      .eq('workspace_members.user_id', user.id)
       .single()
 
     if (workspaceError || !workspace) {
-      return NextResponse.json({ error: 'Workspace not found or access denied' }, { status: 403 })
+      console.error('[Generate Prompt] Workspace query error:', workspaceError?.message || 'No workspace found')
+      return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
     }
+
+    // Check if user is owner or member
+    const isOwner = workspace.owner_id === user.id
+    
+    if (!isOwner) {
+      // Check if user is a member
+      const { data: membership } = await supabase
+        .from('workspace_members')
+        .select('user_id, role')
+        .eq('workspace_id', workspaceId)
+        .eq('user_id', user.id)
+        .single()
+      
+      if (!membership) {
+        console.error('[Generate Prompt] User has no access to workspace')
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      }
+    }
+
+    console.log('[Generate Prompt] Access verified:', { isOwner, workspaceId })
+
+    console.log('[Generate Prompt] Workspace found:', {
+      id: workspace.id,
+      hasApiKey: !!workspace.api_key,
+      apiKeyLength: workspace.api_key?.length,
+      provider: workspace.api_provider
+    })
 
     // The proxy will handle API key validation
     const provider = workspace.api_provider || 'openai'
@@ -133,10 +172,17 @@ ${workspace.agents_content ? `Additional context from Agents.md:
 ${workspace.agents_content}` : ''}`
 
     // Generate the prompt using the proxy
+    console.log('[Generate Prompt] Calling proxy service...')
     const result = await generateWithProxy(workspaceId, provider, userPrompt, user.id)
 
     if (result.error) {
       console.error('[Generate Prompt] Failed to generate prompt:', result.error)
+      console.error('[Generate Prompt] Full error details:', {
+        error: result.error,
+        workspaceId,
+        provider,
+        hasApiKey: !!workspace.api_key
+      })
       
       // Determine appropriate status code based on error
       let statusCode = 500
