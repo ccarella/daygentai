@@ -136,8 +136,38 @@ async function handlePATCH(
       .single()
 
     if (error) {
-      console.error('Error updating issue:', error)
-      return createInternalServerError('Failed to update issue')
+      console.error('Error updating issue:', {
+        code: error.code,
+        message: error.message,
+        issueId: id,
+        // Only log detailed info in development
+        ...(process.env.NODE_ENV === 'development' && {
+          details: error.details,
+          hint: error.hint,
+          updateData,
+          workspaceId
+        })
+      })
+      
+      // Handle specific database errors
+      if (error.code === '22P02' || error.message?.includes('invalid input syntax')) {
+        return NextResponse.json(
+          { 
+            error: 'Invalid status value. Must be one of: todo, in_progress, in_review, done',
+            code: 'INVALID_STATUS'
+          },
+          { status: 400 }
+        )
+      }
+      
+      return NextResponse.json(
+        { 
+          error: 'Failed to update issue',
+          code: error.code || 'UNKNOWN_ERROR',
+          message: error.message || 'An unexpected error occurred'
+        },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({ issue: updatedIssue })
