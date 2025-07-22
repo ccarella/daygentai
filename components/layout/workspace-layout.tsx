@@ -140,7 +140,10 @@ export function WorkspaceLayout({
         {/* Search button - mobile only */}
         <button
           data-sidebar-item
-          onClick={() => emitToggleSearch()}
+          onClick={() => {
+            setIsMobileMenuOpen(false)
+            emitToggleSearch()
+          }}
           className="md:hidden w-full flex items-center space-x-2 px-3 min-h-[44px] rounded-lg transition-colors hover:bg-accent text-foreground mb-1 focus:outline-none"
         >
           <Search className="w-5 h-5" />
