@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { withTimeout, timeoutConfig, withExternalTimeout } from '@/lib/middleware/timeout'
-import { 
-  withErrorHandler, 
-  createUnauthorizedError, 
-  createValidationError, 
-  createNotFoundError, 
-  createForbiddenError,
-  createInternalServerError 
-} from '@/lib/middleware/error-handler'
+import { withExternalTimeout } from '@/lib/middleware/timeout'
 
 interface GeneratePromptRequest {
   title: string
@@ -135,27 +127,24 @@ async function handlePOST(req: NextRequest) {
 
     // Validate required fields
     if (!title || !description || !workspaceId) {
-      return createValidationError(
-        'Missing required fields: title, description, or workspaceId',
-        { requiredFields: ['title', 'description', 'workspaceId'] }
-      )
+      return NextResponse.json({ 
+        error: 'Missing required fields: title, description, or workspaceId' 
+      }, { status: 400 })
     }
 
     // Validate inputs
     const titleValidation = validateInput(title)
     if (!titleValidation.isValid) {
-      return createValidationError(
-        `Invalid title: ${titleValidation.error}`,
-        { field: 'title', value: title.substring(0, 100) }
-      )
+      return NextResponse.json({ 
+        error: `Invalid title: ${titleValidation.error}` 
+      }, { status: 400 })
     }
 
     const descriptionValidation = validateInput(description)
     if (!descriptionValidation.isValid) {
-      return createValidationError(
-        `Invalid description: ${descriptionValidation.error}`,
-        { field: 'description', value: description.substring(0, 100) }
-      )
+      return NextResponse.json({ 
+        error: `Invalid description: ${descriptionValidation.error}` 
+      }, { status: 400 })
     }
 
     // Create authenticated Supabase client
@@ -164,7 +153,7 @@ async function handlePOST(req: NextRequest) {
     // Check if user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return createUnauthorizedError()
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     // Verify user has access to the workspace
@@ -175,7 +164,7 @@ async function handlePOST(req: NextRequest) {
       .single()
 
     if (!userProfile) {
-      return createNotFoundError('User profile')
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
     }
 
     // Check if user has access to workspace (either as owner or member)
@@ -197,15 +186,14 @@ async function handlePOST(req: NextRequest) {
       .single()
 
     if (workspaceError || !workspace) {
-      return createForbiddenError('Workspace not found or access denied')
+      return NextResponse.json({ error: 'Workspace not found or access denied' }, { status: 403 })
     }
 
     // Check if workspace has API key configured
     if (!workspace.api_key) {
-      return createValidationError(
-        'No API key configured for this workspace',
-        { suggestion: 'Please configure an API key in workspace settings' }
-      )
+      return NextResponse.json({ 
+        error: 'No API key configured for this workspace. Please configure an API key in workspace settings.' 
+      }, { status: 400 })
     }
 
     // Sanitize inputs
@@ -235,7 +223,8 @@ ${sanitizedAgentsContent}` : ''}`
     }
 
     if (result.error) {
-      return createInternalServerError(result.error)
+      // Return error in the format expected by the client
+      return NextResponse.json({ error: result.error }, { status: 500 })
     }
 
     // Return only the generated prompt, not the API key
@@ -243,9 +232,12 @@ ${sanitizedAgentsContent}` : ''}`
 
   } catch (error) {
     console.error('Error in generate-prompt route:', error)
-    return createInternalServerError()
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'Internal server error' 
+    }, { status: 500 })
   }
 }
 
-// Export the wrapped handler with timeout and error handling
-export const POST = withTimeout(withErrorHandler(handlePOST), timeoutConfig.external)
+// Export the handler directly without middleware wrappers to maintain backward compatibility
+// The error handling is already implemented within the handler function
+export const POST = handlePOST
