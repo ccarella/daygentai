@@ -21,7 +21,7 @@ export class OpenAIAdapter {
         params.temperature = request.temperature;
       }
       
-      const completion = await this.client.chat.completions.create(params as any);
+      const completion = await this.client.chat.completions.create(params);
       
       // Type assertion since we know this is not a stream
       const chatCompletion = completion as OpenAI.Chat.Completions.ChatCompletion;
@@ -68,7 +68,7 @@ export class OpenAIAdapter {
       params.temperature = request.temperature;
     }
     
-    const stream = await this.client.chat.completions.create(params as any);
+    const stream = await this.client.chat.completions.create(params);
     
     // Type assertion through unknown since we know this is a stream
     const chatStream = stream as unknown as AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>;
