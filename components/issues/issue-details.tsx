@@ -515,9 +515,9 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
       .from('issues')
       .select(`
         *,
-        issue_tags!left (
+        issue_tags (
           tag_id,
-          tags!inner (
+          tags (
             id,
             name,
             color

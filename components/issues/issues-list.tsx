@@ -224,9 +224,9 @@ export function IssuesList({
       .from('issues')
       .select(`
         *,
-        issue_tags!left (
+        issue_tags (
           tag_id,
-          tags!inner (
+          tags (
             id,
             name,
             color
@@ -272,6 +272,16 @@ export function IssuesList({
     }
 
     let newIssues = data || []
+    
+    // Debug: Log the first issue with tags to see what's being returned
+    if (newIssues.length > 0 && newIssues.some((i: Issue) => i.issue_tags && i.issue_tags.length > 0)) {
+      const issueWithTags = newIssues.find((i: Issue) => i.issue_tags && i.issue_tags.length > 0)
+      console.log('Issue with tags from Supabase:', {
+        id: issueWithTags.id,
+        title: issueWithTags.title,
+        issue_tags: issueWithTags.issue_tags
+      })
+    }
     
     // Apply tag filter on the client side
     if (tagFilter !== 'all') {

@@ -155,9 +155,9 @@ export function KanbanBoard({
         .from('issues')
         .select(`
           *,
-          issue_tags!left (
+          issue_tags (
             tag_id,
-            tags!inner (
+            tags (
               id,
               name,
               color
