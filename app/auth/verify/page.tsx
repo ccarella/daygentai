@@ -4,6 +4,12 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getVerificationToken, clearVerificationToken } from '@/lib/auth/token-storage'
+import { 
+  validateMagicLinkToken, 
+  sanitizeUrlParam, 
+  checkRateLimit, 
+  clearRateLimit 
+} from '@/lib/auth/token-validation'
 
 export default function VerifyPage() {
   const [status, setStatus] = useState<'loading' | 'error' | 'success'>('loading')
@@ -13,32 +19,62 @@ export default function VerifyPage() {
   useEffect(() => {
     const verifyToken = async () => {
       try {
+        // Check rate limiting first
+        const { allowed } = checkRateLimit()
+        if (!allowed) {
+          throw new Error('Too many verification attempts. Please try again later.')
+        }
+        
         // Check for token in URL params (for backward compatibility)
         const urlParams = new URLSearchParams(window.location.search)
-        const urlToken = urlParams.get('token')
-        const urlType = urlParams.get('type')
+        const rawUrlToken = urlParams.get('token')
+        const rawUrlType = urlParams.get('type')
         
         let token: string | null = null
         let type: string | null = null
         
-        if (urlToken && urlType) {
-          // Use URL params if available (direct links)
-          token = urlToken
-          type = urlType
+        if (rawUrlToken && rawUrlType) {
+          // Sanitize URL parameters
+          const urlToken = sanitizeUrlParam(rawUrlToken)
+          const urlType = sanitizeUrlParam(rawUrlType)
+          
+          if (!urlToken || !urlType) {
+            throw new Error('Invalid URL parameters')
+          }
+          
+          // Validate token format
+          const validation = validateMagicLinkToken(urlToken, urlType)
+          if (!validation.isValid) {
+            throw new Error(validation.error || 'Invalid token format')
+          }
+          
+          token = validation.sanitizedToken!
+          type = validation.tokenType!
         } else {
           // Otherwise, check sessionStorage (manual verification)
           const verificationData = getVerificationToken()
           
           if (verificationData) {
-            token = verificationData.token
-            type = verificationData.type
+            // Validate stored token
+            const validation = validateMagicLinkToken(
+              verificationData.token, 
+              verificationData.type
+            )
+            
+            if (!validation.isValid) {
+              clearVerificationToken()
+              throw new Error(validation.error || 'Invalid stored token')
+            }
+            
+            token = validation.sanitizedToken!
+            type = validation.tokenType!
             
             // Clear the stored token immediately after reading
             clearVerificationToken()
           }
         }
         
-        if (!token || type !== 'magiclink') {
+        if (!token || !type) {
           throw new Error('No valid verification token found')
         }
         
@@ -54,7 +90,8 @@ export default function VerifyPage() {
           throw new Error(error.message || 'Failed to verify magic link')
         }
         
-        // Success - redirect to workspace
+        // Success - clear rate limiting and redirect to workspace
+        clearRateLimit()
         setStatus('success')
         router.push('/workspace')
       } catch (error) {

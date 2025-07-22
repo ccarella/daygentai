@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/use-toast'
 import { storeVerificationToken } from '@/lib/auth/token-storage'
+import { validateMagicLinkToken } from '@/lib/auth/token-validation'
 
 export default function ManualVerifyPage() {
   const [magicLinkUrl, setMagicLinkUrl] = useState('')
@@ -23,12 +24,33 @@ export default function ManualVerifyPage() {
       const token = url.searchParams.get('token')
       const type = url.searchParams.get('type')
       
-      if (token && type === 'magiclink') {
+      if (token && type) {
+        // Validate token before storing
+        const validation = validateMagicLinkToken(token, type)
+        
+        if (!validation.isValid) {
+          toast({
+            title: "Invalid Token",
+            description: validation.error || "The token format is invalid.",
+            variant: "destructive",
+          })
+          return
+        }
+        
+        if (validation.tokenType !== 'magiclink') {
+          toast({
+            title: "Wrong Token Type",
+            description: "This page only handles magic link tokens.",
+            variant: "destructive",
+          })
+          return
+        }
+        
         setIsVerifying(true)
         
-        // Store token securely using our utility
+        // Store validated token securely using our utility
         // This prevents token exposure in server logs and browser history
-        storeVerificationToken(token, type)
+        storeVerificationToken(validation.sanitizedToken!, validation.tokenType)
         
         // Redirect without token in URL
         router.push('/auth/verify')
@@ -65,7 +87,7 @@ export default function ManualVerifyPage() {
               type="text"
               value={magicLinkUrl}
               onChange={(e) => setMagicLinkUrl(e.target.value)}
-              placeholder="https://bhbrqmpkzelhxlthigkx.supabase.co/auth/v1/verify?token=..."
+              placeholder="https://your-project.supabase.co/auth/v1/verify?token=..."
               className="font-mono text-xs"
             />
             <p className="text-xs text-muted-foreground">
