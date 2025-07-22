@@ -33,7 +33,7 @@ export default async function AdminApiSettingsPage() {
           
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
             <p className="text-sm text-yellow-800">
-              <strong>Admin Access:</strong> You have access to this page because you own the workspace "{workspaces[0]?.name}". 
+              <strong>Admin Access:</strong> You have access to this page because you own the workspace &ldquo;{workspaces[0]?.name}&rdquo;. 
               These settings affect all workspaces in the application.
             </p>
           </div>
