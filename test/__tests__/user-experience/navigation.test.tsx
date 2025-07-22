@@ -113,19 +113,20 @@ describe('Navigation', () => {
       expect(mockRouter.push).toHaveBeenCalledWith('/test-workspace')
     })
 
-    it('navigates to inbox with G then N', async () => {
-      render(
-        <TestWrapper>
-          <TestComponent workspaceSlug="test-workspace" />
-        </TestWrapper>
-      )
+    // Inbox navigation is currently hidden - test disabled
+    // it('navigates to inbox with G then N', async () => {
+    //   render(
+    //     <TestWrapper>
+    //       <TestComponent workspaceSlug="test-workspace" />
+    //     </TestWrapper>
+    //   )
 
-      // Press G then N
-      await user.keyboard('g')
-      await user.keyboard('n')
+    //   // Press G then N
+    //   await user.keyboard('g')
+    //   await user.keyboard('n')
 
-      expect(mockRouter.push).toHaveBeenCalledWith('/test-workspace/inbox')
-    })
+    //   expect(mockRouter.push).toHaveBeenCalledWith('/test-workspace/inbox')
+    // })
 
     it('creates new issue with C key', async () => {
       const { getByText } = render(
@@ -424,11 +425,11 @@ describe('Navigation', () => {
 
       const startTime = performance.now()
 
-      // Rapid keyboard navigation
+      // Rapid keyboard navigation (inbox navigation gn is disabled, so only gi works)
       await user.keyboard('g')
       await user.keyboard('i')
       await user.keyboard('g')
-      await user.keyboard('n')
+      await user.keyboard('n') // This no longer triggers navigation
       await user.keyboard('g')
       await user.keyboard('i')
 
@@ -437,8 +438,8 @@ describe('Navigation', () => {
       // Should handle rapid navigation within 100ms
       expect(endTime - startTime).toBeLessThan(100)
 
-      // Should have navigated 3 times
-      expect(mockRouter.push).toHaveBeenCalledTimes(3)
+      // Should have navigated 2 times (only gi shortcuts work, gn is disabled)
+      expect(mockRouter.push).toHaveBeenCalledTimes(2)
     })
 
     it('debounces navigation calls', async () => {
