@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { updateApiSettings } from '@/app/actions/update-api-settings'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,17 +36,16 @@ export function ApiSettings({ workspaceId, initialSettings }: ApiSettingsProps) 
     try {
       const supabase = createClient()
       
-      const { error } = await supabase
-        .from('workspaces')
-        .update({
-          api_key: apiKey,
-          api_provider: provider,
-          agents_content: agentsContent
-        })
-        .eq('id', workspaceId)
+      // Use server action to save encrypted API key
+      const result = await updateApiSettings({
+        workspaceId,
+        apiKey,
+        apiProvider: provider,
+        agentsContent
+      })
       
-      if (error) {
-        throw error
+      if (result.error) {
+        throw new Error(result.error)
       }
       
       // Update the workspace context with the new API key status

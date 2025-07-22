@@ -72,7 +72,9 @@ export async function recommendNextIssueAction(
       issues, 
       apiKey, 
       provider as 'openai' | 'anthropic',
-      workspace.agents_content
+      workspace.agents_content,
+      workspaceId,
+      user.id
     )
     
     if (result.error || !result.recommendedIssue) {

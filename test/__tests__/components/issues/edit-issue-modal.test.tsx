@@ -14,6 +14,12 @@ vi.mock('next/navigation', () => ({
     refresh: vi.fn()
   })
 }))
+vi.mock('@/lib/tags', () => ({
+  getWorkspaceTags: vi.fn(() => Promise.resolve([])),
+  createTag: vi.fn(() => Promise.resolve({ id: 'new-tag-id' })),
+  updateIssueTags: vi.fn(() => Promise.resolve()),
+  getIssueTags: vi.fn(() => Promise.resolve([]))
+}))
 
 describe('EditIssueModal - Prompt Generation', () => {
   const mockSupabase = {
@@ -107,6 +113,14 @@ describe('EditIssueModal - Prompt Generation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     
+    // Mock fetch API
+    global.fetch = vi.fn(() => 
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ success: true })
+      } as Response)
+    )
+    
     // Reset the mock implementation but preserve the tag-related functionality
     mockSupabase.from.mockImplementation((table) => {
       if (table === 'issue_tags') {
@@ -126,6 +140,13 @@ describe('EditIssueModal - Prompt Generation', () => {
             eq: vi.fn(() => ({
               order: vi.fn(() => Promise.resolve({ data: [], error: null }))
             }))
+          }))
+        }
+      }
+      if (table === 'issues') {
+        return {
+          update: vi.fn(() => ({
+            eq: vi.fn(() => Promise.resolve({ error: null }))
           }))
         }
       }
@@ -231,8 +252,14 @@ describe('EditIssueModal - Prompt Generation', () => {
 
       // Verify update includes new prompt
       await waitFor(() => {
-        const fromCall = mockSupabase.from.mock.calls.find((call: any) => call?.[0] === 'issues')
-        expect(fromCall).toBeDefined()
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/workspaces/test-workspace/issues/issue-123'),
+          expect.objectContaining({
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: expect.stringContaining('"generated_prompt":"New generated prompt"')
+          })
+        )
       })
     })
 
@@ -263,8 +290,14 @@ describe('EditIssueModal - Prompt Generation', () => {
         expect(promptGenerator.generateIssuePrompt).not.toHaveBeenCalled()
         
         // Should keep existing prompt
-        const fromCall = mockSupabase.from.mock.calls.find((call: any) => call?.[0] === 'issues')
-        expect(fromCall).toBeDefined()
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/workspaces/test-workspace/issues/issue-123'),
+          expect.objectContaining({
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: expect.stringContaining('"generated_prompt":"Existing prompt"')
+          })
+        )
       })
     })
 
@@ -295,8 +328,14 @@ describe('EditIssueModal - Prompt Generation', () => {
         expect(promptGenerator.generateIssuePrompt).not.toHaveBeenCalled()
         
         // Should remove prompt
-        const fromCall = mockSupabase.from.mock.calls.find((call: any) => call?.[0] === 'issues')
-        expect(fromCall).toBeDefined()
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/workspaces/test-workspace/issues/issue-123'),
+          expect.objectContaining({
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: expect.stringContaining('"generated_prompt":null')
+          })
+        )
       })
     })
 
@@ -396,8 +435,14 @@ describe('EditIssueModal - Prompt Generation', () => {
 
       await waitFor(() => {
         // Should still update issue, but without prompt
-        const fromCall = mockSupabase.from.mock.calls.find((call: any) => call?.[0] === 'issues')
-        expect(fromCall).toBeDefined()
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/workspaces/test-workspace/issues/issue-123'),
+          expect.objectContaining({
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: expect.any(String)
+          })
+        )
       })
     })
 
@@ -405,61 +450,12 @@ describe('EditIssueModal - Prompt Generation', () => {
       const user = userEvent.setup()
       
       // Mock error response for the update operation
-      const errorSupabase = {
-        auth: {
-          getSession: vi.fn(() => Promise.resolve({
-            data: { session: { access_token: 'test-token', user: { id: 'test-user-id' } } },
-            error: null
-          }))
-        },
-        from: vi.fn((table: string) => {
-          if (table === 'workspaces') {
-            return {
-              select: vi.fn(() => ({
-                eq: vi.fn(() => ({
-                  single: vi.fn(() => Promise.resolve({ 
-                    data: { id: 'test-workspace-id', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
-                    error: null 
-                  }))
-                }))
-              }))
-            }
-          }
-          if (table === 'issues') {
-            return {
-              update: vi.fn(() => ({
-                eq: vi.fn(() => Promise.resolve({ error: { message: 'Database error' } }))
-              }))
-            }
-          }
-          if (table === 'issue_tags') {
-            return {
-              delete: vi.fn(() => ({
-                eq: vi.fn(() => Promise.resolve({ error: null }))
-              })),
-              insert: vi.fn(() => Promise.resolve({ error: null })),
-              select: vi.fn(() => ({
-                eq: vi.fn(() => Promise.resolve({ data: [], error: null }))
-              }))
-            }
-          }
-          if (table === 'tags') {
-            return {
-              select: vi.fn(() => ({
-                eq: vi.fn(() => ({
-                  order: vi.fn(() => Promise.resolve({ data: [], error: null }))
-                }))
-              }))
-            }
-          }
-          return {
-            select: vi.fn(() => ({ eq: vi.fn() })),
-            update: vi.fn(() => ({ eq: vi.fn() }))
-          }
-        })
-      }
-      
-      vi.mocked(createClient).mockReturnValue(errorSupabase as any)
+      global.fetch = vi.fn(() => 
+        Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({ error: 'Database error' })
+        } as Response)
+      )
 
       renderWithProvider()
 
