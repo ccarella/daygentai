@@ -611,7 +611,7 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
                   onValueChange={handleStatusChange}
                   disabled={isUpdatingStatus}
                 >
-                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0">
+                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none">
                     <SelectValue>
                       <span className={`text-sm font-medium ${statusOptions.find(s => s.value === issue.status)?.color || 'text-muted-foreground'}`}>
                         {statusOptions.find(s => s.value === issue.status)?.label || issue.status}
@@ -634,7 +634,7 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
                   onValueChange={handleTypeChange}
                   disabled={isUpdatingType}
                 >
-                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0">
+                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none">
                     <SelectValue>
                       <span className="text-sm font-medium flex items-center gap-1">
                         <span>{typeOptions.find(t => t.value === issue.type)?.icon || '📌'}</span>

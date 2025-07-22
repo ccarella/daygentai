@@ -122,7 +122,7 @@ describe('EditIssueModal - Prompt Generation', () => {
     )
     
     // Reset the mock implementation but preserve the tag-related functionality
-    mockSupabase.from.mockImplementation((table) => {
+    mockSupabase.from.mockImplementation((table: any) => {
       if (table === 'issue_tags') {
         return {
           delete: vi.fn(() => ({
@@ -147,7 +147,18 @@ describe('EditIssueModal - Prompt Generation', () => {
         return {
           update: vi.fn(() => ({
             eq: vi.fn(() => Promise.resolve({ error: null }))
-          }))
+          })),
+          select: vi.fn(() => {
+            // Support chained .eq() calls
+            const chainableQuery = {
+              eq: vi.fn(() => chainableQuery),
+              single: vi.fn(() => Promise.resolve({ 
+                data: { id: 'test-workspace-id', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
+                error: null 
+              }))
+            }
+            return chainableQuery
+          })
         }
       }
       return {
