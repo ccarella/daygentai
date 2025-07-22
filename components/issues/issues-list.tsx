@@ -43,6 +43,7 @@ interface IssuesListProps {
   tagFilter?: string
   searchQuery?: string
   onSearchResultsChange?: (count: number) => void
+  onSearchingChange?: (isSearching: boolean) => void
 }
 
 const typeColors = {
@@ -86,7 +87,8 @@ export function IssuesList({
   typeFilter = 'all',
   tagFilter = 'all',
   searchQuery = '',
-  onSearchResultsChange
+  onSearchResultsChange,
+  onSearchingChange
 }: IssuesListProps) {
   const router = useRouter()
   const { preloadIssues, getListCache, setListCache } = useIssueCache()
@@ -98,6 +100,8 @@ export function IssuesList({
   const [totalCount, setTotalCount] = useState(0)
   const [isStale, setIsStale] = useState(false)
   const isLoadingRef = useRef(false)
+  const [isSearching, setIsSearching] = useState(false)
+  const previousSearchQuery = useRef(searchQuery)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const preloadedIssuesRef = useRef<Set<string>>(new Set())
   const listContainerRef = useRef<HTMLDivElement>(null)
@@ -316,6 +320,10 @@ export function IssuesList({
     let cancelled = false
 
     const loadInitialData = async () => {
+      // Check if this is a search query change
+      const isSearchChange = searchQuery !== previousSearchQuery.current
+      previousSearchQuery.current = searchQuery
+
       // First, try to load from cache
       const cacheKey: ListCacheKey = {
         workspaceId,
@@ -335,7 +343,9 @@ export function IssuesList({
         setHasMore(cachedData.hasMore)
         setTotalCount(cachedData.totalCount)
         setPage(0)
-        setInitialLoading(false)
+        if (!isSearchChange) {
+          setInitialLoading(false)
+        }
         
         if (searchQuery && onSearchResultsChange) {
           onSearchResultsChange(cachedData.totalCount)
@@ -346,6 +356,9 @@ export function IssuesList({
         if (isStale) {
           // Cache is stale, fetching fresh data in background
           setIsStale(true)
+          if (isSearchChange) {
+            setIsSearching(true)
+          }
           
           // Fetch fresh data in background
           const { issues: freshIssues, hasMore: freshHasMore, totalCount: freshTotal } = await fetchIssues(0, false, true)
@@ -355,6 +368,7 @@ export function IssuesList({
             setIssues(freshIssues)
             setHasMore(freshHasMore)
             setTotalCount(freshTotal)
+            setIsSearching(false)
             
             if (searchQuery && onSearchResultsChange) {
               onSearchResultsChange(freshTotal)
@@ -362,8 +376,14 @@ export function IssuesList({
           }
         }
       } else {
-        // No cache, show loading state
-        setInitialLoading(true)
+        // No cache
+        if (!isSearchChange) {
+          // Only show loading state if not a search change
+          setInitialLoading(true)
+        } else {
+          // For search changes, show search loading indicator
+          setIsSearching(true)
+        }
         
         const { issues: newIssues, hasMore: moreAvailable, totalCount: total } = await fetchIssues(0)
         
@@ -373,6 +393,7 @@ export function IssuesList({
           setTotalCount(total)
           setPage(0)
           setInitialLoading(false)
+          setIsSearching(false)
           
           if (searchQuery && onSearchResultsChange) {
             onSearchResultsChange(total)
@@ -537,6 +558,11 @@ export function IssuesList({
     }
   }, [])
 
+  // Notify parent of searching state changes
+  useEffect(() => {
+    onSearchingChange?.(isSearching)
+  }, [isSearching, onSearchingChange])
+
   const truncateDescription = (description: string | null, maxLength: number = 100) => {
     if (!description) return ''
     const plainText = stripMarkdown(description)
@@ -578,8 +604,16 @@ export function IssuesList({
   return (
     <div className="flex-1 overflow-auto bg-background">
       <div ref={listContainerRef} className="">
-        {/* Stale data indicator */}
-        {isStale && (
+        {/* Search indicator */}
+        {isSearching && (
+          <div className="px-6 py-2 bg-muted/50 border-b border-border flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <span>Searching...</span>
+          </div>
+        )}
+        
+        {/* Stale data indicator - only show if not searching */}
+        {isStale && !isSearching && (
           <div className="px-6 py-2 bg-muted/50 border-b border-border flex items-center gap-2 text-xs text-muted-foreground">
             <div className="w-3 h-3 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin"></div>
             <span>Refreshing data...</span>

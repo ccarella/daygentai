@@ -657,6 +657,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
             tagFilter={tagFilter}
             searchQuery={debouncedSearchQuery}
             onSearchResultsChange={setSearchResultCount}
+            onSearchingChange={setIsSearching}
           />
         ) : (
           <KanbanBoard
