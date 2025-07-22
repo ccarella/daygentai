@@ -6,7 +6,6 @@ import { Header } from './header'
 import { WorkspaceLayout } from './workspace-layout'
 import { useWorkspaceNavigation } from '@/hooks/use-workspace-navigation'
 import type { UserWorkspace } from '@/lib/supabase/workspaces'
-import { emitCreateIssueRequest } from '@/lib/events/issue-events'
 
 interface WorkspaceWithMobileNavProps {
   workspace: {
@@ -105,11 +104,6 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
     setIsMobileMenuOpen(!isMobileMenuOpen)
   }
 
-  const handleCreateIssue = () => {
-    // This will trigger the create issue modal in WorkspaceLayout
-    emitCreateIssueRequest()
-  }
-
   // Set up unified workspace navigation
   useWorkspaceNavigation({
     sidebarRef,
@@ -123,13 +117,11 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
           initialProfile={profile} 
           onMenuToggle={handleMenuToggle}
           isMobileMenuOpen={isMobileMenuOpen}
-          onCreateIssue={handleCreateIssue}
         />
       ) : (
         <Header 
           onMenuToggle={handleMenuToggle}
           isMobileMenuOpen={isMobileMenuOpen}
-          onCreateIssue={handleCreateIssue}
         />
       )}
       <div className="pt-11">

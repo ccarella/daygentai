@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Menu, X, Plus } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 
 interface UserProfile {
   name: string
@@ -15,10 +15,9 @@ interface HeaderProps {
   initialProfile?: UserProfile
   onMenuToggle?: () => void
   isMobileMenuOpen?: boolean
-  onCreateIssue?: () => void
 }
 
-export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen, onCreateIssue }: HeaderProps) {
+export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: HeaderProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(initialProfile || null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -72,7 +71,7 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen, onCreat
     <header className="fixed top-0 left-0 right-0 bg-background border-b border-border z-50">
       <div className="w-full px-4 md:px-6 lg:px-8">
         <div className="flex items-center h-11 relative isolate">
-          {/* Left Section - Menu, Create Issue Button (Mobile), and Logo */}
+          {/* Left Section - Logo */}
           <div className="flex items-center flex-1">
             {onMenuToggle && (
               <button
@@ -87,19 +86,6 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen, onCreat
                 )}
               </button>
             )}
-            
-            {/* Create Issue Button - Mobile Only */}
-            {onCreateIssue && (
-              <button
-                onClick={onCreateIssue}
-                className="lg:hidden p-1.5 md:p-2 rounded-md hover:bg-accent mr-2"
-                aria-label="Create issue"
-                data-mobile-create-issue-button
-              >
-                <Plus className="h-6 w-6 text-muted-foreground" />
-              </button>
-            )}
-            
             <Link href="/daygent" className="text-xl font-bold text-foreground">
               Daygent
             </Link>

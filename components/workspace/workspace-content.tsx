@@ -14,7 +14,8 @@ import {
   subscribeToNavigateToInbox,
   subscribeToToggleViewMode,
   subscribeToToggleSearch,
-  subscribeToSetStatusFilter
+  subscribeToSetStatusFilter,
+  emitCreateIssueRequest
 } from '@/lib/events/issue-events'
 
 const KanbanBoard = dynamic(
@@ -65,7 +66,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { LayoutGrid, List, Filter, X } from 'lucide-react'
+import { LayoutGrid, List, Filter, X, Plus } from 'lucide-react'
 import { SearchBar, SearchBarRef } from '@/components/workspace/search-bar'
 import { getWorkspaceTags } from '@/lib/tags'
 import { Tag as TagComponent } from '@/components/ui/tag'
@@ -504,8 +505,18 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               </div>
             </div>
             
-            {/* Right side - Mobile filter toggle and view mode toggle */}
+            {/* Right side - Mobile create issue button, filter toggle and view mode toggle */}
             <div className="flex items-center gap-2">
+              {/* Create Issue Button - Mobile Only */}
+              <button
+                onClick={() => emitCreateIssueRequest()}
+                className="sm:hidden p-2 rounded-md hover:bg-accent transition-colors"
+                title="Create issue"
+                aria-label="Create issue"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+              
               {/* Mobile filter toggle - only visible on small screens */}
               <button
                 onClick={() => setIsFiltersVisible(!isFiltersVisible)}
