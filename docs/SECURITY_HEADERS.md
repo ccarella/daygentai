@@ -51,16 +51,74 @@ curl -I https://yourdomain.com | grep -E "^(Content-Security-Policy|X-Frame-Opti
 
 ## Known Limitations
 
-1. **CSP 'unsafe-inline' and 'unsafe-eval'**: Required by Next.js for:
-   - Inline script injection for hydration
-   - Dynamic imports and code splitting
-   - Development mode features
+### CSP 'unsafe-inline' and 'unsafe-eval' 
+These directives significantly weaken XSS protection but are currently required:
 
-2. **Development vs Production**: The same CSP is used in both environments. Consider stricter policies for production.
+**Why 'unsafe-inline' is needed:**
+- Next.js injects inline scripts for client-side hydration
+- React DevTools requires inline scripts in development
+- Tailwind CSS and other CSS-in-JS solutions use inline styles
+- Third-party components may inject inline scripts/styles
 
-## Future Improvements
+**Why 'unsafe-eval' is needed:**
+- Webpack uses eval() in development mode for hot module replacement
+- Dynamic imports and code splitting may use eval-like constructs
+- Some third-party libraries (e.g., certain JSON parsers) use eval()
 
-1. Implement nonce-based CSP for stricter script control
-2. Add CSP report-uri for violation monitoring
-3. Gradually increase HSTS max-age
-4. Environment-specific CSP policies
+### Development vs Production
+The same CSP is used in both environments. Production should have stricter policies.
+
+## Migration Plan to Nonce-based CSP
+
+### Phase 1: Preparation (Current)
+- Document all inline script/style usage
+- Identify third-party dependencies using eval()
+- Add comprehensive CSP violation reporting
+
+### Phase 2: Implement Nonce Generation
+```typescript
+// middleware.ts
+import { NextResponse } from 'next/server'
+import crypto from 'crypto'
+
+export function middleware(request: Request) {
+  const nonce = crypto.randomBytes(16).toString('base64')
+  const cspHeader = `
+    script-src 'self' 'nonce-${nonce}' 'strict-dynamic';
+    style-src 'self' 'nonce-${nonce}';
+  `
+  
+  const response = NextResponse.next()
+  response.headers.set('Content-Security-Policy', cspHeader)
+  response.headers.set('X-Nonce', nonce)
+  
+  return response
+}
+```
+
+### Phase 3: Update Application Code
+1. Pass nonce to all inline scripts via Next.js Script component
+2. Update style tags to include nonce attribute
+3. Replace eval() usage with safer alternatives
+4. Update third-party integrations
+
+### Phase 4: Testing & Rollout
+1. Enable CSP report-only mode with nonce-based policy
+2. Monitor violation reports
+3. Fix any violations
+4. Gradually roll out to production
+5. Remove 'unsafe-inline' and 'unsafe-eval'
+
+### Phase 5: Modern Browser Optimization
+- Implement 'strict-dynamic' for modern browsers
+- Use 'unsafe-inline' as fallback for older browsers
+- Consider implementing Feature Policy/Permissions Policy
+
+## Interim Security Measures
+
+While 'unsafe-inline' and 'unsafe-eval' are present:
+1. Implement strict input validation
+2. Use React's built-in XSS protection
+3. Sanitize all user-generated content
+4. Regular security audits
+5. Monitor for CSP violations
