@@ -102,6 +102,7 @@ export function IssuesList({
   const isLoadingRef = useRef(false)
   const [isSearching, setIsSearching] = useState(false)
   const previousSearchQuery = useRef(searchQuery)
+  const hasInitiallyLoaded = useRef(false)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const preloadedIssuesRef = useRef<Set<string>>(new Set())
   const listContainerRef = useRef<HTMLDivElement>(null)
@@ -343,8 +344,9 @@ export function IssuesList({
         setHasMore(cachedData.hasMore)
         setTotalCount(cachedData.totalCount)
         setPage(0)
-        if (!isSearchChange) {
+        if (!isSearchChange || !hasInitiallyLoaded.current) {
           setInitialLoading(false)
+          hasInitiallyLoaded.current = true
         }
         
         if (searchQuery && onSearchResultsChange) {
@@ -394,6 +396,7 @@ export function IssuesList({
           setPage(0)
           setInitialLoading(false)
           setIsSearching(false)
+          hasInitiallyLoaded.current = true
           
           if (searchQuery && onSearchResultsChange) {
             onSearchResultsChange(total)
@@ -570,11 +573,12 @@ export function IssuesList({
     return plainText.substring(0, maxLength).trim() + '...'
   }
 
-  if (initialLoading) {
+  // Show skeleton only on very first load
+  if (initialLoading && !hasInitiallyLoaded.current) {
     return <IssueListSkeleton count={5} />
   }
 
-  if (issues.length === 0 && !initialLoading) {
+  if (issues.length === 0 && !initialLoading && !isSearching) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
