@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { withExternalTimeout } from '@/lib/middleware/timeout'
+import { withExternalTimeout, withTimeout, timeoutConfig } from '@/lib/middleware/timeout'
 
 interface GeneratePromptRequest {
   title: string
@@ -238,6 +238,6 @@ ${sanitizedAgentsContent}` : ''}`
   }
 }
 
-// Export the handler directly without middleware wrappers to maintain backward compatibility
-// The error handling is already implemented within the handler function
-export const POST = handlePOST
+// Export the handler with timeout protection for DoS prevention
+// Error handling is implemented within the handler to maintain client compatibility
+export const POST = withTimeout(handlePOST, timeoutConfig.external)
