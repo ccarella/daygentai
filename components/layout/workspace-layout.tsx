@@ -36,7 +36,7 @@ interface WorkspaceLayoutProps {
   children: React.ReactNode
   onIssueCreated?: () => void
   onNavigateToIssues?: () => void
-  onNavigateToInbox?: () => void
+  onNavigateToInbox?: () => void // Currently hidden but preserved for future use
   onNavigateToCookbook?: () => void
   isMobileMenuOpen?: boolean
   setIsMobileMenuOpen?: (open: boolean) => void
@@ -49,6 +49,7 @@ export function WorkspaceLayout({
   children, 
   onIssueCreated, 
   onNavigateToIssues,
+  // @ts-expect-error - Currently hidden but preserved for future use
   onNavigateToInbox,
   onNavigateToCookbook,
   isMobileMenuOpen: propIsMobileMenuOpen,
@@ -141,6 +142,7 @@ export function WorkspaceLayout({
           <span>Search</span>
         </button>
         
+        {/* Inbox navigation - hidden for now but preserved for future use
         {onNavigateToInbox ? (
           <button
             data-sidebar-item
@@ -172,6 +174,7 @@ export function WorkspaceLayout({
             <span>Inbox</span>
           </Link>
         )}
+        */}
         
         {onNavigateToIssues ? (
           <button
@@ -311,6 +314,7 @@ export function WorkspaceLayout({
               >
                 <Plus className="w-5 h-5 text-muted-foreground" />
               </button>
+              {/* Inbox icon button - hidden for now but preserved for future use
               {onNavigateToInbox ? (
                 <button
                   onClick={onNavigateToInbox}
@@ -338,6 +342,7 @@ export function WorkspaceLayout({
                   </svg>
                 </Link>
               )}
+              */}
               {onNavigateToIssues ? (
                 <button
                   onClick={onNavigateToIssues}
