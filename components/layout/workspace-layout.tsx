@@ -127,15 +127,6 @@ export function WorkspaceLayout({
 
       {/* Navigation - scrollable on mobile */}
       <nav ref={sidebarRef} className="flex-1 p-1.5 md:p-2 overflow-y-auto scrollbar-thin">
-        {/* Create Issue button - mobile only */}
-        <button
-          data-sidebar-item
-          onClick={() => setCreateIssueOpen(true)}
-          className="md:hidden w-full flex items-center space-x-2 px-3 min-h-[44px] rounded-lg transition-colors hover:bg-accent text-foreground mb-1 focus:outline-none"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Create Issue</span>
-        </button>
         
         {/* Search button - mobile only */}
         <button
