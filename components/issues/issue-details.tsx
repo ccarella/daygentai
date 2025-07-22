@@ -547,27 +547,33 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
     setIsSubmittingComment(false)
   }
 
-  const handleIssueUpdated = async () => {
-    // Refresh the issue data after update
-    const supabase = createClient()
-    const { data: updatedIssue } = await supabase
-      .from('issues')
-      .select(`
-        *,
-        issue_tags (
-          tags (
-            id,
-            name,
-            color
-          )
-        )
-      `)
-      .eq('id', issueId)
-      .single()
-    
+  const handleIssueUpdated = async (updatedIssue?: Issue) => {
     if (updatedIssue) {
+      // Use the updated issue data directly from the modal
       setIssue(updatedIssue)
       updateIssue(issueId, updatedIssue)
+    } else {
+      // Fallback to refetching if no updated issue is provided
+      const supabase = createClient()
+      const { data: refetchedIssue } = await supabase
+        .from('issues')
+        .select(`
+          *,
+          issue_tags (
+            tags (
+              id,
+              name,
+              color
+            )
+          )
+        `)
+        .eq('id', issueId)
+        .single()
+      
+      if (refetchedIssue) {
+        setIssue(refetchedIssue)
+        updateIssue(issueId, refetchedIssue)
+      }
     }
   }
 

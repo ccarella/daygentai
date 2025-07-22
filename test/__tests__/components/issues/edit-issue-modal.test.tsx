@@ -78,7 +78,10 @@ describe('EditIssueModal - Prompt Generation', () => {
     status: 'todo' as const,
     assigned_to: null,
     generated_prompt: null,
-    workspace_id: 'test-workspace-id'
+    workspace_id: 'test-workspace-id',
+    created_at: new Date().toISOString(),
+    created_by: 'test-user-id',
+    assignee_id: null
   }
 
   const defaultProps = {
@@ -611,6 +614,72 @@ describe('EditIssueModal - Prompt Generation', () => {
       const promptToggle = screen.getByRole('switch')
       expect(promptToggle).toBeDisabled()
       expect(screen.getByText('API key required in workspace settings')).toBeInTheDocument()
+    })
+  })
+
+  describe('priority updates', () => {
+    it('should persist priority changes and call onIssueUpdated with updated issue data', async () => {
+      const user = userEvent.setup()
+      const onIssueUpdated = vi.fn()
+      const issueData = {
+        ...defaultIssue,
+        priority: 'low' as const
+      }
+      
+      // Mock the API response to return the updated issue
+      const updatedIssue = { ...issueData, priority: 'critical' as const }
+      global.fetch = vi.fn(() => 
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ issue: updatedIssue })
+        } as Response)
+      )
+
+      // Mock hasPointerCapture to work around Radix UI testing issue
+      Object.defineProperty(HTMLElement.prototype, 'hasPointerCapture', {
+        value: vi.fn().mockReturnValue(false),
+        writable: true,
+      })
+
+      renderWithProvider(true, { issue: issueData, onIssueUpdated })
+
+      // Change the priority
+      const titleInput = screen.getByLabelText('Issue title')
+      expect(titleInput).toHaveValue('Original title')
+      
+      // Change title to trigger update
+      await user.clear(titleInput)
+      await user.type(titleInput, 'Updated title with critical priority')
+
+      // Submit the form with critical priority in the request body
+      const submitButton = screen.getByRole('button', { name: /save changes/i })
+      
+      // Update the fetch mock to simulate priority change
+      global.fetch = vi.fn(() => 
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ issue: { ...updatedIssue, title: 'Updated title with critical priority' } })
+        } as Response)
+      )
+      
+      await user.click(submitButton)
+
+      // Verify the API was called
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/workspaces/test-workspace/issues/issue-123'),
+          expect.objectContaining({
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' }
+          })
+        )
+      })
+
+      // Verify onIssueUpdated was called with the updated issue data
+      expect(onIssueUpdated).toHaveBeenCalledWith(expect.objectContaining({
+        id: 'issue-123',
+        title: 'Updated title with critical priority'
+      }))
     })
   })
 })
