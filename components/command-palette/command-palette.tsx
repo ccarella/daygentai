@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, FileText, Inbox, Plus, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle, Circle, Loader2 } from "lucide-react"
+import { Search, FileText, /* Inbox, */ Plus, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle, Circle, Loader2 } from "lucide-react"
 import { 
   emitIssueStatusUpdate, 
   emitCreateIssueRequest,
@@ -323,6 +323,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       group: "Quick Access"
     })
 
+    /* Go to Inbox command - hidden for now but preserved for future use
     baseCommands.push({
       id: "go-inbox",
       title: "Go to Inbox",
@@ -332,6 +333,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       keywords: ["navigate", "triage", "inbox"],
       group: "Quick Access"
     })
+    */
 
     // View Section
     baseCommands.push({

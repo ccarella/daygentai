@@ -200,6 +200,7 @@ export function useGlobalShortcuts({
         },
         description: 'Go to issues',
       },
+      /* Go to inbox shortcut - hidden for now but preserved for future use
       'gn': {
         handler: () => {
           if (onNavigateToInbox) {
@@ -211,6 +212,7 @@ export function useGlobalShortcuts({
         },
         description: 'Go to inbox',
       },
+      */
       
       // Sequential shortcuts - Status changes
       'st': {

@@ -124,18 +124,18 @@ describe('Command Palette (Simplified)', () => {
       
       await user.click(screen.getByText('Open Command Palette'))
       
-      // All commands visible initially
+      // All commands visible initially (except hidden inbox command)
       expect(screen.getByText('Go to Issues')).toBeInTheDocument()
-      expect(screen.getByText('Go to Inbox')).toBeInTheDocument()
+      expect(screen.queryByText('Go to Inbox')).not.toBeInTheDocument() // Inbox command is hidden
       expect(screen.getByText('New Issue')).toBeInTheDocument()
       
-      // Search
+      // Search for issues instead since inbox is hidden
       const searchInput = screen.getByPlaceholderText('Type a command or search...')
-      await user.type(searchInput, 'inbox')
+      await user.type(searchInput, 'issues')
       
-      // Only inbox command visible
-      expect(screen.queryByText('Go to Issues')).not.toBeInTheDocument()
-      expect(screen.getByText('Go to Inbox')).toBeInTheDocument()
+      // Only issues command visible
+      expect(screen.getByText('Go to Issues')).toBeInTheDocument()
+      expect(screen.queryByText('Go to Inbox')).not.toBeInTheDocument()
       expect(screen.queryByText('New Issue')).not.toBeInTheDocument()
     })
 
