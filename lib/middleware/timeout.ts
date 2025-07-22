@@ -89,16 +89,6 @@ export function withTimeout<T extends (...args: never[]) => Promise<Response>>(
       userAgent: req.headers.get('user-agent')
     }
 
-    // Create a modified request with the abort signal
-    // This allows handlers to check req.signal?.aborted and cancel operations
-    const modifiedReq = Object.assign(Object.create(Object.getPrototypeOf(req)), req, {
-      signal: controller.signal
-    })
-
-    // Replace the original request with the modified one in args
-    const modifiedArgs = [...args] as unknown[]
-    modifiedArgs[0] = modifiedReq
-
     try {
       // Create a promise that rejects on timeout
       const timeoutPromise = new Promise<never>((_, reject) => {
@@ -108,8 +98,9 @@ export function withTimeout<T extends (...args: never[]) => Promise<Response>>(
       })
 
       // Race between the handler and timeout
+      // Don't modify the request object to avoid read-only property errors
       const response = await Promise.race([
-        handler(...(modifiedArgs as Parameters<T>)),
+        handler(...args),
         timeoutPromise
       ])
 

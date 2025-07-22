@@ -352,20 +352,51 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
     setIsUpdatingStatus(true)
     
     try {
+      // Only log in development for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Status update requested:', {
+          newStatus,
+          type: typeof newStatus,
+          length: newStatus.length,
+          trimmed: newStatus.trim(),
+          isValidStatus: ['todo', 'in_progress', 'in_review', 'done'].includes(newStatus)
+        })
+      }
+
       const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issue.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: newStatus.trim() }), // Ensure trimmed value
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to update status')
+        let errorData
+        try {
+          errorData = await response.json()
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError)
+          errorData = { error: 'Failed to parse server error response' }
+        }
+        
+        console.error('Status update failed:', {
+          status: response.status,
+          errorData,
+          sentValue: newStatus,
+        })
+        throw new Error(errorData.error || errorData.message || 'Failed to update status')
       }
 
-      const { issue: updatedIssue } = await response.json()
+      let responseData
+      try {
+        responseData = await response.json()
+      } catch (parseError) {
+        console.error('Failed to parse success response:', parseError)
+        throw new Error('Invalid response from server')
+      }
+      
+      const { issue: updatedIssue } = responseData
       setIssue(updatedIssue)
       updateIssue(issue.id, { status: newStatus as Issue['status'] })
       toast({
