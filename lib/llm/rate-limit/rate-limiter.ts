@@ -106,6 +106,8 @@ export class RateLimiter {
     
     await Promise.all(
       windows.map(async (window) => {
+        // Call the increment_rate_limit RPC function defined in the database
+        // See: supabase/migrations/20250122_create_llm_proxy_tables.sql
         const { error } = await supabase.rpc('increment_rate_limit', {
           p_workspace_id: workspaceId,
           p_window_start: window.start.toISOString(),
