@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/components/ui/use-toast'
+import { storeVerificationToken } from '@/lib/auth/token-storage'
 
 export default function ManualVerifyPage() {
   const [magicLinkUrl, setMagicLinkUrl] = useState('')
@@ -24,8 +25,13 @@ export default function ManualVerifyPage() {
       
       if (token && type === 'magiclink') {
         setIsVerifying(true)
-        // Redirect to our local verify route with the token
-        router.push(`/auth/verify?token=${token}&type=magiclink`)
+        
+        // Store token securely using our utility
+        // This prevents token exposure in server logs and browser history
+        storeVerificationToken(token, type)
+        
+        // Redirect without token in URL
+        router.push('/auth/verify')
       } else {
         toast({
           title: "Invalid Link",
