@@ -26,7 +26,7 @@ interface Issue {
   created_at: string
   created_by: string
   assignee_id: string | null
-  issue_tags?: Array<{ tags: TagData }>
+  issue_tags?: Array<{ tag_id: string; tags: TagData }>
   creator?: {
     name: string
     avatar_url?: string | null
@@ -224,8 +224,9 @@ export function IssuesList({
       .from('issues')
       .select(`
         *,
-        issue_tags (
-          tags (
+        issue_tags!left (
+          tag_id,
+          tags!inner (
             id,
             name,
             color
@@ -697,15 +698,19 @@ export function IssuesList({
                   {/* Tags */}
                   {issue.issue_tags && issue.issue_tags.length > 0 && (
                     <div className="flex items-center gap-1 ml-2">
-                      {issue.issue_tags.map(({ tags }) => (
-                        <TagComponent
-                          key={tags.id}
-                          color={tags.color}
-                          className="text-xs"
-                        >
-                          {tags.name}
-                        </TagComponent>
-                      ))}
+                      {issue.issue_tags.map((tag_relation) => {
+                        const tag = tag_relation.tags
+                        if (!tag) return null
+                        return (
+                          <TagComponent
+                            key={tag.id}
+                            color={tag.color}
+                            className="text-xs"
+                          >
+                            {tag.name}
+                          </TagComponent>
+                        )
+                      })}
                     </div>
                   )}
                   
