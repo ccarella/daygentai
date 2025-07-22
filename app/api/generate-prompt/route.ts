@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { withExternalTimeout, withTimeout, timeoutConfig } from '@/lib/middleware/timeout'
+import { withExternalTimeout } from '@/lib/middleware/timeout'
 
 interface GeneratePromptRequest {
   title: string
@@ -59,6 +59,8 @@ function validateInput(input: string): { isValid: boolean; error?: string } {
 
 async function generateWithOpenAI(userPrompt: string, apiKey: string): Promise<{ prompt: string; error?: string }> {
   try {
+    console.log('[OpenAI] Starting API call with key:', apiKey.substring(0, 7) + '...')
+    
     const fetchPromise = fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -84,7 +86,22 @@ async function generateWithOpenAI(userPrompt: string, apiKey: string): Promise<{
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.error?.message || `API request failed: ${response.status}`)
+      console.error('[OpenAI] API error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      })
+      
+      // Handle specific OpenAI error cases
+      if (response.status === 401) {
+        throw new Error('Invalid API key. Please check your OpenAI API key in workspace settings.')
+      } else if (response.status === 429) {
+        throw new Error('OpenAI rate limit exceeded. Please try again later.')
+      } else if (response.status === 500) {
+        throw new Error('OpenAI service error. Please try again later.')
+      }
+      
+      throw new Error(errorData.error?.message || `OpenAI API request failed: ${response.status}`)
     }
 
     const data = await response.json()
@@ -109,9 +126,13 @@ async function generateWithOpenAI(userPrompt: string, apiKey: string): Promise<{
       throw new Error('No prompt generated')
     }
 
+    console.log('[OpenAI] Successfully generated prompt')
     return { prompt: generatedPrompt }
   } catch (error) {
-    console.error('OpenAI API error:', error)
+    console.error('[OpenAI] Error details:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    })
     return {
       prompt: '',
       error: error instanceof Error ? error.message : 'OpenAI API error'
@@ -191,10 +212,26 @@ async function handlePOST(req: NextRequest) {
 
     // Check if workspace has API key configured
     if (!workspace.api_key) {
+      console.error('[Generate Prompt] No API key found for workspace:', {
+        workspaceId,
+        hasApiKey: false,
+        provider: workspace.api_provider
+      })
       return NextResponse.json({ 
         error: 'No API key configured for this workspace. Please configure an API key in workspace settings.' 
       }, { status: 400 })
     }
+
+    // Debug logging
+    console.log('[Generate Prompt] Processing request:', {
+      workspaceId,
+      hasApiKey: !!workspace.api_key,
+      apiKeyLength: workspace.api_key.length,
+      apiKeyPrefix: workspace.api_key.substring(0, 7) + '...',
+      provider: workspace.api_provider || 'openai',
+      titleLength: title.length,
+      descriptionLength: description.length
+    })
 
     // Sanitize inputs
     const sanitizedTitle = sanitizeInput(title)
@@ -223,8 +260,18 @@ ${sanitizedAgentsContent}` : ''}`
     }
 
     if (result.error) {
+      console.error('[Generate Prompt] Failed to generate prompt:', result.error)
+      
+      // Determine appropriate status code based on error
+      let statusCode = 500
+      if (result.error.includes('Invalid API key')) {
+        statusCode = 401
+      } else if (result.error.includes('rate limit')) {
+        statusCode = 429
+      }
+      
       // Return error in the format expected by the client
-      return NextResponse.json({ error: result.error }, { status: 500 })
+      return NextResponse.json({ error: result.error }, { status: statusCode })
     }
 
     // Return only the generated prompt, not the API key
@@ -238,6 +285,6 @@ ${sanitizedAgentsContent}` : ''}`
   }
 }
 
-// Export the handler with timeout protection for DoS prevention
-// Error handling is implemented within the handler to maintain client compatibility
-export const POST = withTimeout(handlePOST, timeoutConfig.external)
+// Export the handler directly for now to debug the issue
+// TODO: Re-enable timeout protection after fixing the API issue
+export const POST = handlePOST
