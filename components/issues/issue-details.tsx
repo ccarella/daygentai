@@ -118,6 +118,7 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
   const [createdAt, setCreatedAt] = useState<string>('')
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   const [isUpdatingType, setIsUpdatingType] = useState(false)
+  const [isUpdatingPriority, setIsUpdatingPriority] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [comments, setComments] = useState<Comment[]>([])
   const [isLoadingComments, setIsLoadingComments] = useState(true)
@@ -453,6 +454,44 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
     }
   }
 
+  const handlePriorityChange = async (newPriority: string) => {
+    if (!issue || isUpdatingPriority) return
+    
+    setIsUpdatingPriority(true)
+    
+    try {
+      const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issue.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ priority: newPriority }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update priority')
+      }
+
+      const { issue: updatedIssue } = await response.json()
+      setIssue(updatedIssue)
+      updateIssue(issue.id, { priority: newPriority as Issue['priority'] })
+      toast({
+        title: "Priority updated",
+        description: `Issue priority changed to ${newPriority.toLowerCase()}.`,
+      })
+    } catch (error) {
+      console.error('Failed to update issue priority:', error)
+      toast({
+        title: "Failed to update priority",
+        description: error instanceof Error ? error.message : "An error occurred while updating the issue priority.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUpdatingPriority(false)
+    }
+  }
+
   const handleEdit = () => {
     setIsEditModalOpen(true)
   }
@@ -595,11 +634,44 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
 
           {/* Metadata */}
           <div className="space-y-3">
-            {/* Priority - now on its own */}
-            <div className="flex items-center">
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[issue.priority]}`}>
-                {priorityLabels[issue.priority]}
-              </span>
+            {/* Priority with inline editing */}
+            <div className="flex items-center space-x-2">
+              <span className="text-muted-foreground text-sm">Priority:</span>
+              <Select
+                value={issue.priority}
+                onValueChange={handlePriorityChange}
+                disabled={isUpdatingPriority}
+              >
+                <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none">
+                  <SelectValue>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[issue.priority]}`}>
+                      {priorityLabels[issue.priority]}
+                    </span>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="critical">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors.critical}`}>
+                      {priorityLabels.critical}
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="high">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors.high}`}>
+                      {priorityLabels.high}
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="medium">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors.medium}`}>
+                      {priorityLabels.medium}
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="low">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors.low}`}>
+                      {priorityLabels.low}
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             {/* Status and Type - responsive layout */}
