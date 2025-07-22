@@ -14,7 +14,8 @@ import {
   subscribeToNavigateToInbox,
   subscribeToToggleViewMode,
   subscribeToToggleSearch,
-  subscribeToSetStatusFilter
+  subscribeToSetStatusFilter,
+  emitCreateIssueRequest
 } from '@/lib/events/issue-events'
 
 const KanbanBoard = dynamic(
@@ -65,7 +66,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { LayoutGrid, List, Filter, X } from 'lucide-react'
+import { LayoutGrid, List, Filter, X, Plus } from 'lucide-react'
 import { SearchBar, SearchBarRef } from '@/components/workspace/search-bar'
 import { getWorkspaceTags } from '@/lib/tags'
 import { Tag as TagComponent } from '@/components/ui/tag'
@@ -412,6 +413,16 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
           <div className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-3">
             {/* Left side - Create issue button (mobile) and desktop filters */}
             <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+              {/* Create Issue Button - Mobile Only */}
+              <button
+                onClick={() => emitCreateIssueRequest()}
+                className="sm:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-accent transition-colors text-sm font-medium"
+                title="Create issue"
+                aria-label="Create issue"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Create issue</span>
+              </button>
               
               {/* Search hint when search is hidden */}
               {!isSearchVisible && !debouncedSearchQuery && (
