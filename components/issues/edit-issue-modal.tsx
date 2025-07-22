@@ -25,13 +25,21 @@ interface Issue {
   status: 'todo' | 'in_progress' | 'in_review' | 'done';
   workspace_id: string;
   generated_prompt?: string | null;
+  created_at: string;
+  created_by: string;
+  assignee_id: string | null;
+  issue_tags?: Array<{ tags: { id: string; name: string; color?: string } }>;
+  creator?: {
+    name: string;
+    avatar_url?: string | null;
+  };
 }
 
 interface EditIssueModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   issue: Issue | null;
-  onIssueUpdated?: () => void;
+  onIssueUpdated?: (updatedIssue: Issue) => void;
 }
 
 export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: EditIssueModalProps) {
@@ -188,6 +196,10 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
         return;
       }
       
+      // Parse the response to get the updated issue
+      const responseData = await response.json();
+      const updatedIssue = responseData.issue;
+      
       // Update tags
       const tagIds = selectedTags.map(tag => tag.id).filter(id => !id.startsWith('temp-'));
       await updateIssueTags(issue.id, tagIds);
@@ -197,7 +209,7 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
         description: "Your changes have been saved successfully.",
       });
       onOpenChange(false);
-      onIssueUpdated?.();
+      onIssueUpdated?.(updatedIssue);
     } catch (err) {
       handleError(err, { 
         type: 'unknown', 

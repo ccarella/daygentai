@@ -27,6 +27,10 @@ We'll be using NextAuth.js for the authentication implementation.`,
     type: 'feature' as const,
     priority: 'high' as const,
     status: 'in_progress' as const,
+    created_at: new Date().toISOString(),
+    created_by: 'demo-user-1',
+    assignee_id: null,
+    generated_prompt: null,
   };
 
   const handleIssueUpdated = () => {
