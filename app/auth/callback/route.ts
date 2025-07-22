@@ -5,22 +5,19 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const next = requestUrl.searchParams.get('next') || '/workspace'
-  const origin = requestUrl.origin
-
+  
   if (code) {
     const supabase = await createClient()
-    
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (error) {
-      console.error('Auth callback error:', error)
-      return NextResponse.redirect(`${origin}/?error=auth_failed`)
+      console.error('Auth error:', error)
+      return NextResponse.redirect(`${requestUrl.origin}/?error=auth_failed`)
     }
 
-    // URL to redirect to after sign in process completes
-    return NextResponse.redirect(`${origin}${next}`)
+    return NextResponse.redirect(`${requestUrl.origin}${next}`)
   }
 
-  // No code provided
-  return NextResponse.redirect(`${origin}/`)
+  // No code provided - redirect to home with error
+  return NextResponse.redirect(`${requestUrl.origin}/?error=no_code`)
 }

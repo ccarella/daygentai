@@ -261,7 +261,7 @@ describe('LLMProxyService', () => {
 
       const proxyService = new LLMProxyService();
       await expect(proxyService.processRequest(mockRequest, userId))
-        .rejects.toThrow('Failed to process LLM request');
+        .rejects.toThrow('API rate limit exceeded. Please try again later.');
     });
 
     it('should cache non-streaming responses with usage data', async () => {

@@ -19,8 +19,10 @@ export function EmailLogin() {
     setLoading(true)
 
     try {
-      // Use window.location.origin to get the current deployment URL
-      const redirectURL = `${window.location.origin}/auth/callback`
+      // Use NEXT_PUBLIC_SITE_URL if set (for specific environments), 
+      // otherwise use window.location.origin (for dynamic environments like Vercel previews)
+      const baseUrl = process.env['NEXT_PUBLIC_SITE_URL'] || window.location.origin
+      const redirectURL = `${baseUrl}/auth/callback`
       const { error } = await signInWithMagicLink(email, redirectURL)
 
       if (error) throw error
