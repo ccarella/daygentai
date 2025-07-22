@@ -349,6 +349,18 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
   const handleStatusChange = async (newStatus: string) => {
     if (!issue || isUpdatingStatus) return
     
+    // Validate status value before sending
+    const validStatuses = ['todo', 'in_progress', 'in_review', 'done']
+    if (!validStatuses.includes(newStatus)) {
+      console.error('Invalid status value:', newStatus)
+      toast({
+        title: "Invalid status",
+        description: `Status must be one of: ${validStatuses.join(', ')}`,
+        variant: "destructive",
+      })
+      return
+    }
+    
     setIsUpdatingStatus(true)
     
     try {

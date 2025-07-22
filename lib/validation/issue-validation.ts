@@ -43,11 +43,14 @@ export function validateIssueUpdate(
   // Validate status
   if ('status' in input) {
     if (typeof input['status'] !== 'string') {
-      errors.push('status must be a string')
-    } else if (!ISSUE_STATUS.includes(input['status'] as IssueStatus)) {
-      errors.push(`status must be one of: ${ISSUE_STATUS.join(', ')}`)
+      errors.push(`status must be a string, received ${typeof input['status']}`)
     } else {
-      validated.status = input['status'] as IssueStatus
+      const trimmedStatus = input['status'].trim()
+      if (!ISSUE_STATUS.includes(trimmedStatus as IssueStatus)) {
+        errors.push(`status must be one of: ${ISSUE_STATUS.join(', ')}. Received: "${input['status']}"`)
+      } else {
+        validated.status = trimmedStatus as IssueStatus
+      }
     }
   }
 

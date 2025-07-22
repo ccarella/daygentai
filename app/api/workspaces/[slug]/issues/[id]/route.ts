@@ -8,7 +8,8 @@ import {
   createUnauthorizedError, 
   createNotFoundError,
   createForbiddenError,
-  createInternalServerError 
+  createInternalServerError,
+  createValidationError
 } from '@/lib/middleware/error-handler'
 
 async function handleGET(
@@ -81,10 +82,21 @@ async function handlePATCH(
     }
 
     // Parse and validate request body
-    const body = await request.json()
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch (error) {
+      console.error('Failed to parse request body:', error)
+      return createValidationError('Invalid JSON in request body')
+    }
+    
     const validation = validateIssueUpdate(body)
     
     if (!validation.valid) {
+      console.error('Issue update validation failed:', {
+        body,
+        error: validation.error
+      })
       return validation.error
     }
     
