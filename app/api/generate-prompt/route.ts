@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { withExternalTimeout } from '@/lib/middleware/timeout'
+import { LLMProxyService } from '@/lib/llm/proxy/llm-proxy-service'
 
 interface GeneratePromptRequest {
   title: string
@@ -16,58 +16,21 @@ Format the response as follows:
 
 Keep the prompt concise and actionable.`
 
-// Function to sanitize user input
-function sanitizeInput(input: string): string {
-  if (!input || typeof input !== 'string') {
-    return ''
-  }
+// Input validation is now handled by the proxy service
 
-  // Remove null bytes and other control characters except newlines and carriage returns
-  let sanitized = input.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+const proxyService = new LLMProxyService();
 
-  // Escape special characters that could be used for template literal injection
-  sanitized = sanitized
-    .replace(/`/g, '\\`')  // Escape backticks to prevent template literal injection
-    .replace(/\$/g, '\\$') // Escape dollar signs to prevent template literal interpolation
-
-  // Truncate to reasonable length to prevent DoS
-  const maxLength = 10000
-  if (sanitized.length > maxLength) {
-    sanitized = sanitized.substring(0, maxLength) + '...'
-  }
-
-  return sanitized
-}
-
-// Function to validate input for LLM prompt generation
-function validateInput(input: string): { isValid: boolean; error?: string } {
-  if (!input || typeof input !== 'string') {
-    return { isValid: false, error: 'Input must be a non-empty string' }
-  }
-
-  // Check length to prevent DoS
-  if (input.length > 10000) {
-    return { isValid: false, error: 'Input exceeds maximum length of 10000 characters' }
-  }
-
-  // Since we're sending to an LLM API (not rendering in HTML), we don't need
-  // to check for HTML/JS patterns. The sanitizeInput function already handles
-  // escaping backticks and dollar signs to prevent prompt injection.
-  
-  return { isValid: true }
-}
-
-async function generateWithOpenAI(userPrompt: string, apiKey: string): Promise<{ prompt: string; error?: string }> {
+async function generateWithProxy(
+  workspaceId: string,
+  provider: string,
+  userPrompt: string,
+  userId: string
+): Promise<{ prompt: string; error?: string }> {
   try {
-    console.log('[OpenAI] Starting API call with key:', apiKey.substring(0, 7) + '...')
-    
-    const fetchPromise = fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
+    const response = await proxyService.processRequest({
+      provider: provider as 'openai' | 'anthropic',
+      workspaceId,
+      request: {
         model: 'gpt-3.5-turbo',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
@@ -75,68 +38,23 @@ async function generateWithOpenAI(userPrompt: string, apiKey: string): Promise<{
         ],
         temperature: 0.7,
         max_tokens: 500
-      })
-    })
+      },
+      endpoint: '/api/generate-prompt'
+    }, userId);
 
-    const response = await withExternalTimeout(
-      fetchPromise,
-      60000, // 60 seconds for OpenAI API
-      'OpenAI API request timeout'
-    )
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error('[OpenAI] API error response:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData
-      })
-      
-      // Handle specific OpenAI error cases
-      if (response.status === 401) {
-        throw new Error('Invalid API key. Please check your OpenAI API key in workspace settings.')
-      } else if (response.status === 429) {
-        throw new Error('OpenAI rate limit exceeded. Please try again later.')
-      } else if (response.status === 500) {
-        throw new Error('OpenAI service error. Please try again later.')
-      }
-      
-      throw new Error(errorData.error?.message || `OpenAI API request failed: ${response.status}`)
-    }
-
-    const data = await response.json()
-    
-    // Validate response structure
-    if (!data || typeof data !== 'object') {
-      throw new Error('Invalid response format from OpenAI API')
-    }
-    
-    if (!Array.isArray(data.choices) || data.choices.length === 0) {
-      throw new Error('No choices returned from OpenAI API')
-    }
-    
-    const firstChoice = data.choices[0]
-    if (!firstChoice || !firstChoice.message || typeof firstChoice.message.content !== 'string') {
-      throw new Error('Invalid choice format in OpenAI API response')
-    }
-    
-    const generatedPrompt = firstChoice.message.content.trim()
+    const generatedPrompt = response.data.choices[0]?.message?.content?.trim();
     
     if (!generatedPrompt) {
-      throw new Error('No prompt generated')
+      throw new Error('No prompt generated');
     }
 
-    console.log('[OpenAI] Successfully generated prompt')
-    return { prompt: generatedPrompt }
+    return { prompt: generatedPrompt };
   } catch (error) {
-    console.error('[OpenAI] Error details:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    })
+    console.error('[Generate Prompt] Error:', error);
     return {
       prompt: '',
-      error: error instanceof Error ? error.message : 'OpenAI API error'
-    }
+      error: error instanceof Error ? error.message : 'Failed to generate prompt'
+    };
   }
 }
 
@@ -153,18 +71,10 @@ async function handlePOST(req: NextRequest) {
       }, { status: 400 })
     }
 
-    // Validate inputs
-    const titleValidation = validateInput(title)
-    if (!titleValidation.isValid) {
+    // Basic validation
+    if (title.length > 10000 || description.length > 10000) {
       return NextResponse.json({ 
-        error: `Invalid title: ${titleValidation.error}` 
-      }, { status: 400 })
-    }
-
-    const descriptionValidation = validateInput(description)
-    if (!descriptionValidation.isValid) {
-      return NextResponse.json({ 
-        error: `Invalid description: ${descriptionValidation.error}` 
+        error: 'Input exceeds maximum length of 10000 characters' 
       }, { status: 400 })
     }
 
@@ -210,54 +120,20 @@ async function handlePOST(req: NextRequest) {
       return NextResponse.json({ error: 'Workspace not found or access denied' }, { status: 403 })
     }
 
-    // Check if workspace has API key configured
-    if (!workspace.api_key) {
-      console.error('[Generate Prompt] No API key found for workspace:', {
-        workspaceId,
-        hasApiKey: false,
-        provider: workspace.api_provider
-      })
-      return NextResponse.json({ 
-        error: 'No API key configured for this workspace. Please configure an API key in workspace settings.' 
-      }, { status: 400 })
-    }
+    // The proxy will handle API key validation
+    const provider = workspace.api_provider || 'openai'
 
-    // Debug logging
-    console.log('[Generate Prompt] Processing request:', {
-      workspaceId,
-      hasApiKey: !!workspace.api_key,
-      apiKeyLength: workspace.api_key.length,
-      apiKeyPrefix: workspace.api_key.substring(0, 7) + '...',
-      provider: workspace.api_provider || 'openai',
-      titleLength: title.length,
-      descriptionLength: description.length
-    })
-
-    // Sanitize inputs
-    const sanitizedTitle = sanitizeInput(title)
-    const sanitizedDescription = sanitizeInput(description)
-    const sanitizedAgentsContent = workspace.agents_content ? sanitizeInput(workspace.agents_content) : undefined
-
-    // Construct the user prompt with sanitized inputs
+    // Construct the user prompt
     const userPrompt = `Convert this to a prompt for an LLM-based software development agent.
 
-Issue Title: ${sanitizedTitle}
-Issue Description: ${sanitizedDescription}
+Issue Title: ${title}
+Issue Description: ${description}
 
-${sanitizedAgentsContent ? `Additional context from Agents.md:
-${sanitizedAgentsContent}` : ''}`
+${workspace.agents_content ? `Additional context from Agents.md:
+${workspace.agents_content}` : ''}`
 
-    // Generate the prompt using the appropriate provider
-    let result: { prompt: string; error?: string }
-    
-    if (workspace.api_provider === 'openai' || !workspace.api_provider) {
-      result = await generateWithOpenAI(userPrompt, workspace.api_key)
-    } else {
-      result = {
-        prompt: '',
-        error: `Provider ${workspace.api_provider} is not yet implemented`
-      }
-    }
+    // Generate the prompt using the proxy
+    const result = await generateWithProxy(workspaceId, provider, userPrompt, user.id)
 
     if (result.error) {
       console.error('[Generate Prompt] Failed to generate prompt:', result.error)

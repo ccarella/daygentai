@@ -1,4 +1,5 @@
 import { handleApiError, handleAIError } from '@/lib/error-handler'
+import { LLMProxyService } from '@/lib/llm/proxy/llm-proxy-service'
 
 interface Issue {
   id: string
@@ -29,7 +30,9 @@ export async function recommendNextIssue(
   issues: Issue[],
   apiKey: string,
   provider: 'openai' | 'anthropic' = 'openai',
-  agentsContent?: string | null
+  agentsContent?: string | null,
+  workspaceId?: string,
+  userId?: string
 ): Promise<RecommendationResult> {
   try {
     // Filter to only include 'todo' status issues
@@ -54,7 +57,9 @@ export async function recommendNextIssue(
         apiKey,
         provider,
         agentsContent,
-        isRetry
+        isRetry,
+        workspaceId,
+        userId
       )
       
       if (!result.error && result.recommendedIssue) {
@@ -96,7 +101,9 @@ async function attemptRecommendation(
   apiKey: string,
   provider: 'openai' | 'anthropic',
   agentsContent?: string | null,
-  isRetry: boolean = false
+  isRetry: boolean = false,
+  workspaceId?: string,
+  userId?: string
 ): Promise<RecommendationResult> {
   // Format issues for the LLM
   const issuesContext = todoIssues.map((issue, index) => {
@@ -152,7 +159,11 @@ CRITICAL INSTRUCTIONS:
 
   let response: RecommendationResult
 
-  if (provider === 'openai') {
+  if (workspaceId && userId) {
+    // Use proxy if workspaceId and userId are provided
+    response = await getRecommendationFromProxy(userPrompt, workspaceId, provider, todoIssues, isRetry, userId)
+  } else if (provider === 'openai') {
+    // Fallback to direct API call (for backward compatibility)
     response = await getRecommendationFromOpenAI(userPrompt, apiKey, todoIssues, isRetry)
   } else {
     return {
@@ -166,6 +177,95 @@ CRITICAL INSTRUCTIONS:
   return {
     ...response,
     prompt: userPrompt
+  }
+}
+
+const proxyService = new LLMProxyService();
+
+async function getRecommendationFromProxy(
+  userPrompt: string,
+  workspaceId: string,
+  provider: 'openai' | 'anthropic',
+  issues: Issue[],
+  isRetry: boolean = false,
+  userId: string
+): Promise<RecommendationResult> {
+  try {
+    const temperature = isRetry ? 0.1 : 0.3
+    
+    const systemPrompt = isRetry 
+      ? 'You are an AI assistant helping prioritize software development tasks. You MUST only recommend issues from the exact list provided to you. Never create new UUIDs or reference issues not in the provided list. Always copy UUIDs exactly as shown, character by character. When in doubt, choose the first issue from the list. Your response must contain a UUID that exactly matches one from the provided list.'
+      : 'You are an AI assistant helping prioritize software development tasks. You MUST only recommend issues from the exact list provided to you. Never create new UUIDs or reference issues not in the provided list. Always copy UUIDs exactly as shown.'
+    
+    const response = await proxyService.processRequest({
+      provider,
+      workspaceId,
+      request: {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { 
+            role: 'system', 
+            content: systemPrompt
+          },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature,
+        max_tokens: 200
+      },
+      endpoint: '/actions/recommend-issue'
+    }, userId);
+    
+    const firstChoice = response.data.choices[0];
+    if (!firstChoice?.message?.content) {
+      throw new Error('No content in LLM response');
+    }
+    const content = firstChoice.message.content;
+
+    // Parse the response
+    const idMatch = content.match(/RECOMMENDED_ID:\s*([^\s]+)/i)
+    const justificationMatch = content.match(/JUSTIFICATION:\s*([\s\S]+)/)
+
+    if (!idMatch || !justificationMatch) {
+      handleAIError(new Error(`Failed to parse LLM response: ${content}`), 'issue recommendation')
+      throw new Error('Invalid response format from LLM')
+    }
+
+    const recommendedId = idMatch[1]!.trim()
+    const justification = justificationMatch[1]!.trim()
+
+    // Validate UUID format
+    const isValidUUID = validateUUID(recommendedId)
+    if (!isValidUUID) {
+      // Invalid UUID format returned by LLM
+    }
+
+    // Find the recommended issue with multiple strategies
+    const recommendedIssue = findRecommendedIssue(recommendedId, issues)
+
+    if (!recommendedIssue) {
+      // List only the first 5 UUIDs in the error message to keep it readable
+      const validIds = issues.slice(0, 5).map(i => i.id).join(', ')
+      const remainingCount = issues.length > 5 ? ` and ${issues.length - 5} more` : ''
+      
+      // Provide more specific error based on what went wrong
+      const errorDetail = !isValidUUID 
+        ? 'The returned ID is not in valid UUID format.'
+        : 'The UUID is valid but does not match any todo issue.'
+      
+      throw new Error(`Recommended issue not found. LLM returned ID: ${recommendedId}. ${errorDetail} Valid todo issues are: ${validIds}${remainingCount}`)
+    }
+
+    return {
+      recommendedIssue,
+      justification
+    }
+  } catch (error) {
+    handleApiError(error, 'LLM proxy recommendation')
+    return {
+      recommendedIssue: null,
+      justification: '',
+      error: error instanceof Error ? error.message : 'LLM API error'
+    }
   }
 }
 
