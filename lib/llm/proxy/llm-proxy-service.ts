@@ -72,7 +72,21 @@ export class LLMProxyService {
       response = await adapter.complete(sanitizedRequest);
     } catch (error) {
       // Log the error but don't expose API details
-      console.error('LLM API error:', error);
+      console.error('[LLM Proxy] API error:', error);
+      
+      // Provide more specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+          throw new Error('Invalid API key. Please check your API key in workspace settings.');
+        }
+        if (error.message.includes('429') || error.message.includes('rate limit')) {
+          throw new Error('API rate limit exceeded. Please try again later.');
+        }
+        if (error.message.includes('timeout')) {
+          throw new Error('Request timed out. Please try again.');
+        }
+      }
+      
       throw new Error('Failed to process LLM request. Please check your API key and try again.');
     }
     
