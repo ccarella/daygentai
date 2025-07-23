@@ -5,6 +5,7 @@ import { getLLMCache } from '../cache/memory-cache';
 import { RateLimiter } from '../rate-limit/rate-limiter';
 import { validateAndSanitizeRequest } from '../validators/request-validator';
 import { decryptApiKey, getEncryptionSecret, isEncryptedApiKey } from '@/lib/crypto/api-key-encryption';
+import { UsageMonitor } from '../usage/usage-monitor';
 import { 
   ProxyRequest, 
   ProxyResponse, 
@@ -29,6 +30,21 @@ export class LLMProxyService {
     
     // Validate and sanitize the request
     const sanitizedRequest = validateAndSanitizeRequest(request.request);
+    
+    // Check usage quota first
+    try {
+      const quotaCheck = await UsageMonitor.checkWorkspaceQuota(request.workspaceId);
+      if (!quotaCheck.allowed) {
+        throw new Error(quotaCheck.message || 'Monthly usage limit exceeded');
+      }
+    } catch (quotaError) {
+      // If quota check fails on error (not over limit), log but continue
+      if (quotaError instanceof Error && !quotaError.message.includes('limit exceeded')) {
+        console.warn('[LLM Proxy] Quota check failed, continuing:', quotaError);
+      } else {
+        throw quotaError;
+      }
+    }
     
     // Check rate limits (with graceful fallback if table doesn't exist)
     try {
@@ -152,7 +168,17 @@ export class LLMProxyService {
   }
   
   private async getApiKey(workspaceId: string, provider: string): Promise<string> {
-    console.log('[LLM Proxy] Getting API key for workspace:', workspaceId);
+    console.log('[LLM Proxy] Getting API key for provider:', provider);
+    
+    // First, check for centralized API key in environment variables
+    const centralizedKey = process.env[`CENTRALIZED_${provider.toUpperCase()}_API_KEY`];
+    if (centralizedKey) {
+      console.log('[LLM Proxy] Using centralized API key for', provider);
+      return centralizedKey;
+    }
+    
+    // Fall back to workspace-specific API key (for migration period)
+    console.log('[LLM Proxy] No centralized key found, checking workspace:', workspaceId);
     const supabase = await createClient();
     
     const { data, error } = await supabase
@@ -163,7 +189,7 @@ export class LLMProxyService {
     
     if (error || !data) {
       console.error('[LLM Proxy] Workspace query error:', error);
-      throw new Error('Workspace not found or no API key configured');
+      throw new Error('No API key configured. Please contact your administrator.');
     }
     
     console.log('[LLM Proxy] Workspace data:', {
@@ -173,12 +199,12 @@ export class LLMProxyService {
       requestedProvider: provider
     });
     
-    if (data.api_provider !== provider) {
-      throw new Error(`This workspace is configured for ${data.api_provider}, not ${provider}`);
+    if (!data.api_key) {
+      throw new Error('No API key configured. Please contact your administrator.');
     }
     
-    if (!data.api_key) {
-      throw new Error('No API key configured for this workspace');
+    if (data.api_provider && data.api_provider !== provider) {
+      throw new Error(`This workspace is configured for ${data.api_provider}, not ${provider}`);
     }
     
     // Check if the API key looks encrypted (base64 with minimum length)
@@ -203,7 +229,7 @@ export class LLMProxyService {
         hasEncryptionSecret: !!process.env['API_KEY_ENCRYPTION_SECRET'],
         encryptedKeyLength: data.api_key.length
       });
-      throw new Error('Failed to decrypt API key. Please re-enter your API key in settings.');
+      throw new Error('Failed to decrypt API key. Please contact your administrator.');
     }
   }
   
