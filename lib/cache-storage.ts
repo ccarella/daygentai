@@ -9,6 +9,10 @@ const TTL_MS = 30 * 60 * 1000 // 30 minutes
 const MAX_CACHE_SIZE = 10 * 1024 * 1024 // 10MB limit
 const CLEANUP_CHUNK_SIZE = 10 // Process 10 items at a time
 
+// Cleanup state management
+let isCleanupRunning = false
+let cleanupQueued = false
+
 interface StoredCacheEntry<T> {
   data: T
   timestamp: number
@@ -96,9 +100,16 @@ const removeKeyFromIndex = (key: string) => {
 const cleanupCacheAsync = () => {
   if (!isLocalStorageAvailable()) return
   
+  // Check if cleanup is already running
+  if (isCleanupRunning) {
+    cleanupQueued = true
+    return
+  }
+  
   const metadata = getMetadata()
   if (!metadata) return
   
+  isCleanupRunning = true
   const now = Date.now()
   const allKeys = [...metadata.cacheKeys.issues, ...metadata.cacheKeys.lists]
   let currentIndex = 0
@@ -167,13 +178,25 @@ const cleanupCacheAsync = () => {
         lastCleanup: now,
         totalSize
       })
+      
+      // Cleanup complete
+      isCleanupRunning = false
+      
+      // Check if another cleanup was queued
+      if (cleanupQueued) {
+        cleanupQueued = false
+        setTimeout(() => cleanupCacheAsync(), 100)
+      }
     } else {
       // Schedule next chunk
       if ('requestIdleCallback' in window) {
         requestIdleCallback(processChunk)
       } else {
         // Fallback for browsers without requestIdleCallback
-        setTimeout(() => processChunk({ timeRemaining: () => 10, didTimeout: false } as IdleDeadline), 0)
+        setTimeout(() => processChunk({ 
+          timeRemaining: () => Math.max(1, 16 - (Date.now() % 16)), // Align with frame timing
+          didTimeout: false 
+        } as IdleDeadline), 0)
       }
     }
   }
@@ -183,7 +206,10 @@ const cleanupCacheAsync = () => {
     requestIdleCallback(processChunk)
   } else {
     // Fallback for browsers without requestIdleCallback
-    setTimeout(() => processChunk({ timeRemaining: () => 10, didTimeout: false } as IdleDeadline), 0)
+    setTimeout(() => processChunk({ 
+      timeRemaining: () => Math.max(1, 16 - (Date.now() % 16)), // Align with frame timing
+      didTimeout: false 
+    } as IdleDeadline), 0)
   }
 }
 
@@ -250,7 +276,7 @@ export const storeInCache = <T>(key: string, data: T, type: 'issue' | 'list' = '
       // Remove only 1-3 oldest items for minimal UI blocking
       if (entries.length > 0) {
         entries.sort((a, b) => a.timestamp - b.timestamp)
-        const itemsToRemove = Math.min(3, Math.max(1, Math.ceil(entries.length * 0.3)))
+        const itemsToRemove = Math.min(3, Math.max(1, entries.length))
         
         for (let i = 0; i < itemsToRemove && i < entries.length; i++) {
           const entry = entries[i]
@@ -261,8 +287,10 @@ export const storeInCache = <T>(key: string, data: T, type: 'issue' | 'list' = '
         }
       }
       
-      // Queue comprehensive async cleanup
-      setTimeout(() => cleanupCacheAsync(), 0)
+      // Queue comprehensive async cleanup with delay to avoid race condition
+      if (!isCleanupRunning) {
+        setTimeout(() => cleanupCacheAsync(), 50)
+      }
     }
     
     try {
