@@ -103,6 +103,7 @@ vi.mock('@/lib/events/issue-events', () => ({
   subscribeToToggleViewMode: vi.fn(() => vi.fn()),
   subscribeToToggleSearch: vi.fn(() => vi.fn()),
   subscribeToSetStatusFilter: vi.fn(() => vi.fn()),
+  subscribeToSetTypeFilter: vi.fn(() => vi.fn()),
   emitCreateIssueRequest: vi.fn()
 }))
 

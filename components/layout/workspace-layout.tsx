@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation'
 import { Plus, ChevronLeft, ChevronRight, HelpCircle, Settings, Terminal, BookOpen, Search } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import type { UserWorkspace } from '@/lib/supabase/workspaces'
-import { subscribeToCreateIssueRequests, emitToggleSearch } from '@/lib/events/issue-events'
+import { subscribeToCreateIssueRequests, emitToggleSearch, emitSetTypeFilter } from '@/lib/events/issue-events'
+import { IssueTypesSidebar } from './issue-types-sidebar'
 
 const CreateIssueModal = dynamic(
   () => import('@/components/issues/create-issue-modal').then(mod => ({ default: mod.CreateIssueModal })),
@@ -60,6 +61,7 @@ export function WorkspaceLayout({
   const [localIsMobileMenuOpen, setLocalIsMobileMenuOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isSidebarHovered, setIsSidebarHovered] = useState(false)
+  const [typeFilter, setTypeFilter] = useState('all')
   const pathname = usePathname()
   const { openWithMode } = useCommandPalette()
   const localSidebarRef = useRef<HTMLDivElement>(null)
@@ -72,6 +74,11 @@ export function WorkspaceLayout({
   const handleIssueCreated = () => {
     onIssueCreated?.()
     setCreateIssueOpen(false)
+  }
+  
+  const handleTypeFilterChange = (type: string) => {
+    setTypeFilter(type)
+    emitSetTypeFilter(type)
   }
 
   // Navigation is now handled by parent component
@@ -261,6 +268,13 @@ export function WorkspaceLayout({
           <span>Settings</span>
         </Link>
       </nav>
+      
+      {/* Issue Types Filter */}
+      <IssueTypesSidebar 
+        currentTypeFilter={typeFilter}
+        onTypeFilterChange={handleTypeFilterChange}
+        collapsed={false}
+      />
 
       {/* Info Icon at Bottom - Hidden on mobile */}
       <div className="hidden md:block p-2 border-t border-border">
@@ -427,6 +441,13 @@ export function WorkspaceLayout({
               >
                 <HelpCircle className="w-5 h-5 text-muted-foreground" />
               </button>
+              
+              {/* Issue Types Filter - Collapsed */}
+              <IssueTypesSidebar 
+                currentTypeFilter={typeFilter}
+                onTypeFilterChange={handleTypeFilterChange}
+                collapsed={true}
+              />
             </div>
           )}
         </div>

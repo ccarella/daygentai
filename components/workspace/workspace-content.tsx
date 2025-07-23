@@ -15,6 +15,7 @@ import {
   subscribeToToggleViewMode,
   subscribeToToggleSearch,
   subscribeToSetStatusFilter,
+  subscribeToSetTypeFilter,
   emitCreateIssueRequest
 } from '@/lib/events/issue-events'
 
@@ -97,7 +98,9 @@ export interface WorkspaceContentRef {
   toggleSearch: () => void
   isSearchVisible: () => boolean
   setStatusFilter: (status: string) => void
+  setTypeFilter: (type: string) => void
   getCurrentView: () => 'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe'
+  getCurrentTypeFilter: () => string
 }
 
 const statusOptions = [
@@ -385,7 +388,9 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     toggleSearch: () => setIsSearchVisible(prev => !prev),
     isSearchVisible: () => isSearchVisible,
     setStatusFilter: (status: string) => setStatusFilter(status),
-    getCurrentView: () => currentView
+    setTypeFilter: (type: string) => setTypeFilter(type),
+    getCurrentView: () => currentView,
+    getCurrentTypeFilter: () => typeFilter
   }))
 
   const handleIssueDeleted = () => {
@@ -415,12 +420,17 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
       setStatusFilter(event.detail.status)
     })
     
+    const unsubscribeSetTypeFilter = subscribeToSetTypeFilter((event) => {
+      setTypeFilter(event.detail.type)
+    })
+    
     return () => {
       unsubscribeNavigateToIssues()
       unsubscribeNavigateToInbox()
       unsubscribeToggleViewMode()
       unsubscribeToggleSearch()
       unsubscribeSetStatusFilter()
+      unsubscribeSetTypeFilter()
     }
   }, [handleBackToList, handleNavigateToInbox, handleToggleViewMode, setIsSearchVisible, setStatusFilter])
 

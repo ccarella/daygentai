@@ -6,6 +6,7 @@ export const NAVIGATE_TO_INBOX = 'navigate-to-inbox'
 export const TOGGLE_VIEW_MODE = 'toggle-view-mode'
 export const TOGGLE_SEARCH = 'toggle-search'
 export const SET_STATUS_FILTER = 'set-status-filter'
+export const SET_TYPE_FILTER = 'set-type-filter'
 
 export interface IssueStatusUpdatedEvent {
   issueId: string
@@ -14,6 +15,10 @@ export interface IssueStatusUpdatedEvent {
 
 export interface SetStatusFilterEvent {
   status: string
+}
+
+export interface SetTypeFilterEvent {
+  type: string
 }
 
 export function emitIssueStatusUpdate(issueId: string, newStatus: string) {
@@ -51,6 +56,13 @@ export function emitToggleSearch() {
 export function emitSetStatusFilter(status: string) {
   const event = new CustomEvent(SET_STATUS_FILTER, {
     detail: { status }
+  })
+  window.dispatchEvent(event)
+}
+
+export function emitSetTypeFilter(type: string) {
+  const event = new CustomEvent(SET_TYPE_FILTER, {
+    detail: { type }
   })
   window.dispatchEvent(event)
 }
@@ -129,5 +141,16 @@ export function subscribeToSetStatusFilter(
   // Return unsubscribe function
   return () => {
     window.removeEventListener(SET_STATUS_FILTER, callback as EventListener)
+  }
+}
+
+export function subscribeToSetTypeFilter(
+  callback: (event: CustomEvent<SetTypeFilterEvent>) => void
+) {
+  window.addEventListener(SET_TYPE_FILTER, callback as EventListener)
+  
+  // Return unsubscribe function
+  return () => {
+    window.removeEventListener(SET_TYPE_FILTER, callback as EventListener)
   }
 }
