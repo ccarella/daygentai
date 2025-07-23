@@ -12,8 +12,8 @@ vi.mock('@/lib/supabase/client')
 vi.mock('next/navigation')
 
 describe('CreateWorkspaceForm', () => {
-  const mockSupabase = createMockSupabaseClient()
-  const mockRouter = createMockRouter()
+  let mockSupabase: any
+  let mockRouter: any
   const user = userEvent.setup()
   const mockUser = createMockUser()
 
@@ -21,6 +21,17 @@ describe('CreateWorkspaceForm', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockSupabase = createMockSupabaseClient({
+      rpc: vi.fn().mockResolvedValue({
+        data: { 
+          success: true, 
+          workspace_id: 'mock-workspace-id',
+          auth_uid: mockUser.id 
+        },
+        error: null
+      })
+    })
+    mockRouter = createMockRouter()
     ;(createClient as any).mockReturnValue(mockSupabase)
     ;(useRouter as any).mockReturnValue(mockRouter)
     
@@ -256,12 +267,10 @@ describe('CreateWorkspaceForm', () => {
       
       await waitFor(() => {
         expect(mockSupabase.auth.getUser).toHaveBeenCalled()
-        expect(mockSupabase.from).toHaveBeenCalledWith('workspaces')
-        expect(mockWorkspaceQuery.insert).toHaveBeenCalledWith({
-          name: 'Test Workspace',
-          slug: 'test-workspace',
-          avatar_url: '🚀',
-          owner_id: mockUser.id,
+        expect(mockSupabase.rpc).toHaveBeenCalledWith('create_workspace', {
+          p_name: 'Test Workspace',
+          p_slug: 'test-workspace',
+          p_avatar_url: '🚀'
         })
         expect(mockRouter.push).toHaveBeenCalledWith('/test-workspace')
       })
@@ -277,34 +286,18 @@ describe('CreateWorkspaceForm', () => {
       await user.click(nextButton)
       
       await waitFor(() => {
-        expect(mockWorkspaceQuery.insert).toHaveBeenCalledWith({
-          name: 'Test Workspace',
-          slug: 'test-workspace',
-          avatar_url: '🏢', // default avatar
-          owner_id: mockUser.id,
+        expect(mockSupabase.rpc).toHaveBeenCalledWith('create_workspace', {
+          p_name: 'Test Workspace',
+          p_slug: 'test-workspace',
+          p_avatar_url: '🏢' // default avatar
         })
       })
     })
 
     it('shows loading state during submission', async () => {
-      let checkResolve: any
-      let insertResolve: any
+      let rpcResolve: any
       
-      mockSupabase.from.mockImplementation((table: string) => {
-        if (table === 'workspaces') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockImplementation(() => new Promise(resolve => { checkResolve = resolve })),
-            insert: vi.fn().mockImplementation(() => ({
-              select: vi.fn().mockReturnValue({
-                single: vi.fn().mockImplementation(() => new Promise(resolve => { insertResolve = resolve }))
-              })
-            })),
-          }
-        }
-        return mockSupabase.from(table)
-      })
+      mockSupabase.rpc.mockImplementation(() => new Promise(resolve => { rpcResolve = resolve }))
 
       render(<CreateWorkspaceForm />)
       
@@ -314,15 +307,15 @@ describe('CreateWorkspaceForm', () => {
       const nextButton = screen.getByRole('button', { name: 'Next' })
       await user.click(nextButton)
       
-      // Resolve check first
-      checkResolve({ data: null, error: null })
-      
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Creating...' })).toBeInTheDocument()
         expect(screen.getByRole('button', { name: 'Creating...' })).toBeDisabled()
       })
       
-      insertResolve({ error: null })
+      rpcResolve({ 
+        data: { success: true, workspace_id: 'mock-id', auth_uid: mockUser.id },
+        error: null 
+      })
       
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument()
@@ -347,7 +340,7 @@ describe('CreateWorkspaceForm', () => {
       })
       
       await waitFor(() => {
-        expect(mockWorkspaceQuery.insert).toHaveBeenCalled()
+        expect(mockSupabase.rpc).toHaveBeenCalled()
       })
     })
   })
@@ -374,22 +367,14 @@ describe('CreateWorkspaceForm', () => {
     })
 
     it('handles duplicate slug error', async () => {
-      // Mock existing workspace
-      mockSupabase.from.mockImplementation((table: string) => {
-        if (table === 'workspaces') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ 
-              data: createMockWorkspace(), 
-              error: null 
-            }),
-            insert: vi.fn().mockReturnValue({
-              select: vi.fn().mockResolvedValue({ error: null })
-            }),
-          }
-        }
-        return mockSupabase.from(table)
+      // Mock RPC to return duplicate slug error
+      mockSupabase.rpc.mockResolvedValue({
+        data: { 
+          success: false, 
+          error: 'A workspace with this URL already exists',
+          detail: 'DUPLICATE_SLUG'
+        },
+        error: null
       })
 
       render(<CreateWorkspaceForm />)
@@ -409,20 +394,9 @@ describe('CreateWorkspaceForm', () => {
 
     it('displays database error message', async () => {
       const errorMessage = 'Database connection failed'
-      mockSupabase.from.mockImplementation((table: string) => {
-        if (table === 'workspaces') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: null, error: null }),
-            insert: vi.fn().mockReturnValue({
-              select: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({ data: null, error: new Error(errorMessage) })
-              })
-            }),
-          }
-        }
-        return mockSupabase.from(table)
+      mockSupabase.rpc.mockResolvedValue({
+        data: null,
+        error: new Error(errorMessage)
       })
 
       render(<CreateWorkspaceForm />)
@@ -434,26 +408,12 @@ describe('CreateWorkspaceForm', () => {
       await user.click(nextButton)
       
       await waitFor(() => {
-        expect(screen.getByText(errorMessage)).toBeInTheDocument()
+        expect(screen.getByText(`Error creating workspace: ${errorMessage}`)).toBeInTheDocument()
       })
     })
 
     it('displays generic error for non-Error objects', async () => {
-      mockSupabase.from.mockImplementation((table: string) => {
-        if (table === 'workspaces') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: null, error: null }),
-            insert: vi.fn().mockReturnValue({
-              select: vi.fn().mockReturnValue({
-                single: vi.fn().mockRejectedValue('String error')
-              })
-            }),
-          }
-        }
-        return mockSupabase.from(table)
-      })
+      mockSupabase.rpc.mockRejectedValue('String error')
 
       render(<CreateWorkspaceForm />)
       
@@ -464,48 +424,19 @@ describe('CreateWorkspaceForm', () => {
       await user.click(nextButton)
       
       await waitFor(() => {
-        expect(screen.getByText('Something went wrong')).toBeInTheDocument()
+        expect(screen.getByText('An unexpected error occurred while creating your workspace. Please try again.')).toBeInTheDocument()
       })
     })
   })
 
   describe('edge cases', () => {
     it('prevents multiple simultaneous submissions', async () => {
-      let checkResolve: any
-      let insertResolve: any
-      let checkCalled = false
-      let insertCalled = false
+      let rpcResolve: any
+      let rpcCallCount = 0
       
-      mockSupabase.from.mockImplementation((table: string) => {
-        if (table === 'workspaces') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockImplementation(() => {
-              if (!checkCalled) {
-                checkCalled = true
-                return new Promise(resolve => { checkResolve = resolve })
-              }
-              return Promise.resolve({ data: null, error: null })
-            }),
-            insert: vi.fn().mockImplementation(() => {
-              if (!insertCalled) {
-                insertCalled = true
-                return {
-                  select: vi.fn().mockReturnValue({
-                    single: vi.fn().mockImplementation(() => new Promise(resolve => { insertResolve = resolve }))
-                  })
-                }
-              }
-              return {
-                select: vi.fn().mockReturnValue({
-                  single: vi.fn().mockResolvedValue({ data: createMockWorkspace(), error: null })
-                })
-              }
-            }),
-          }
-        }
-        return mockSupabase.from(table)
+      mockSupabase.rpc.mockImplementation(() => {
+        rpcCallCount++
+        return new Promise(resolve => { rpcResolve = resolve })
       })
 
       render(<CreateWorkspaceForm />)
@@ -518,9 +449,6 @@ describe('CreateWorkspaceForm', () => {
       // First click
       await user.click(nextButton)
       
-      // Resolve check
-      checkResolve({ data: null, error: null })
-      
       await waitFor(() => {
         // Button should be disabled during submission
         expect(nextButton).toBeDisabled()
@@ -530,12 +458,15 @@ describe('CreateWorkspaceForm', () => {
       await user.click(nextButton)
       await user.click(nextButton)
       
-      // Resolve insert
-      insertResolve({ error: null })
+      // Resolve RPC
+      rpcResolve({ 
+        data: { success: true, workspace_id: 'mock-id', auth_uid: mockUser.id },
+        error: null 
+      })
       
       await waitFor(() => {
-        // Should only call insert once
-        expect(insertCalled).toBe(true)
+        // Should only call RPC once
+        expect(rpcCallCount).toBe(1)
       })
     })
 
