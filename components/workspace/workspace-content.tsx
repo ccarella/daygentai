@@ -166,7 +166,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   // List view defaults to Active (exclude_done), Kanban defaults to All
   const [statusFilter, setStatusFilter] = useState<string>('exclude_done')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
-  const [typeFilter] = useState<string>(presetTypeFilter || 'all')
+  const [typeFilter, setTypeFilter] = useState<string>(presetTypeFilter || 'all')
   const [tagFilter, setTagFilter] = useState<string>('all')
   const [sortBy, setSortBy] = useState<string>('newest')
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -316,6 +316,10 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     setCurrentView('list')
     setCurrentIssueId(null)
     setCurrentRecipeId(null)
+    // Reset filters to show all active issues
+    setTypeFilter('all')
+    setPriorityFilter('all')
+    setStatusFilter('exclude_done')
     // Update URL without page refresh
     window.history.pushState({}, '', `/${workspace.slug}`)
     
