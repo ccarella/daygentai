@@ -195,7 +195,13 @@ export function IssuesList({
       }
 
       if (typeFilter !== 'all') {
-        filteredResults = filteredResults.filter((issue: Issue) => issue.type === typeFilter)
+        // Handle multiple types separated by comma
+        if (typeFilter.includes(',')) {
+          const types = typeFilter.split(',')
+          filteredResults = filteredResults.filter((issue: Issue) => types.includes(issue.type))
+        } else {
+          filteredResults = filteredResults.filter((issue: Issue) => issue.type === typeFilter)
+        }
       }
 
       if (tagFilter !== 'all') {
@@ -257,7 +263,13 @@ export function IssuesList({
     }
 
     if (typeFilter !== 'all') {
-      countQuery = countQuery.eq('type', typeFilter)
+      // Handle multiple types separated by comma
+      if (typeFilter.includes(',')) {
+        const types = typeFilter.split(',')
+        countQuery = countQuery.in('type', types)
+      } else {
+        countQuery = countQuery.eq('type', typeFilter)
+      }
     }
 
     const { count: totalFilteredCount } = await countQuery
@@ -293,7 +305,13 @@ export function IssuesList({
     }
 
     if (typeFilter !== 'all') {
-      query = query.eq('type', typeFilter)
+      // Handle multiple types separated by comma
+      if (typeFilter.includes(',')) {
+        const types = typeFilter.split(',')
+        query = query.in('type', types)
+      } else {
+        query = query.eq('type', typeFilter)
+      }
     }
 
     // Apply ordering based on sortBy

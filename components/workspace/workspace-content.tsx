@@ -84,8 +84,9 @@ interface WorkspaceContentProps {
     avatar_url: string | null
     owner_id: string
   }
-  initialView?: 'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe'
+  initialView?: 'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe' | 'sprint-board' | 'design' | 'product'
   initialIssueId?: string
+  typeFilter?: string // Preset type filter for specific views
 }
 
 export interface WorkspaceContentRef {
@@ -97,7 +98,7 @@ export interface WorkspaceContentRef {
   toggleSearch: () => void
   isSearchVisible: () => boolean
   setStatusFilter: (status: string) => void
-  getCurrentView: () => 'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe'
+  getCurrentView: () => 'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe' | 'sprint-board' | 'design' | 'product'
 }
 
 const statusOptions = [
@@ -139,7 +140,7 @@ const sortOptions = [
 ]
 
 export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContentProps>(
-  function WorkspaceContent({ workspace, initialView = 'list', initialIssueId }, ref) {
+  function WorkspaceContent({ workspace, initialView = 'list', initialIssueId, typeFilter: presetTypeFilter }, ref) {
   const pathname = usePathname()
   
   // Extract issue ID from URL if present
@@ -161,10 +162,13 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     if (pathname.includes('/cookbook')) return 'cookbook'
     if (pathname.includes('/issue/')) return 'issue'
     if (pathname.includes('/recipe/')) return 'recipe'
+    if (pathname.includes('/sprint-board')) return 'sprint-board'
+    if (pathname.includes('/design')) return 'design'
+    if (pathname.includes('/product')) return 'product'
     return 'list'
   }
   
-  const [currentView, setCurrentView] = useState<'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe'>(getInitialView())
+  const [currentView, setCurrentView] = useState<'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe' | 'sprint-board' | 'design' | 'product'>(getInitialView())
   const [currentIssueId, setCurrentIssueId] = useState<string | null>(initialIssueId || getIssueIdFromPath() || null)
   const [currentRecipeId, setCurrentRecipeId] = useState<string | null>(getRecipeIdFromPath() || null)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -174,7 +178,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   // List view defaults to Active (exclude_done), Kanban defaults to All
   const [statusFilter, setStatusFilter] = useState<string>('exclude_done')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
-  const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [typeFilter, setTypeFilter] = useState<string>(presetTypeFilter || 'all')
   const [tagFilter, setTagFilter] = useState<string>('all')
   const [sortBy, setSortBy] = useState<string>('newest')
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -448,8 +452,8 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
         </div>
       </div>
       
-      {/* Filters - Show for both list views (list and kanban) */}
-      {currentView === 'list' && (issuesViewMode === 'list' || issuesViewMode === 'kanban') && (
+      {/* Filters - Show for all issue views */}
+      {(currentView === 'list' || currentView === 'sprint-board' || currentView === 'design' || currentView === 'product') && (issuesViewMode === 'list' || issuesViewMode === 'kanban') && (
         <div className="border-b border-border bg-background overflow-hidden relative">
           {/* Mobile and Desktop Filter Header */}
           <div className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-3">
@@ -512,7 +516,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                     <Filter className="h-4 w-4" />
                     {/* Show indicator when any filter differs from default values
                         Default: statusFilter='exclude_done', others='all' */}
-                    {(statusFilter !== 'exclude_done' || priorityFilter !== 'all' || typeFilter !== 'all' || tagFilter !== 'all') && (
+                    {(statusFilter !== 'exclude_done' || priorityFilter !== 'all' || (!presetTypeFilter && typeFilter !== 'all') || tagFilter !== 'all') && (
                       <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
                     )}
                   </button>
@@ -555,22 +559,24 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                       </Select>
                     </div>
                     
-                    {/* Type Filter */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-muted-foreground">Type</label>
-                      <Select value={typeFilter} onValueChange={setTypeFilter}>
-                        <SelectTrigger className="w-full h-8 text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {typeOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {/* Type Filter - disabled if preset */}
+                    {!presetTypeFilter && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Type</label>
+                        <Select value={typeFilter} onValueChange={setTypeFilter}>
+                          <SelectTrigger className="w-full h-8 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {typeOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     
                     {/* Tag Filter */}
                     {availableTags.length > 0 && (
@@ -701,22 +707,24 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                 </Select>
               </div>
               
-              {/* Type Filter */}
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-foreground">Type</label>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="w-full h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {typeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Type Filter - disabled if preset */}
+              {!presetTypeFilter && (
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Type</label>
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="w-full h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {typeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               
               {/* Tag Filter */}
               {availableTags.length > 0 && (
@@ -764,7 +772,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
       )}
 
       {/* Dynamic Content */}
-      {currentView === 'list' ? (
+      {(currentView === 'list' || currentView === 'sprint-board' || currentView === 'design' || currentView === 'product') ? (
         issuesViewMode === 'list' ? (
           <IssuesList 
             key={`list-${refreshKey}`}
