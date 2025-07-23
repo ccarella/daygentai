@@ -132,8 +132,9 @@ export default function CreateWorkspaceForm() {
         }
       }
 
-      // Navigate to the newly created workspace
-      router.push(`/${slug}`)
+      // Navigate to success page first to ensure cache is properly invalidated
+      // The success page will then redirect to the workspace
+      router.push('/success')
     } catch (err) {
       clearTimeout(timeoutId)
       console.error('Workspace creation error:', err)

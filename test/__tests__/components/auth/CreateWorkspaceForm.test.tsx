@@ -272,7 +272,7 @@ describe('CreateWorkspaceForm', () => {
           p_slug: 'test-workspace',
           p_avatar_url: '🚀'
         })
-        expect(mockRouter.push).toHaveBeenCalledWith('/test-workspace')
+        expect(mockRouter.push).toHaveBeenCalledWith('/success')
       })
     })
 

@@ -298,7 +298,37 @@ export async function middleware(request: NextRequest) {
       if (!hasProfile) {
         return NextResponse.redirect(new URL('/CreateUser', request.url))
       }
-      // For workspace routes, we'll check access in the page components
+      
+      // Special handling: if user doesn't have workspace in cache but is trying to access one,
+      // invalidate cache and re-check (handles race condition after workspace creation)
+      if (!hasWorkspace) {
+        // Invalidate this user's cache entry
+        userCache.invalidate(cacheKey)
+        
+        // Re-fetch to get fresh data
+        try {
+          const { data: freshWorkspaceData } = await supabase
+            .from('workspace_members')
+            .select('workspace_id')
+            .eq('user_id', user.id)
+            .limit(1)
+          
+          if (freshWorkspaceData && freshWorkspaceData.length > 0) {
+            // User does have a workspace - update cache and allow access
+            userProfile.hasWorkspace = true
+            userCache.set(cacheKey, userProfile)
+          } else {
+            // User really doesn't have a workspace - redirect to create one
+            return NextResponse.redirect(new URL('/CreateWorkspace', request.url))
+          }
+        } catch (error) {
+          console.error('Error re-checking workspace access:', error)
+          // On error, redirect to workspace creation to be safe
+          return NextResponse.redirect(new URL('/CreateWorkspace', request.url))
+        }
+      }
+      
+      // For workspace routes, we'll check specific access in the page components
       // Don't require workspace ownership here since users can be members of workspaces they don't own
     }
     

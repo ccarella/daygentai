@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout'
+import { SuccessRedirect } from '@/components/auth/SuccessRedirect'
 import type { WorkspaceMemberDetailsQueryResponse } from '@/types/supabase-helpers'
 
 export default async function SuccessPage({
@@ -56,7 +57,8 @@ export default async function SuccessPage({
 
   // If user has a workspace and not in debug mode, redirect to workspace
   if (!isDebugMode) {
-    redirect(`/${workspace.slug}`)
+    // Use a client-side redirect with a small delay to ensure cache invalidation has propagated
+    return <SuccessRedirect workspaceSlug={workspace.slug} />
   }
 
   return (

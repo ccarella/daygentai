@@ -45,7 +45,11 @@ async function handlePOST(request: NextRequest) {
     // Invalidate the cache
     invalidateUserCache(userId || user.id)
 
-    return NextResponse.json({ success: true })
+    // Also set a response header to signal cache invalidation
+    const response = NextResponse.json({ success: true })
+    response.headers.set('X-Cache-Invalidated', 'true')
+    
+    return response
   } catch (error) {
     console.error('Error in cache invalidation:', error)
     return createInternalServerError()

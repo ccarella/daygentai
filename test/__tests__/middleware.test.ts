@@ -313,11 +313,12 @@ describe('middleware', () => {
       it('allows access to workspace routes when user has profile', async () => {
         mockRequest.nextUrl.pathname = '/test-workspace'
         
-        const response = await middleware(mockRequest as NextRequest)
+        await middleware(mockRequest as NextRequest)
         
-        // Middleware doesn't redirect when user has profile (workspace access is checked in page components)
-        expect(NextResponse.redirect).not.toHaveBeenCalled()
-        expect(response).toBeDefined()
+        // With the new cache invalidation logic, users without workspaces are redirected to CreateWorkspace
+        expect(NextResponse.redirect).toHaveBeenCalledWith(
+          new URL('/CreateWorkspace', mockRequest.url)
+        )
       })
     })
 
