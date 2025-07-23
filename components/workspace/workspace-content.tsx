@@ -86,6 +86,7 @@ interface WorkspaceContentProps {
   }
   initialView?: 'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe'
   initialIssueId?: string
+  initialTypeFilter?: string
 }
 
 export interface WorkspaceContentRef {
@@ -139,7 +140,7 @@ const sortOptions = [
 ]
 
 export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContentProps>(
-  function WorkspaceContent({ workspace, initialView = 'list', initialIssueId }, ref) {
+  function WorkspaceContent({ workspace, initialView = 'list', initialIssueId, initialTypeFilter }, ref) {
   const pathname = usePathname()
   
   // Extract issue ID from URL if present
@@ -174,7 +175,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   // List view defaults to Active (exclude_done), Kanban defaults to All
   const [statusFilter, setStatusFilter] = useState<string>('exclude_done')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
-  const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [typeFilter, setTypeFilter] = useState<string>(initialTypeFilter || 'all')
   const [tagFilter, setTagFilter] = useState<string>('all')
   const [sortBy, setSortBy] = useState<string>('newest')
   const [searchQuery, setSearchQuery] = useState<string>('')

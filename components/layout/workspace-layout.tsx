@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus, ChevronLeft, ChevronRight, HelpCircle, Settings, Terminal, BookOpen, Search } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, HelpCircle, Settings, Terminal, BookOpen, Search, ChevronDown, Bug, Sparkles, Palette, MessageSquare } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import type { UserWorkspace } from '@/lib/supabase/workspaces'
 import { subscribeToCreateIssueRequests, emitToggleSearch } from '@/lib/events/issue-events'
@@ -60,6 +60,7 @@ export function WorkspaceLayout({
   const [localIsMobileMenuOpen, setLocalIsMobileMenuOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isSidebarHovered, setIsSidebarHovered] = useState(false)
+  const [isIssuesExpanded, setIsIssuesExpanded] = useState(true)
   const pathname = usePathname()
   const { openWithMode } = useCommandPalette()
   const localSidebarRef = useRef<HTMLDivElement>(null)
@@ -177,37 +178,93 @@ export function WorkspaceLayout({
         )}
         */}
         
-        {onNavigateToIssues ? (
+        {/* Issues Section with Collapsible Sub-items */}
+        <div className="mt-1">
           <button
             data-sidebar-item
-            onClick={onNavigateToIssues}
-            className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
-              pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
+            onClick={() => {
+              if (pathname === `/${workspace.slug}` || pathname === `/${workspace.slug}/issues/all`) {
+                // If already on main issues page, just toggle expansion
+                setIsIssuesExpanded(!isIssuesExpanded)
+              } else {
+                // Navigate to main issues page and expand
+                setIsIssuesExpanded(true)
+                if (onNavigateToIssues) {
+                  onNavigateToIssues()
+                }
+              }
+            }}
+            className={`w-full flex items-center justify-between px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors focus:outline-none ${
+              pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issues/`) || pathname.startsWith(`/${workspace.slug}/issue/`)
                 ? 'bg-accent text-foreground' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>Issues</span>
+            <div className="flex items-center space-x-2 md:space-x-3">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Issues</span>
+            </div>
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${
+              isIssuesExpanded ? 'rotate-180' : ''
+            }`} />
           </button>
-        ) : (
-          <Link
-            data-sidebar-item
-            href={`/${workspace.slug}`}
-            className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
-              pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
-                ? 'bg-accent text-foreground' 
-                : 'hover:bg-accent text-foreground'
-            }`}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>Issues</span>
-          </Link>
-        )}
+          
+          {/* Issue Type Sub-navigation */}
+          {isIssuesExpanded && (
+            <div className="ml-7 mt-1 space-y-0.5">
+              <Link
+                data-sidebar-item
+                href={`/${workspace.slug}/issues/features`}
+                className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-colors text-sm focus:outline-none ${
+                  pathname === `/${workspace.slug}/issues/features`
+                    ? 'bg-accent text-foreground' 
+                    : 'hover:bg-accent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Features</span>
+              </Link>
+              <Link
+                data-sidebar-item
+                href={`/${workspace.slug}/issues/bugs`}
+                className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-colors text-sm focus:outline-none ${
+                  pathname === `/${workspace.slug}/issues/bugs`
+                    ? 'bg-accent text-foreground' 
+                    : 'hover:bg-accent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Bug className="w-4 h-4" />
+                <span>Bugs</span>
+              </Link>
+              <Link
+                data-sidebar-item
+                href={`/${workspace.slug}/issues/design`}
+                className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-colors text-sm focus:outline-none ${
+                  pathname === `/${workspace.slug}/issues/design`
+                    ? 'bg-accent text-foreground' 
+                    : 'hover:bg-accent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Palette className="w-4 h-4" />
+                <span>Design</span>
+              </Link>
+              <Link
+                data-sidebar-item
+                href={`/${workspace.slug}/issues/non-technical`}
+                className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-colors text-sm focus:outline-none ${
+                  pathname === `/${workspace.slug}/issues/non-technical`
+                    ? 'bg-accent text-foreground' 
+                    : 'hover:bg-accent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>Non-technical</span>
+              </Link>
+            </div>
+          )}
+        </div>
         
         {/* Cookbook */}
         {onNavigateToCookbook ? (
@@ -354,10 +411,11 @@ export function WorkspaceLayout({
                 <button
                   onClick={onNavigateToIssues}
                   className={`p-2 rounded mb-2 transition-colors ${
-                    pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
+                    pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issues/`) || pathname.startsWith(`/${workspace.slug}/issue/`)
                       ? 'bg-accent' 
                       : 'hover:bg-accent'
                   }`}
+                  title="Issues"
                 >
                   <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -367,10 +425,11 @@ export function WorkspaceLayout({
                 <Link
                   href={`/${workspace.slug}`}
                   className={`p-2 rounded mb-2 transition-colors ${
-                    pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
+                    pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issues/`) || pathname.startsWith(`/${workspace.slug}/issue/`)
                       ? 'bg-accent' 
                       : 'hover:bg-accent'
                   }`}
+                  title="Issues"
                 >
                   <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
