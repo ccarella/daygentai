@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { MoreHorizontal, Trash2, Edit3 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -124,6 +124,16 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
   const [isLoadingComments, setIsLoadingComments] = useState(true)
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  
+  // Debounce timer refs
+  const statusChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const typeChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const priorityChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
+  // Abort controller refs for cancelling in-flight requests
+  const statusAbortControllerRef = useRef<AbortController | null>(null)
+  const typeAbortControllerRef = useRef<AbortController | null>(null)
+  const priorityAbortControllerRef = useRef<AbortController | null>(null)
 
   // Handle ESC key to navigate back
   useEffect(() => {
@@ -137,6 +147,33 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onBack, isEditModalOpen])
+  
+  // Cleanup timeouts and abort controllers on unmount
+  useEffect(() => {
+    return () => {
+      // Clear timeouts
+      if (statusChangeTimeoutRef.current) {
+        clearTimeout(statusChangeTimeoutRef.current)
+      }
+      if (typeChangeTimeoutRef.current) {
+        clearTimeout(typeChangeTimeoutRef.current)
+      }
+      if (priorityChangeTimeoutRef.current) {
+        clearTimeout(priorityChangeTimeoutRef.current)
+      }
+      
+      // Abort any in-flight requests
+      if (statusAbortControllerRef.current) {
+        statusAbortControllerRef.current.abort()
+      }
+      if (typeAbortControllerRef.current) {
+        typeAbortControllerRef.current.abort()
+      }
+      if (priorityAbortControllerRef.current) {
+        priorityAbortControllerRef.current.abort()
+      }
+    }
+  }, [])
 
   // Get current user ID
   useEffect(() => {
@@ -315,9 +352,9 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
   // Subscribe to status updates
   useEffect(() => {
     const unsubscribe = subscribeToIssueStatusUpdates((event) => {
-      if (event.detail.issueId === issueId) {
+      if (event.detail.issueId === issueId && !isUpdatingStatus) {
         setIssue(prevIssue => {
-          if (!prevIssue) return prevIssue
+          if (!prevIssue || prevIssue.status === event.detail.newStatus) return prevIssue
           return { ...prevIssue, status: event.detail.newStatus as Issue['status'] }
         })
         // Update cache after state update
@@ -326,7 +363,7 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
     })
 
     return unsubscribe
-  }, [issueId, updateIssue])
+  }, [issueId, updateIssue, isUpdatingStatus])
 
   const handleDelete = async () => {
     if (!issue) return
@@ -347,150 +384,237 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
     }
   }
 
-  const handleStatusChange = async (newStatus: string) => {
-    if (!issue || isUpdatingStatus) return
+  const handleStatusChange = useCallback((newStatus: string) => {
+    if (!issue || newStatus === issue.status) return
     
-    setIsUpdatingStatus(true)
+    // Clear any pending status change
+    if (statusChangeTimeoutRef.current) {
+      clearTimeout(statusChangeTimeoutRef.current)
+    }
     
-    try {
-      // Only log in development for debugging
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Status update requested:', {
-          newStatus,
-          type: typeof newStatus,
-          length: newStatus.length,
-          trimmed: newStatus.trim(),
-          isValidStatus: ['todo', 'in_progress', 'in_review', 'done'].includes(newStatus)
+    // Abort any in-flight request
+    if (statusAbortControllerRef.current) {
+      statusAbortControllerRef.current.abort()
+    }
+    
+    // Store previous status for rollback
+    const previousStatus = issue.status
+    
+    // Immediate optimistic update
+    setIssue(prev => prev ? { ...prev, status: newStatus as Issue['status'] } : prev)
+    updateIssue(issue.id, { status: newStatus as Issue['status'] })
+    
+    // Debounce the API call
+    statusChangeTimeoutRef.current = setTimeout(async () => {
+      // Create new abort controller for this request
+      statusAbortControllerRef.current = new AbortController()
+      setIsUpdatingStatus(true)
+      
+      try {
+        const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issue.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status: newStatus.trim() }),
+          signal: statusAbortControllerRef.current.signal
         })
-      }
 
-      const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issue.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus.trim() }), // Ensure trimmed value
-      })
+        if (!response.ok) {
+          let errorData
+          try {
+            errorData = await response.json()
+          } catch (parseError) {
+            console.error('Failed to parse error response:', parseError)
+            errorData = { error: 'Failed to parse server error response' }
+          }
+          
+          throw new Error(errorData.error || errorData.message || 'Failed to update status')
+        }
 
-      if (!response.ok) {
-        let errorData
-        try {
-          errorData = await response.json()
-        } catch (parseError) {
-          console.error('Failed to parse error response:', parseError)
-          errorData = { error: 'Failed to parse server error response' }
+        const { issue: updatedIssue } = await response.json()
+        
+        // Update with server response to ensure consistency
+        setIssue(updatedIssue)
+        updateIssue(issue.id, updatedIssue)
+        
+        toast({
+          title: "Status updated",
+          description: `Issue status changed to ${newStatus.toLowerCase().replace('_', ' ')}.`,
+        })
+      } catch (error) {
+        // Don't show error or rollback if request was aborted
+        if (error instanceof Error && error.name === 'AbortError') {
+          return
         }
         
-        console.error('Status update failed:', {
-          status: response.status,
-          errorData,
-          sentValue: newStatus,
+        // Rollback on error
+        setIssue(prev => prev ? { ...prev, status: previousStatus } : prev)
+        updateIssue(issue.id, { status: previousStatus })
+        
+        console.error('Failed to update issue status:', error)
+        toast({
+          title: "Failed to update status",
+          description: error instanceof Error ? error.message : "An error occurred while updating the issue status.",
+          variant: "destructive",
         })
-        throw new Error(errorData.error || errorData.message || 'Failed to update status')
+      } finally {
+        setIsUpdatingStatus(false)
+        statusChangeTimeoutRef.current = null
+        statusAbortControllerRef.current = null
       }
+    }, 300) // 300ms debounce
+  }, [issue, workspaceSlug, updateIssue, toast])
 
-      let responseData
-      try {
-        responseData = await response.json()
-      } catch (parseError) {
-        console.error('Failed to parse success response:', parseError)
-        throw new Error('Invalid response from server')
-      }
+  const handleTypeChange = useCallback((newType: string) => {
+    if (!issue || newType === issue.type) return
+    
+    // Clear any pending type change
+    if (typeChangeTimeoutRef.current) {
+      clearTimeout(typeChangeTimeoutRef.current)
+    }
+    
+    // Abort any in-flight request
+    if (typeAbortControllerRef.current) {
+      typeAbortControllerRef.current.abort()
+    }
+    
+    // Store previous type for rollback
+    const previousType = issue.type
+    
+    // Immediate optimistic update
+    setIssue(prev => prev ? { ...prev, type: newType as Issue['type'] } : prev)
+    updateIssue(issue.id, { type: newType as Issue['type'] })
+    
+    // Debounce the API call
+    typeChangeTimeoutRef.current = setTimeout(async () => {
+      // Create new abort controller for this request
+      typeAbortControllerRef.current = new AbortController()
+      setIsUpdatingType(true)
       
-      const { issue: updatedIssue } = responseData
-      setIssue(updatedIssue)
-      updateIssue(issue.id, { status: newStatus as Issue['status'] })
-      toast({
-        title: "Status updated",
-        description: `Issue status changed to ${newStatus.toLowerCase().replace('_', ' ')}.`,
-      })
-    } catch (error) {
-      console.error('Failed to update issue status:', error)
-      toast({
-        title: "Failed to update status",
-        description: error instanceof Error ? error.message : "An error occurred while updating the issue status.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUpdatingStatus(false)
-    }
-  }
+      try {
+        const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issue.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ type: newType }),
+          signal: typeAbortControllerRef.current.signal
+        })
 
-  const handleTypeChange = async (newType: string) => {
-    if (!issue || isUpdatingType) return
-    
-    setIsUpdatingType(true)
-    
-    try {
-      const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issue.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type: newType }),
-      })
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to update type')
+        }
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to update type')
+        const { issue: updatedIssue } = await response.json()
+        
+        // Update with server response to ensure consistency
+        setIssue(updatedIssue)
+        updateIssue(issue.id, updatedIssue)
+        
+        toast({
+          title: "Type updated",
+          description: `Issue type changed to ${newType.toLowerCase()}.`,
+        })
+      } catch (error) {
+        // Don't show error or rollback if request was aborted
+        if (error instanceof Error && error.name === 'AbortError') {
+          return
+        }
+        
+        // Rollback on error
+        setIssue(prev => prev ? { ...prev, type: previousType } : prev)
+        updateIssue(issue.id, { type: previousType })
+        
+        console.error('Failed to update issue type:', error)
+        toast({
+          title: "Failed to update type",
+          description: error instanceof Error ? error.message : "An error occurred while updating the issue type.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsUpdatingType(false)
+        typeChangeTimeoutRef.current = null
+        typeAbortControllerRef.current = null
       }
+    }, 300) // 300ms debounce
+  }, [issue, workspaceSlug, updateIssue, toast])
 
-      const { issue: updatedIssue } = await response.json()
-      setIssue(updatedIssue)
-      updateIssue(issue.id, { type: newType as Issue['type'] })
-      toast({
-        title: "Type updated",
-        description: `Issue type changed to ${newType.toLowerCase()}.`,
-      })
-    } catch (error) {
-      console.error('Failed to update issue type:', error)
-      toast({
-        title: "Failed to update type",
-        description: error instanceof Error ? error.message : "An error occurred while updating the issue type.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUpdatingType(false)
+  const handlePriorityChange = useCallback((newPriority: string) => {
+    if (!issue || newPriority === issue.priority) return
+    
+    // Clear any pending priority change
+    if (priorityChangeTimeoutRef.current) {
+      clearTimeout(priorityChangeTimeoutRef.current)
     }
-  }
-
-  const handlePriorityChange = async (newPriority: string) => {
-    if (!issue || isUpdatingPriority) return
     
-    setIsUpdatingPriority(true)
+    // Abort any in-flight request
+    if (priorityAbortControllerRef.current) {
+      priorityAbortControllerRef.current.abort()
+    }
     
-    try {
-      const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issue.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ priority: newPriority }),
-      })
+    // Store previous priority for rollback
+    const previousPriority = issue.priority
+    
+    // Immediate optimistic update
+    setIssue(prev => prev ? { ...prev, priority: newPriority as Issue['priority'] } : prev)
+    updateIssue(issue.id, { priority: newPriority as Issue['priority'] })
+    
+    // Debounce the API call
+    priorityChangeTimeoutRef.current = setTimeout(async () => {
+      // Create new abort controller for this request
+      priorityAbortControllerRef.current = new AbortController()
+      setIsUpdatingPriority(true)
+      
+      try {
+        const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issue.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ priority: newPriority }),
+          signal: priorityAbortControllerRef.current.signal
+        })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to update priority')
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to update priority')
+        }
+
+        const { issue: updatedIssue } = await response.json()
+        
+        // Update with server response to ensure consistency
+        setIssue(updatedIssue)
+        updateIssue(issue.id, updatedIssue)
+        
+        toast({
+          title: "Priority updated",
+          description: `Issue priority changed to ${newPriority.toLowerCase()}.`,
+        })
+      } catch (error) {
+        // Don't show error or rollback if request was aborted
+        if (error instanceof Error && error.name === 'AbortError') {
+          return
+        }
+        
+        // Rollback on error
+        setIssue(prev => prev ? { ...prev, priority: previousPriority } : prev)
+        updateIssue(issue.id, { priority: previousPriority })
+        
+        console.error('Failed to update issue priority:', error)
+        toast({
+          title: "Failed to update priority",
+          description: error instanceof Error ? error.message : "An error occurred while updating the issue priority.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsUpdatingPriority(false)
+        priorityChangeTimeoutRef.current = null
+        priorityAbortControllerRef.current = null
       }
-
-      const { issue: updatedIssue } = await response.json()
-      setIssue(updatedIssue)
-      updateIssue(issue.id, { priority: newPriority as Issue['priority'] })
-      toast({
-        title: "Priority updated",
-        description: `Issue priority changed to ${newPriority.toLowerCase()}.`,
-      })
-    } catch (error) {
-      console.error('Failed to update issue priority:', error)
-      toast({
-        title: "Failed to update priority",
-        description: error instanceof Error ? error.message : "An error occurred while updating the issue priority.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUpdatingPriority(false)
-    }
-  }
+    }, 300) // 300ms debounce
+  }, [issue, workspaceSlug, updateIssue, toast])
 
   const handleEdit = () => {
     setIsEditModalOpen(true)
@@ -643,94 +767,115 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
             {/* Priority with inline editing */}
             <div className="flex items-center space-x-2">
               <span className="text-muted-foreground text-sm">Priority:</span>
-              <Select
-                value={issue.priority}
-                onValueChange={handlePriorityChange}
-                disabled={isUpdatingPriority}
-              >
-                <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none">
-                  <SelectValue>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[issue.priority]}`}>
-                      {priorityLabels[issue.priority]}
-                    </span>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="critical">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors.critical}`}>
-                      {priorityLabels.critical}
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="high">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors.high}`}>
-                      {priorityLabels.high}
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="medium">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors.medium}`}>
-                      {priorityLabels.medium}
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="low">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors.low}`}>
-                      {priorityLabels.low}
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <Select
+                  value={issue.priority}
+                  onValueChange={handlePriorityChange}
+                  disabled={isUpdatingPriority}
+                >
+                  <SelectTrigger className={`h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none transition-opacity ${isUpdatingPriority ? 'opacity-60' : ''}`}>
+                    <SelectValue>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[issue.priority]}`}>
+                        {priorityLabels[issue.priority]}
+                      </span>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="critical">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors.critical}`}>
+                        {priorityLabels.critical}
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="high">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors.high}`}>
+                        {priorityLabels.high}
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="medium">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors.medium}`}>
+                        {priorityLabels.medium}
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="low">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors.low}`}>
+                        {priorityLabels.low}
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                {isUpdatingPriority && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                  </div>
+                )}
+              </div>
             </div>
             
             {/* Status and Type - responsive layout */}
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center space-x-2">
                 <span className="text-muted-foreground text-sm">Status:</span>
-                <Select
-                  value={issue.status}
-                  onValueChange={handleStatusChange}
-                  disabled={isUpdatingStatus}
-                >
-                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none">
-                    <SelectValue>
-                      <span className={`text-sm font-medium ${statusOptions.find(s => s.value === issue.status)?.color || 'text-muted-foreground'}`}>
-                        {statusOptions.find(s => s.value === issue.status)?.label || issue.status}
-                      </span>
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((status) => (
-                      <SelectItem key={status.value} value={status.value}>
-                        <span className={status.color}>{status.label}</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <Select
+                    value={issue.status}
+                    onValueChange={handleStatusChange}
+                    disabled={isUpdatingStatus}
+                  >
+                    <SelectTrigger className={`h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none transition-opacity ${isUpdatingStatus ? 'opacity-60' : ''}`}>
+                      <SelectValue>
+                        <span className={`text-sm font-medium ${statusOptions.find(s => s.value === issue.status)?.color || 'text-muted-foreground'}`}>
+                          {statusOptions.find(s => s.value === issue.status)?.label || issue.status}
+                        </span>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((status) => (
+                        <SelectItem key={status.value} value={status.value}>
+                          <span className={status.color}>{status.label}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {isUpdatingStatus && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-muted-foreground text-sm">Type:</span>
-                <Select
-                  value={issue.type}
-                  onValueChange={handleTypeChange}
-                  disabled={isUpdatingType}
-                >
-                  <SelectTrigger className="h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none">
-                    <SelectValue>
-                      <span className="text-sm font-medium flex items-center gap-1">
-                        <span>{typeOptions.find(t => t.value === issue.type)?.icon || '📌'}</span>
-                        <span className="hidden sm:inline">{typeOptions.find(t => t.value === issue.type)?.label || issue.type}</span>
-                      </span>
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {typeOptions.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        <span className="flex items-center gap-2">
-                          <span>{type.icon}</span>
-                          <span>{type.label}</span>
+                <div className="relative">
+                  <Select
+                    value={issue.type}
+                    onValueChange={handleTypeChange}
+                    disabled={isUpdatingType}
+                  >
+                    <SelectTrigger className={`h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none transition-opacity ${isUpdatingType ? 'opacity-60' : ''}`}>
+                      <SelectValue>
+                        <span className="text-sm font-medium flex items-center gap-1">
+                          <span>{typeOptions.find(t => t.value === issue.type)?.icon || '📌'}</span>
+                          <span className="hidden sm:inline">{typeOptions.find(t => t.value === issue.type)?.label || issue.type}</span>
                         </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {typeOptions.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          <span className="flex items-center gap-2">
+                            <span>{type.icon}</span>
+                            <span>{type.label}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {isUpdatingType && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             
