@@ -21,10 +21,6 @@ describe('CreateUserForm', () => {
     ;(createClient as any).mockReturnValue(mockSupabase)
     ;(useRouter as any).mockReturnValue(mockRouter)
     
-    // Mock window.location.href
-    delete (window as any).location
-    window.location = { href: '' } as any
-    
     // Default to authenticated user
     mockSupabase.auth.getUser.mockResolvedValue({
       data: { user: mockUser },
@@ -167,7 +163,8 @@ describe('CreateUserForm', () => {
           name: 'Test User',
           avatar_url: '🐱',
         })
-        expect(window.location.href).toBe('/CreateWorkspace')
+        expect(mockRouter.refresh).toHaveBeenCalled()
+        expect(mockRouter.push).toHaveBeenCalledWith('/CreateWorkspace')
       })
     })
 
@@ -305,7 +302,8 @@ describe('CreateUserForm', () => {
       
       await waitFor(() => {
         expect(screen.queryByText('First error')).not.toBeInTheDocument()
-        expect(window.location.href).toBe('/CreateWorkspace')
+        expect(mockRouter.refresh).toHaveBeenCalled()
+        expect(mockRouter.push).toHaveBeenCalledWith('/CreateWorkspace')
       })
     })
   })
