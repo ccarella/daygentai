@@ -125,5 +125,9 @@ function WorkspaceLayoutInner({ children, workspace }: { children: React.ReactNo
     warmCache(workspace.id)
   }, [workspace.id, warmCache])
   
-  return <>{children}</>
+  return (
+    <div className="transition-opacity duration-200 ease-in-out animate-in fade-in">
+      {children}
+    </div>
+  )
 }

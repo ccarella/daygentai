@@ -1,37 +1,28 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useProfile } from '@/contexts/profile-context'
 import { Header } from './header'
 
 export function HeaderWrapper() {
-  const [profile, setProfile] = useState<{ name: string; avatar_url: string | null } | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { profile, loading } = useProfile()
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        setLoading(false)
-        return
-      }
-      
-      const { data: profile } = await supabase
-        .from('users')
-        .select('name, avatar_url')
-        .eq('id', user.id)
-        .single()
-      
-      setProfile(profile)
-      setLoading(false)
-    }
+  if (loading) {
+    return (
+      <div className="fixed top-0 left-0 right-0 bg-background border-b border-border z-50">
+        <div className="w-full px-4 md:px-6 lg:px-8">
+          <div className="flex items-center h-11">
+            <div className="flex items-center flex-1">
+              <div className="text-xl font-bold text-foreground">Daygent</div>
+            </div>
+            <div className="flex items-center flex-1 justify-end">
+              <div className="w-11 h-11 md:w-10 md:h-10 rounded-full bg-secondary animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-    fetchProfile()
-  }, [])
-
-  if (loading) return null
   if (!profile) return null
   
   return <Header initialProfile={profile} />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -19,31 +19,10 @@ interface HeaderProps {
 
 export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: HeaderProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(initialProfile || null)
+  const userProfile = initialProfile
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const supabase = createClient()
-
-  const fetchUserProfile = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const { data: profile } = await supabase
-        .from('users')
-        .select('name, avatar_url')
-        .eq('id', user.id)
-        .single()
-      
-      if (profile) {
-        setUserProfile(profile)
-      }
-    }
-  }, [supabase])
-
-  useEffect(() => {
-    if (!initialProfile) {
-      fetchUserProfile()
-    }
-  }, [initialProfile, fetchUserProfile])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
