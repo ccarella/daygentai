@@ -59,6 +59,7 @@ export function WorkspaceLayout({
   const [createIssueOpen, setCreateIssueOpen] = useState(false)
   const [localIsMobileMenuOpen, setLocalIsMobileMenuOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false)
   const pathname = usePathname()
   const { openWithMode } = useCommandPalette()
   const localSidebarRef = useRef<HTMLDivElement>(null)
@@ -280,15 +281,21 @@ export function WorkspaceLayout({
     <>
       <div className="flex h-screen bg-background">
         {/* Desktop Sidebar */}
-        <div className={`hidden lg:flex bg-sidebar border-r border-border flex-col relative transition-all duration-300 ${
-          isSidebarCollapsed ? 'w-16' : 'w-[224px]'
-        }`}>
+        <div 
+          className={`hidden lg:flex bg-sidebar border-r border-border flex-col relative transition-all duration-300 ${
+            isSidebarCollapsed ? 'w-16' : 'w-[224px]'
+          }`}
+          onMouseEnter={() => setIsSidebarHovered(true)}
+          onMouseLeave={() => setIsSidebarHovered(false)}
+        >
           {!isSidebarCollapsed && <SidebarContent />}
           
-          {/* Collapse Toggle Button */}
+          {/* Collapse Toggle Button - Only visible on hover */}
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="absolute -right-3 top-8 bg-background border border-border rounded-full p-1 hover:bg-accent shadow-sm z-10"
+            className={`absolute -right-3 top-8 bg-background border border-border rounded-full p-1 hover:bg-accent shadow-sm z-10 transition-opacity duration-200 ${
+              isSidebarHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
             aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isSidebarCollapsed ? (
