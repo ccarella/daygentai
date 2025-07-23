@@ -7,7 +7,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { useIssueCache } from '@/contexts/issue-cache-context'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { subscribeToIssueStatusUpdates } from '@/lib/events/issue-events'
+import { subscribeToIssueStatusUpdates, emitIssueStatusUpdate } from '@/lib/events/issue-events'
 import { CommentList } from './comment-list'
 import {
   DropdownMenu,
@@ -134,6 +134,10 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
   const statusAbortControllerRef = useRef<AbortController | null>(null)
   const typeAbortControllerRef = useRef<AbortController | null>(null)
   const priorityAbortControllerRef = useRef<AbortController | null>(null)
+  
+  // Track the source of updates to prevent feedback loops
+  const updateSourceRef = useRef<string | null>(null)
+  const componentIdRef = useRef(`issue-details-${Math.random().toString(36).substr(2, 9)}`)
 
   // Handle ESC key to navigate back
   useEffect(() => {
@@ -289,7 +293,7 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
             .from('users')
             .select('name, avatar_url')
             .eq('id', cachedIssue.created_by)
-            .single()
+            .maybeSingle()
 
           if (user) {
             setCreatorName(user.name.trim() || 'Unknown')
@@ -352,9 +356,27 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
   // Subscribe to status updates
   useEffect(() => {
     const unsubscribe = subscribeToIssueStatusUpdates((event) => {
-      if (event.detail.issueId === issueId && !isUpdatingStatus) {
+      // Only react to external status updates, not our own
+      if (event.detail.issueId === issueId && 
+          updateSourceRef.current !== componentIdRef.current) {
         setIssue(prevIssue => {
           if (!prevIssue || prevIssue.status === event.detail.newStatus) return prevIssue
+          
+          // Cancel any pending status changes to prevent conflicts
+          if (statusChangeTimeoutRef.current) {
+            clearTimeout(statusChangeTimeoutRef.current)
+            statusChangeTimeoutRef.current = null
+          }
+          
+          // Abort any in-flight status requests
+          if (statusAbortControllerRef.current) {
+            statusAbortControllerRef.current.abort()
+            statusAbortControllerRef.current = null
+          }
+          
+          // Reset updating state since external update takes precedence
+          setIsUpdatingStatus(false)
+          
           return { ...prevIssue, status: event.detail.newStatus as Issue['status'] }
         })
         // Update cache after state update
@@ -363,7 +385,7 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
     })
 
     return unsubscribe
-  }, [issueId, updateIssue, isUpdatingStatus])
+  }, [issueId, updateIssue])
 
   const handleDelete = async () => {
     if (!issue) return
@@ -397,18 +419,21 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
       statusAbortControllerRef.current.abort()
     }
     
+    // Mark this component as the source of the update
+    updateSourceRef.current = componentIdRef.current
+    
     // Store previous status for rollback
     const previousStatus = issue.status
     
     // Immediate optimistic update
     setIssue(prev => prev ? { ...prev, status: newStatus as Issue['status'] } : prev)
     updateIssue(issue.id, { status: newStatus as Issue['status'] })
+    setIsUpdatingStatus(true)
     
     // Debounce the API call
     statusChangeTimeoutRef.current = setTimeout(async () => {
       // Create new abort controller for this request
       statusAbortControllerRef.current = new AbortController()
-      setIsUpdatingStatus(true)
       
       try {
         const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issue.id}`, {
@@ -438,6 +463,9 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
         setIssue(updatedIssue)
         updateIssue(issue.id, updatedIssue)
         
+        // Emit the status update event after successful update
+        emitIssueStatusUpdate(issue.id, newStatus)
+        
         toast({
           title: "Status updated",
           description: `Issue status changed to ${newStatus.toLowerCase().replace('_', ' ')}.`,
@@ -462,6 +490,10 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
         setIsUpdatingStatus(false)
         statusChangeTimeoutRef.current = null
         statusAbortControllerRef.current = null
+        // Clear the update source after a short delay
+        setTimeout(() => {
+          updateSourceRef.current = null
+        }, 100)
       }
     }, 300) // 300ms debounce
   }, [issue, workspaceSlug, updateIssue, toast])
@@ -767,15 +799,21 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
             {/* Priority with inline editing */}
             <div className="flex items-center space-x-2">
               <span className="text-muted-foreground text-sm">Priority:</span>
-              <div className="relative">
+              <div className="relative inline-flex items-center">
                 <Select
                   value={issue.priority}
                   onValueChange={handlePriorityChange}
                   disabled={isUpdatingPriority}
                 >
-                  <SelectTrigger className={`h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none transition-opacity ${isUpdatingPriority ? 'opacity-60' : ''}`}>
+                  <SelectTrigger className={`h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none transition-all duration-200 ${isUpdatingPriority ? 'pointer-events-none' : ''}`}>
                     <SelectValue>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[issue.priority]}`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-all duration-200 ${priorityColors[issue.priority]} ${isUpdatingPriority ? 'opacity-60' : ''}`}>
+                        {isUpdatingPriority && (
+                          <svg className="h-3 w-3 animate-spin mr-1" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        )}
                         {priorityLabels[issue.priority]}
                       </span>
                     </SelectValue>
@@ -803,11 +841,6 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                {isUpdatingPriority && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                  </div>
-                )}
               </div>
             </div>
             
@@ -815,16 +848,26 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center space-x-2">
                 <span className="text-muted-foreground text-sm">Status:</span>
-                <div className="relative">
+                <div className="relative inline-flex items-center">
                   <Select
                     value={issue.status}
                     onValueChange={handleStatusChange}
                     disabled={isUpdatingStatus}
                   >
-                    <SelectTrigger className={`h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none transition-opacity ${isUpdatingStatus ? 'opacity-60' : ''}`}>
+                    <SelectTrigger className={`h-7 w-auto border-0 p-0 px-2 hover:bg-accent focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none transition-all duration-200 ${isUpdatingStatus ? 'bg-accent/50' : ''}`}>
                       <SelectValue>
-                        <span className={`text-sm font-medium ${statusOptions.find(s => s.value === issue.status)?.color || 'text-muted-foreground'}`}>
-                          {statusOptions.find(s => s.value === issue.status)?.label || issue.status}
+                        <span className={`text-sm font-medium transition-colors duration-200 ${statusOptions.find(s => s.value === issue.status)?.color || 'text-muted-foreground'}`}>
+                          {isUpdatingStatus ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              {statusOptions.find(s => s.value === issue.status)?.label || issue.status}
+                            </span>
+                          ) : (
+                            statusOptions.find(s => s.value === issue.status)?.label || issue.status
+                          )}
                         </span>
                       </SelectValue>
                     </SelectTrigger>
@@ -836,26 +879,27 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
                       ))}
                     </SelectContent>
                   </Select>
-                  {isUpdatingStatus && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                    </div>
-                  )}
                 </div>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-muted-foreground text-sm">Type:</span>
-                <div className="relative">
+                <div className="relative inline-flex items-center">
                   <Select
                     value={issue.type}
                     onValueChange={handleTypeChange}
                     disabled={isUpdatingType}
                   >
-                    <SelectTrigger className={`h-7 w-auto border-0 p-0 hover:bg-accent focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none transition-opacity ${isUpdatingType ? 'opacity-60' : ''}`}>
+                    <SelectTrigger className={`h-7 w-auto border-0 p-0 px-2 hover:bg-accent focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none transition-all duration-200 ${isUpdatingType ? 'bg-accent/50' : ''}`}>
                       <SelectValue>
-                        <span className="text-sm font-medium flex items-center gap-1">
-                          <span>{typeOptions.find(t => t.value === issue.type)?.icon || '📌'}</span>
-                          <span className="hidden sm:inline">{typeOptions.find(t => t.value === issue.type)?.label || issue.type}</span>
+                        <span className="text-sm font-medium flex items-center gap-1 transition-opacity duration-200">
+                          {isUpdatingType && (
+                            <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          )}
+                          <span className={isUpdatingType ? 'opacity-60' : ''}>{typeOptions.find(t => t.value === issue.type)?.icon || '📌'}</span>
+                          <span className={`hidden sm:inline ${isUpdatingType ? 'opacity-60' : ''}`}>{typeOptions.find(t => t.value === issue.type)?.label || issue.type}</span>
                         </span>
                       </SelectValue>
                     </SelectTrigger>
@@ -870,11 +914,6 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
                       ))}
                     </SelectContent>
                   </Select>
-                  {isUpdatingType && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

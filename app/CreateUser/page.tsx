@@ -11,11 +11,16 @@ export default async function CreateUserPage() {
   }
 
   // Check if user already has a profile
-  const { data: existingUser } = await supabase
+  const { data: existingUser, error } = await supabase
     .from('users')
     .select('id')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
+
+  // If there's an error fetching the profile, log it but continue
+  if (error) {
+    console.error('Error checking existing user profile:', error)
+  }
 
   if (existingUser) {
     redirect('/CreateWorkspace')

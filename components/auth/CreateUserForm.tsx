@@ -54,6 +54,8 @@ export default function CreateUserForm() {
         }
       }
 
+      // Refresh the router to get the latest data and then navigate
+      await router.refresh()
       router.push('/CreateWorkspace')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')

@@ -50,11 +50,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       const supabase = createClient()
       const { data: { user }, error: authError } = await supabase.auth.getUser()
       
-      if (authError) {
-        throw new Error(`Authentication failed: ${authError.message}`)
-      }
-      
-      if (!user) {
+      if (authError || !user) {
+        // User is not authenticated, which is fine for public pages
         setProfile(null)
         return
       }
@@ -63,7 +60,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         .from('users')
         .select('id, name, avatar_url')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
       
       if (profileError) {
         throw new Error(`Failed to fetch profile: ${profileError.message}`)

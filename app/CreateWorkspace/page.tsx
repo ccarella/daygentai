@@ -16,7 +16,7 @@ export default async function CreateWorkspacePage() {
     .from('users')
     .select('id')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!userProfile) {
     redirect('/CreateUser')

@@ -50,7 +50,7 @@ export function ProfileSettings({ onAvatarUpdate }: ProfileSettingsProps) {
           .from('users')
           .select('name, avatar_url')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
 
         if (error) throw error
 
