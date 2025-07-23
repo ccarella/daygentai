@@ -192,9 +192,9 @@ export class LLMProxyService {
       throw new Error('No API key configured. Please contact your administrator.');
     }
     
-    console.log('[LLM Proxy] Workspace data:', {
+    // Log workspace info without sensitive details
+    console.log('[LLM Proxy] Workspace API key check:', {
       hasApiKey: !!data.api_key,
-      apiKeyLength: data.api_key?.length,
       provider: data.api_provider,
       requestedProvider: provider
     });
@@ -226,8 +226,7 @@ export class LLMProxyService {
       console.error('[LLM Proxy] Failed to decrypt API key:', error);
       console.error('[LLM Proxy] Decryption error details:', {
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        hasEncryptionSecret: !!process.env['API_KEY_ENCRYPTION_SECRET'],
-        encryptedKeyLength: data.api_key.length
+        hasEncryptionSecret: !!process.env['API_KEY_ENCRYPTION_SECRET']
       });
       throw new Error('Failed to decrypt API key. Please contact your administrator.');
     }

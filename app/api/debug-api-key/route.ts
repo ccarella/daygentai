@@ -52,15 +52,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Debug info
+    // Debug info - avoid exposing sensitive key metadata
     const debugInfo: Record<string, unknown> = {
       workspaceId: workspace.id,
       hasApiKey: !!workspace.api_key,
       apiProvider: workspace.api_provider,
-      apiKeyLength: workspace.api_key?.length || 0,
       isEncrypted: workspace.api_key ? isEncryptedApiKey(workspace.api_key) : false,
       hasEncryptionSecret: !!process.env['API_KEY_ENCRYPTION_SECRET'],
-      encryptionSecretLength: process.env['API_KEY_ENCRYPTION_SECRET']?.length || 0,
       environment: process.env['NODE_ENV'],
       vercelEnv: process.env['VERCEL_ENV']
     }
