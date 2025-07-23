@@ -329,6 +329,7 @@ export function generateListCacheKey(key: ListCacheKey): string {
     p: key.priorityFilter,
     t: key.typeFilter,
     g: key.tagFilter,
+    b: key.sortBy,
     q: key.searchQuery,
     n: key.page
   })
@@ -344,6 +345,7 @@ export function parseListCacheKey(jsonKey: string): ListCacheKey | null {
       priorityFilter: parsed.p,
       typeFilter: parsed.t,
       tagFilter: parsed.g,
+      sortBy: parsed.b || 'newest',
       searchQuery: parsed.q,
       page: parsed.n
     }

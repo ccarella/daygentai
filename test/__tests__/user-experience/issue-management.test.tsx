@@ -218,14 +218,14 @@ describe('Issue Management', () => {
       expect(screen.getByText('Users cannot log in with magic links')).toBeInTheDocument()
       expect(screen.getByText('Bug')).toBeInTheDocument()
       expect(screen.getByText('Critical')).toBeInTheDocument()
-      expect(screen.getByText('todo')).toBeInTheDocument() // lowercase in the UI
+      expect(screen.getByText('To Do')).toBeInTheDocument() // Updated status label
 
       // Check second issue
       expect(screen.getByText('Add dark mode')).toBeInTheDocument()
       expect(screen.getByText('Feature')).toBeInTheDocument()
       // Status is shown as lowercase with underscores
       const secondIssue = screen.getByText('Add dark mode').closest('[data-issue-id]')!
-      expect(secondIssue).toHaveTextContent('in progress')
+      expect(secondIssue).toHaveTextContent('In Progress')
     })
 
     it('shows empty state when no issues', async () => {

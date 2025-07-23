@@ -66,10 +66,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { LayoutGrid, List, Filter, X, Plus } from 'lucide-react'
+import { LayoutGrid, List, Filter, X, Plus, ArrowUpDown } from 'lucide-react'
 import { SearchBar, SearchBarRef } from '@/components/workspace/search-bar'
 import { getWorkspaceTags } from '@/lib/tags'
 import { Tag as TagComponent } from '@/components/ui/tag'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 
 interface WorkspaceContentProps {
   workspace: {
@@ -119,6 +124,18 @@ const typeOptions = [
   { value: 'task', label: 'Task' },
   { value: 'epic', label: 'Epic' },
   { value: 'spike', label: 'Spike' },
+  { value: 'chore', label: 'Chore' },
+  { value: 'design', label: 'Design' },
+  { value: 'non-technical', label: 'Non-technical' },
+]
+
+const sortOptions = [
+  { value: 'newest', label: 'Newest' },
+  { value: 'oldest', label: 'Oldest' },
+  { value: 'priority_high', label: 'Severity (High)' },
+  { value: 'priority_low', label: 'Severity (Low)' },
+  { value: 'type', label: 'Type' },
+  { value: 'tag', label: 'Tag' },
 ]
 
 export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContentProps>(
@@ -159,6 +176,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [tagFilter, setTagFilter] = useState<string>('all')
+  const [sortBy, setSortBy] = useState<string>('newest')
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [isSearchVisible, setIsSearchVisible] = useState<boolean>(false)
   const [isFiltersVisible, setIsFiltersVisible] = useState<boolean>(false)
@@ -166,6 +184,8 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   const [searchResultCount, setSearchResultCount] = useState<number>(0)
   const searchInputRef = useRef<SearchBarRef>(null)
   const [availableTags, setAvailableTags] = useState<Array<{id: string, name: string, color?: string | undefined}>>([])
+  const [isFilterPopoverOpen, setIsFilterPopoverOpen] = useState<boolean>(false)
+  const [isSortPopoverOpen, setIsSortPopoverOpen] = useState<boolean>(false)
   
   // Debounce search query for better performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300)
@@ -229,6 +249,20 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
         },
         description: 'Toggle search',
       },
+      'f': {
+        handler: () => {
+          setIsFilterPopoverOpen(prev => !prev)
+          return true
+        },
+        description: 'Toggle filter',
+      },
+      's': {
+        handler: () => {
+          setIsSortPopoverOpen(prev => !prev)
+          return true
+        },
+        description: 'Toggle sort',
+      },
       'escape': {
         handler: () => {
           if (isSearchVisible) {
@@ -236,12 +270,20 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
             setSearchQuery('')
             return true
           }
-          return false // Let other handlers process Escape if search is not visible
+          if (isFilterPopoverOpen) {
+            setIsFilterPopoverOpen(false)
+            return true
+          }
+          if (isSortPopoverOpen) {
+            setIsSortPopoverOpen(false)
+            return true
+          }
+          return false // Let other handlers process Escape if nothing is open
         },
-        description: 'Close search',
+        description: 'Close search/filter/sort',
       },
     },
-    deps: [isSearchVisible],
+    deps: [isSearchVisible, isFilterPopoverOpen, isSortPopoverOpen],
   })
 
   // Auto-focus search input when it becomes visible
@@ -411,7 +453,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
         <div className="border-b border-border bg-background overflow-hidden relative">
           {/* Mobile and Desktop Filter Header */}
           <div className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-3">
-            {/* Left side - Create issue button (mobile) and desktop filters */}
+            {/* Left side - Create issue button (mobile) and search indicators */}
             <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
               {/* Create Issue Button - Mobile Only */}
               <button
@@ -426,14 +468,14 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               
               {/* Search hint when search is hidden */}
               {!isSearchVisible && !debouncedSearchQuery && (
-                <div className="text-sm text-muted-foreground hidden sm:block">
+                <div className="text-sm text-muted-foreground">
                   Press <kbd className="px-1.5 py-0.5 text-xs bg-muted border border-border rounded">/</kbd> to search
                 </div>
               )}
               
               {/* Active search indicator */}
               {!isSearchVisible && debouncedSearchQuery && (
-                <div className="text-sm text-primary font-medium hidden sm:flex items-center gap-2">
+                <div className="text-sm text-primary font-medium flex items-center gap-2">
                   <span>Searching: &ldquo;{debouncedSearchQuery}&rdquo;</span>
                   <button
                     onClick={() => {
@@ -446,77 +488,9 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                   </button>
                 </div>
               )}
-              
-              {/* Desktop filters - always visible on sm+ screens */}
-              <div className="hidden sm:flex items-center gap-3 flex-1 min-w-0">
-                <span className="text-sm text-muted-foreground flex-shrink-0">Filter by:</span>
-                
-                {/* Status Filter */}
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[180px] h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                {/* Priority Filter */}
-                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                  <SelectTrigger className="w-[140px] h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {priorityOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                {/* Type Filter */}
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="w-[140px] h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {typeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                {/* Tag Filter */}
-                {availableTags.length > 0 && (
-                  <Select value={tagFilter} onValueChange={setTagFilter}>
-                    <SelectTrigger className="w-[140px] h-8 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Tags</SelectItem>
-                      {availableTags.map((tag) => (
-                        <SelectItem key={tag.id} value={tag.id}>
-                          <div className="flex items-center gap-2">
-                            <TagComponent color={tag.color} className="text-xs">
-                              {tag.name}
-                            </TagComponent>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
             </div>
             
-            {/* Right side - Mobile filter toggle and view mode toggle */}
+            {/* Right side - Filter, sort, and view mode controls */}
             <div className="flex items-center gap-2">
               {/* Mobile filter toggle - only visible on small screens */}
               <button
@@ -526,6 +500,135 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               >
                 <Filter className="h-4 w-4" />
               </button>
+              
+              {/* Desktop Filter Popover - hidden on mobile */}
+              <Popover open={isFilterPopoverOpen} onOpenChange={setIsFilterPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    className="hidden sm:flex p-2 rounded-md hover:bg-accent transition-colors relative"
+                    title="Filter (F)"
+                    aria-label="Filter"
+                  >
+                    <Filter className="h-4 w-4" />
+                    {/* Show indicator when any filter differs from default values
+                        Default: statusFilter='exclude_done', others='all' */}
+                    {(statusFilter !== 'exclude_done' || priorityFilter !== 'all' || typeFilter !== 'all' || tagFilter !== 'all') && (
+                      <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
+                    )}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4" align="end">
+                  <div className="space-y-4">
+                    <div className="font-medium text-sm">Filter by</div>
+                    
+                    {/* Status Filter */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-muted-foreground">Status</label>
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-full h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statusOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Priority Filter */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-muted-foreground">Priority</label>
+                      <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                        <SelectTrigger className="w-full h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {priorityOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Type Filter */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-muted-foreground">Type</label>
+                      <Select value={typeFilter} onValueChange={setTypeFilter}>
+                        <SelectTrigger className="w-full h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {typeOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Tag Filter */}
+                    {availableTags.length > 0 && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Tag</label>
+                        <Select value={tagFilter} onValueChange={setTagFilter}>
+                          <SelectTrigger className="w-full h-8 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Tags</SelectItem>
+                            {availableTags.map((tag) => (
+                              <SelectItem key={tag.id} value={tag.id}>
+                                <div className="flex items-center gap-2">
+                                  <TagComponent color={tag.color} className="text-xs">
+                                    {tag.name}
+                                  </TagComponent>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
+              {/* Desktop Sort Popover - hidden on mobile */}
+              <Popover open={isSortPopoverOpen} onOpenChange={setIsSortPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    className="hidden sm:flex p-2 rounded-md hover:bg-accent transition-colors"
+                    title="Sort (S)"
+                    aria-label="Sort"
+                  >
+                    <ArrowUpDown className="h-4 w-4" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-2" align="end">
+                  <div className="space-y-1">
+                    {sortOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          setSortBy(option.value)
+                          setIsSortPopoverOpen(false)
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors ${
+                          sortBy === option.value ? 'bg-accent' : ''
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
               
               {/* View Mode Toggle */}
               <div className="flex items-center gap-1 border rounded-md p-1">
@@ -638,6 +741,23 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                   </Select>
                 </div>
               )}
+              
+              {/* Sort By Filter */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">Sort by</label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-full h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sortOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </div>
@@ -655,6 +775,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
             priorityFilter={priorityFilter}
             typeFilter={typeFilter}
             tagFilter={tagFilter}
+            sortBy={sortBy}
             searchQuery={debouncedSearchQuery}
             onSearchResultsChange={setSearchResultCount}
             onSearchingChange={setIsSearching}
@@ -669,6 +790,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
             priorityFilter={priorityFilter}
             typeFilter={typeFilter}
             tagFilter={tagFilter}
+            sortBy={sortBy}
             searchQuery={debouncedSearchQuery}
           />
         )

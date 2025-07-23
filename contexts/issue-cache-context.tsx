@@ -52,12 +52,13 @@ interface ListCacheEntry {
   timestamp: number
 }
 
-interface ListCacheKey {
+export interface ListCacheKey {
   workspaceId: string
   statusFilter: string
   priorityFilter: string
   typeFilter: string
   tagFilter: string
+  sortBy: string
   searchQuery: string
   page: number
 }
@@ -489,6 +490,7 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
           priorityFilter: 'all',
           typeFilter: 'all',
           tagFilter: 'all',
+          sortBy: 'newest',
           searchQuery: '',
           page: 0
         }
@@ -582,4 +584,4 @@ export function useIssueCache() {
 }
 
 // Export types for use in other components
-export type { Issue, IssueWithCreator, ListCacheKey, ListCacheEntry }
+export type { Issue, IssueWithCreator, ListCacheEntry }
