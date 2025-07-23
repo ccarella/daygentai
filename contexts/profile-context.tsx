@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 interface UserProfile {
@@ -20,8 +20,12 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined)
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const fetchInProgress = useRef(false)
 
   const fetchProfile = async () => {
+    if (fetchInProgress.current) return
+    fetchInProgress.current = true
+    
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
@@ -43,6 +47,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error fetching profile:', error)
     } finally {
+      fetchInProgress.current = false
       setLoading(false)
     }
   }
