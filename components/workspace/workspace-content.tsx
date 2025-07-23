@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useImperativeHandle, forwardRef, useEffect, useRef, useCallback } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { IssuesList } from '@/components/issues/issues-list'
 import dynamic from 'next/dynamic'
 import { useDebounce } from '@/hooks/use-debounce'
@@ -130,6 +130,7 @@ const sortOptions = [
 export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContentProps>(
   function WorkspaceContent({ workspace, initialView = 'list', initialIssueId, typeFilter: presetTypeFilter }, ref) {
   const pathname = usePathname()
+  const router = useRouter()
   
   // Extract issue ID from URL if present
   const getIssueIdFromPath = () => {
@@ -313,13 +314,13 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
 
   const handleBackToList = useCallback(() => {
     // If we're on a different page route (sprint-board, design, product), 
-    // we need to actually navigate, not just update the view
+    // we need to use Next.js router for navigation
     const currentPath = window.location.pathname
     if (currentPath.includes('/sprint-board') || 
         currentPath.includes('/design') || 
         currentPath.includes('/product')) {
-      // Use actual navigation to go to the main workspace page
-      window.location.href = `/${workspace.slug}`
+      // Use Next.js router for better performance and consistency
+      router.push(`/${workspace.slug}`)
     } else {
       // Otherwise, just update the view state
       setCurrentView('list')
@@ -328,7 +329,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
       // Update URL without page refresh
       window.history.pushState({}, '', `/${workspace.slug}`)
     }
-  }, [workspace.slug])
+  }, [workspace.slug, router])
 
   const handleBackToCookbook = useCallback(() => {
     setCurrentView('cookbook')
