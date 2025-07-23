@@ -205,7 +205,7 @@ export function WorkspaceLayout({
             href={`/${workspace.slug}`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}` && !pathname.includes('/sprint-board') && !pathname.includes('/design') && !pathname.includes('/product')
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
@@ -234,7 +234,7 @@ export function WorkspaceLayout({
             href={`/${workspace.slug}/sprint-board`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/sprint-board`
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
@@ -263,7 +263,7 @@ export function WorkspaceLayout({
             href={`/${workspace.slug}/design`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/design`
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
@@ -292,7 +292,7 @@ export function WorkspaceLayout({
             href={`/${workspace.slug}/product`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/product`
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
@@ -321,7 +321,7 @@ export function WorkspaceLayout({
             href={`/${workspace.slug}/cookbook`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/cookbook` 
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
