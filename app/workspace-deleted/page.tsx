@@ -21,7 +21,7 @@ export default async function WorkspaceDeletedPage() {
     .from('users')
     .select('name, avatar_url')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   if (!profile) {
     redirect('/CreateUser')

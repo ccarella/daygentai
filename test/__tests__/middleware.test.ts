@@ -62,7 +62,7 @@ describe('middleware', () => {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         limit: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       })),
     }
     
@@ -194,7 +194,7 @@ describe('middleware', () => {
               select: vi.fn().mockReturnThis(),
               eq: vi.fn().mockReturnThis(),
               limit: vi.fn().mockReturnThis(),
-              single: vi.fn().mockResolvedValue({ 
+              maybeSingle: vi.fn().mockResolvedValue({ 
                 data: null, // No profile
                 error: null 
               }),
@@ -272,7 +272,7 @@ describe('middleware', () => {
               select: vi.fn().mockReturnThis(),
               eq: vi.fn().mockReturnThis(),
               limit: vi.fn().mockReturnThis(),
-              single: vi.fn().mockResolvedValue({ 
+              maybeSingle: vi.fn().mockResolvedValue({ 
                 data: table === 'users' ? { id: mockUser.id } : null, 
                 error: null 
               }),
@@ -340,7 +340,7 @@ describe('middleware', () => {
               select: vi.fn().mockReturnThis(),
               eq: vi.fn().mockReturnThis(),
               limit: vi.fn().mockReturnThis(),
-              single: vi.fn().mockResolvedValue({ 
+              maybeSingle: vi.fn().mockResolvedValue({ 
                 data: table === 'users' ? { id: mockUser.id } : null, 
                 error: null 
               }),

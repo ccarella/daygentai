@@ -41,6 +41,9 @@ export default function CreateUserForm() {
         throw insertError
       }
 
+      // Add a small delay to ensure the profile is properly created
+      await new Promise(resolve => setTimeout(resolve, 500))
+
       // Invalidate middleware cache for this user
       if (typeof window !== 'undefined') {
         try {
@@ -54,7 +57,8 @@ export default function CreateUserForm() {
         }
       }
 
-      router.push('/CreateWorkspace')
+      // Use window.location for a hard refresh to ensure server-side cache is cleared
+      window.location.href = '/CreateWorkspace'
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {

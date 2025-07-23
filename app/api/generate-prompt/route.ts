@@ -105,7 +105,7 @@ async function handlePOST(req: NextRequest) {
       .from('users')
       .select('id')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     if (!userProfile) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 })

@@ -25,7 +25,7 @@ export default async function UserSettingsPage() {
     .from('users')
     .select('id, name, avatar_url')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
   
   if (!profile) {
     redirect('/CreateUser')

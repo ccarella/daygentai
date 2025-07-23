@@ -224,7 +224,7 @@ export async function middleware(request: NextRequest) {
             .from('users')
             .select('id')
             .eq('id', user.id)
-            .single(),
+            .maybeSingle(),
           supabase
             .from('workspace_members')
             .select('workspace_id')
