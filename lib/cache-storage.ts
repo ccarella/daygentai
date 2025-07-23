@@ -194,10 +194,10 @@ const shouldCleanup = (): boolean => {
   
   const timeSinceCleanup = Date.now() - metadata.lastCleanup
   
-  // Cleanup if: version mismatch, over 1 hour since last cleanup, or size too large
+  // Cleanup if: version mismatch, over 1 hour since last cleanup, or size over 80% of max
   return metadata.version !== CACHE_VERSION || 
          timeSinceCleanup > 60 * 60 * 1000 ||
-         metadata.totalSize > MAX_CACHE_SIZE
+         metadata.totalSize > MAX_CACHE_SIZE * 0.8
 }
 
 // Store data in localStorage with TTL
@@ -222,13 +222,18 @@ export const storeInCache = <T>(key: string, data: T, type: 'issue' | 'list' = '
     return true
   } catch (e) {
     console.warn('Failed to store in localStorage:', e)
-    // Try cleanup and retry once (synchronous for immediate space)
+    // Emergency cleanup: remove just a few oldest items synchronously
     const metadata = getMetadata()
     if (metadata) {
-      // Quick synchronous cleanup of oldest items
-      const entries: { key: string; timestamp: number }[] = []
       const allCacheKeys = [...metadata.cacheKeys.issues, ...metadata.cacheKeys.lists]
-      allCacheKeys.forEach(k => {
+      
+      // Only process first 10 items to find oldest ones quickly
+      const sampleSize = Math.min(10, allCacheKeys.length)
+      const entries: { key: string; timestamp: number }[] = []
+      
+      for (let i = 0; i < sampleSize; i++) {
+        const k = allCacheKeys[i]
+        if (!k) continue
         try {
           const stored = localStorage.getItem(k)
           if (stored) {
@@ -236,21 +241,28 @@ export const storeInCache = <T>(key: string, data: T, type: 'issue' | 'list' = '
             entries.push({ key: k, timestamp: entry.timestamp })
           }
         } catch {
+          // Remove corrupted entry immediately
           localStorage.removeItem(k)
           removeKeyFromIndex(k)
         }
-      })
+      }
       
-      // Remove oldest 20% of entries
-      entries.sort((a, b) => a.timestamp - b.timestamp)
-      const toRemove = Math.ceil(entries.length * 0.2)
-      for (let i = 0; i < toRemove && i < entries.length; i++) {
-        const entry = entries[i]
-        if (entry) {
-          localStorage.removeItem(entry.key)
-          removeKeyFromIndex(entry.key)
+      // Remove only 1-3 oldest items for minimal UI blocking
+      if (entries.length > 0) {
+        entries.sort((a, b) => a.timestamp - b.timestamp)
+        const itemsToRemove = Math.min(3, Math.max(1, Math.ceil(entries.length * 0.3)))
+        
+        for (let i = 0; i < itemsToRemove && i < entries.length; i++) {
+          const entry = entries[i]
+          if (entry) {
+            localStorage.removeItem(entry.key)
+            removeKeyFromIndex(entry.key)
+          }
         }
       }
+      
+      // Queue comprehensive async cleanup
+      setTimeout(() => cleanupCacheAsync(), 0)
     }
     
     try {
