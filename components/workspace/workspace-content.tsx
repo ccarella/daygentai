@@ -46,6 +46,13 @@ const Cookbook = dynamic(
     loading: () => <ContentSkeleton />
   }
 )
+const Settings = dynamic(
+  () => import('@/components/settings/settings-content').then(mod => ({ default: mod.SettingsContent })),
+  { 
+    ssr: false,
+    loading: () => <ContentSkeleton />
+  }
+)
 const RecipeDetails = dynamic(
   () => import('@/components/cookbook/recipe-details').then(mod => ({ default: mod.RecipeDetails })),
   { 
@@ -79,7 +86,7 @@ interface WorkspaceContentProps {
     avatar_url: string | null
     owner_id: string
   }
-  initialView?: 'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe'
+  initialView?: 'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe' | 'settings'
   initialIssueId?: string
 }
 
@@ -87,12 +94,13 @@ export interface WorkspaceContentRef {
   navigateToIssuesList: () => void
   navigateToInbox: () => void
   navigateToCookbook: () => void
+  navigateToSettings: () => void
   toggleViewMode: () => void
   getCurrentViewMode: () => 'list' | 'kanban'
   toggleSearch: () => void
   isSearchVisible: () => boolean
   setStatusFilter: (status: string) => void
-  getCurrentView: () => 'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe'
+  getCurrentView: () => 'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe' | 'settings'
 }
 
 const statusOptions = [
@@ -142,12 +150,13 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     if (initialView !== 'list') return initialView
     if (pathname.includes('/inbox')) return 'inbox'
     if (pathname.includes('/cookbook')) return 'cookbook'
+    if (pathname.includes('/settings')) return 'settings'
     if (pathname.includes('/issue/')) return 'issue'
     if (pathname.includes('/recipe/')) return 'recipe'
     return 'list'
   }
   
-  const [currentView, setCurrentView] = useState<'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe'>(getInitialView())
+  const [currentView, setCurrentView] = useState<'list' | 'issue' | 'inbox' | 'cookbook' | 'recipe' | 'settings'>(getInitialView())
   const [currentIssueId, setCurrentIssueId] = useState<string | null>(initialIssueId || getIssueIdFromPath() || null)
   const [currentRecipeId, setCurrentRecipeId] = useState<string | null>(getRecipeIdFromPath() || null)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -189,6 +198,10 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
         setCurrentRecipeId(null)
       } else if (pathname.includes('/cookbook')) {
         setCurrentView('cookbook')
+        setCurrentIssueId(null)
+        setCurrentRecipeId(null)
+      } else if (pathname.includes('/settings')) {
+        setCurrentView('settings')
         setCurrentIssueId(null)
         setCurrentRecipeId(null)
       } else if (pathname.includes('/issue/')) {
@@ -309,6 +322,14 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     window.history.pushState({}, '', `/${workspace.slug}/cookbook`)
   }, [workspace.slug])
 
+  const handleNavigateToSettings = useCallback(() => {
+    setCurrentView('settings')
+    setCurrentIssueId(null)
+    setCurrentRecipeId(null)
+    // Update URL without page refresh
+    window.history.pushState({}, '', `/${workspace.slug}/settings`)
+  }, [workspace.slug])
+
 
   // Shared function to update filters based on view mode
   const updateFiltersForViewMode = (viewMode: 'list' | 'kanban') => {
@@ -338,6 +359,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     navigateToIssuesList: handleBackToList,
     navigateToInbox: handleNavigateToInbox,
     navigateToCookbook: handleNavigateToCookbook,
+    navigateToSettings: handleNavigateToSettings,
     toggleViewMode: handleToggleViewMode,
     getCurrentViewMode: () => issuesViewMode,
     toggleSearch: () => setIsSearchVisible(prev => !prev),
@@ -384,7 +406,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
 
 
   return (
-    <>
+    <div className="flex flex-col h-full">
       {/* Search Bar - Only show for issues list view and when visible */}
       <div className={`bg-background border-b border-border transition-all duration-200 ease-in-out overflow-hidden ${
         currentView === 'list' && isSearchVisible ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'
@@ -643,8 +665,10 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
         </div>
       )}
 
-      {/* Dynamic Content */}
-      {currentView === 'list' ? (
+      {/* Dynamic Content with transition */}
+      <div className="flex-1 relative overflow-hidden">
+        <div className="absolute inset-0 transition-opacity duration-200 ease-in-out">
+          {currentView === 'list' ? (
         issuesViewMode === 'list' ? (
           <IssuesList 
             key={`list-${refreshKey}`}
@@ -685,6 +709,8 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
           recipeId={currentRecipeId}
           onBack={handleBackToCookbook}
         />
+      ) : currentView === 'settings' ? (
+        <Settings workspaceSlug={workspace.slug} />
       ) : currentIssueId ? (
         <IssueDetails
           issueId={currentIssueId}
@@ -693,6 +719,8 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
           onDeleted={handleIssueDeleted}
         />
       ) : null}
-    </>
+        </div>
+      </div>
+    </div>
   )
 })

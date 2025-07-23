@@ -38,6 +38,7 @@ interface WorkspaceLayoutProps {
   onNavigateToIssues?: () => void
   onNavigateToInbox?: () => void // Currently hidden but preserved for future use
   onNavigateToCookbook?: () => void
+  onNavigateToSettings?: () => void
   isMobileMenuOpen?: boolean
   setIsMobileMenuOpen?: (open: boolean) => void
   sidebarRef?: React.RefObject<HTMLDivElement | null>
@@ -52,6 +53,7 @@ export function WorkspaceLayout({
   // @ts-expect-error - Currently hidden but preserved for future use
   onNavigateToInbox,
   onNavigateToCookbook,
+  onNavigateToSettings,
   isMobileMenuOpen: propIsMobileMenuOpen,
   setIsMobileMenuOpen: propSetIsMobileMenuOpen,
   sidebarRef: propSidebarRef
@@ -248,18 +250,33 @@ export function WorkspaceLayout({
           <span>Commands</span>
         </button>
         
-        <Link
-          data-sidebar-item
-          href={`/${workspace.slug}/settings`}
-          className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
-            pathname === `/${workspace.slug}/settings` 
-              ? 'bg-accent text-foreground' 
-              : 'hover:bg-accent text-foreground'
-          }`}
-        >
-          <Settings className="w-5 h-5" />
-          <span>Settings</span>
-        </Link>
+        {onNavigateToSettings ? (
+          <button
+            data-sidebar-item
+            onClick={onNavigateToSettings}
+            className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
+              pathname === `/${workspace.slug}/settings` 
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
+            }`}
+          >
+            <Settings className="w-5 h-5" />
+            <span>Settings</span>
+          </button>
+        ) : (
+          <Link
+            data-sidebar-item
+            href={`/${workspace.slug}/settings`}
+            className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
+              pathname === `/${workspace.slug}/settings` 
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
+            }`}
+          >
+            <Settings className="w-5 h-5" />
+            <span>Settings</span>
+          </Link>
+        )}
       </nav>
 
       {/* Info Icon at Bottom - Hidden on mobile */}

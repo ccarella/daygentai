@@ -28,6 +28,10 @@ export default function WorkspacePage({ params }: { params: Promise<{ slug: stri
     contentRef.current?.navigateToCookbook()
   }
 
+  const handleNavigateToSettings = () => {
+    contentRef.current?.navigateToSettings()
+  }
+
   // These handlers were previously used with AppCommandPalette
   // which is now handled at the layout level
 
@@ -40,6 +44,7 @@ export default function WorkspacePage({ params }: { params: Promise<{ slug: stri
       onNavigateToIssues={handleNavigateToIssues}
       onNavigateToInbox={handleNavigateToInbox}
       onNavigateToCookbook={handleNavigateToCookbook}
+      onNavigateToSettings={handleNavigateToSettings}
     >
       <WorkspaceContent 
         ref={contentRef}
