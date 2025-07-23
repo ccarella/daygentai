@@ -129,6 +129,11 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
   const statusChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const typeChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const priorityChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
+  // Abort controller refs for cancelling in-flight requests
+  const statusAbortControllerRef = useRef<AbortController | null>(null)
+  const typeAbortControllerRef = useRef<AbortController | null>(null)
+  const priorityAbortControllerRef = useRef<AbortController | null>(null)
 
   // Handle ESC key to navigate back
   useEffect(() => {
@@ -143,9 +148,10 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onBack, isEditModalOpen])
   
-  // Cleanup timeouts on unmount
+  // Cleanup timeouts and abort controllers on unmount
   useEffect(() => {
     return () => {
+      // Clear timeouts
       if (statusChangeTimeoutRef.current) {
         clearTimeout(statusChangeTimeoutRef.current)
       }
@@ -154,6 +160,17 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
       }
       if (priorityChangeTimeoutRef.current) {
         clearTimeout(priorityChangeTimeoutRef.current)
+      }
+      
+      // Abort any in-flight requests
+      if (statusAbortControllerRef.current) {
+        statusAbortControllerRef.current.abort()
+      }
+      if (typeAbortControllerRef.current) {
+        typeAbortControllerRef.current.abort()
+      }
+      if (priorityAbortControllerRef.current) {
+        priorityAbortControllerRef.current.abort()
       }
     }
   }, [])
@@ -375,6 +392,11 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
       clearTimeout(statusChangeTimeoutRef.current)
     }
     
+    // Abort any in-flight request
+    if (statusAbortControllerRef.current) {
+      statusAbortControllerRef.current.abort()
+    }
+    
     // Store previous status for rollback
     const previousStatus = issue.status
     
@@ -384,6 +406,8 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
     
     // Debounce the API call
     statusChangeTimeoutRef.current = setTimeout(async () => {
+      // Create new abort controller for this request
+      statusAbortControllerRef.current = new AbortController()
       setIsUpdatingStatus(true)
       
       try {
@@ -393,6 +417,7 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ status: newStatus.trim() }),
+          signal: statusAbortControllerRef.current.signal
         })
 
         if (!response.ok) {
@@ -418,6 +443,11 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
           description: `Issue status changed to ${newStatus.toLowerCase().replace('_', ' ')}.`,
         })
       } catch (error) {
+        // Don't show error or rollback if request was aborted
+        if (error instanceof Error && error.name === 'AbortError') {
+          return
+        }
+        
         // Rollback on error
         setIssue(prev => prev ? { ...prev, status: previousStatus } : prev)
         updateIssue(issue.id, { status: previousStatus })
@@ -431,113 +461,160 @@ export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: Issu
       } finally {
         setIsUpdatingStatus(false)
         statusChangeTimeoutRef.current = null
+        statusAbortControllerRef.current = null
       }
     }, 300) // 300ms debounce
   }, [issue, workspaceSlug, updateIssue, toast])
 
-  const handleTypeChange = async (newType: string) => {
-    if (!issue || isUpdatingType || newType === issue.type) return
+  const handleTypeChange = useCallback((newType: string) => {
+    if (!issue || newType === issue.type) return
     
-    setIsUpdatingType(true)
+    // Clear any pending type change
+    if (typeChangeTimeoutRef.current) {
+      clearTimeout(typeChangeTimeoutRef.current)
+    }
+    
+    // Abort any in-flight request
+    if (typeAbortControllerRef.current) {
+      typeAbortControllerRef.current.abort()
+    }
     
     // Store previous type for rollback
     const previousType = issue.type
     
-    // Optimistic update
+    // Immediate optimistic update
     setIssue(prev => prev ? { ...prev, type: newType as Issue['type'] } : prev)
     updateIssue(issue.id, { type: newType as Issue['type'] })
     
-    try {
-      const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issue.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type: newType }),
-      })
+    // Debounce the API call
+    typeChangeTimeoutRef.current = setTimeout(async () => {
+      // Create new abort controller for this request
+      typeAbortControllerRef.current = new AbortController()
+      setIsUpdatingType(true)
+      
+      try {
+        const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issue.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ type: newType }),
+          signal: typeAbortControllerRef.current.signal
+        })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to update type')
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to update type')
+        }
+
+        const { issue: updatedIssue } = await response.json()
+        
+        // Update with server response to ensure consistency
+        setIssue(updatedIssue)
+        updateIssue(issue.id, updatedIssue)
+        
+        toast({
+          title: "Type updated",
+          description: `Issue type changed to ${newType.toLowerCase()}.`,
+        })
+      } catch (error) {
+        // Don't show error or rollback if request was aborted
+        if (error instanceof Error && error.name === 'AbortError') {
+          return
+        }
+        
+        // Rollback on error
+        setIssue(prev => prev ? { ...prev, type: previousType } : prev)
+        updateIssue(issue.id, { type: previousType })
+        
+        console.error('Failed to update issue type:', error)
+        toast({
+          title: "Failed to update type",
+          description: error instanceof Error ? error.message : "An error occurred while updating the issue type.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsUpdatingType(false)
+        typeChangeTimeoutRef.current = null
+        typeAbortControllerRef.current = null
       }
+    }, 300) // 300ms debounce
+  }, [issue, workspaceSlug, updateIssue, toast])
 
-      const { issue: updatedIssue } = await response.json()
-      
-      // Update with server response to ensure consistency
-      setIssue(updatedIssue)
-      updateIssue(issue.id, updatedIssue)
-      
-      toast({
-        title: "Type updated",
-        description: `Issue type changed to ${newType.toLowerCase()}.`,
-      })
-    } catch (error) {
-      // Rollback on error
-      setIssue(prev => prev ? { ...prev, type: previousType } : prev)
-      updateIssue(issue.id, { type: previousType })
-      
-      console.error('Failed to update issue type:', error)
-      toast({
-        title: "Failed to update type",
-        description: error instanceof Error ? error.message : "An error occurred while updating the issue type.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUpdatingType(false)
-    }
-  }
-
-  const handlePriorityChange = async (newPriority: string) => {
-    if (!issue || isUpdatingPriority || newPriority === issue.priority) return
+  const handlePriorityChange = useCallback((newPriority: string) => {
+    if (!issue || newPriority === issue.priority) return
     
-    setIsUpdatingPriority(true)
+    // Clear any pending priority change
+    if (priorityChangeTimeoutRef.current) {
+      clearTimeout(priorityChangeTimeoutRef.current)
+    }
+    
+    // Abort any in-flight request
+    if (priorityAbortControllerRef.current) {
+      priorityAbortControllerRef.current.abort()
+    }
     
     // Store previous priority for rollback
     const previousPriority = issue.priority
     
-    // Optimistic update
+    // Immediate optimistic update
     setIssue(prev => prev ? { ...prev, priority: newPriority as Issue['priority'] } : prev)
     updateIssue(issue.id, { priority: newPriority as Issue['priority'] })
     
-    try {
-      const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issue.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ priority: newPriority }),
-      })
+    // Debounce the API call
+    priorityChangeTimeoutRef.current = setTimeout(async () => {
+      // Create new abort controller for this request
+      priorityAbortControllerRef.current = new AbortController()
+      setIsUpdatingPriority(true)
+      
+      try {
+        const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issue.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ priority: newPriority }),
+          signal: priorityAbortControllerRef.current.signal
+        })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to update priority')
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to update priority')
+        }
+
+        const { issue: updatedIssue } = await response.json()
+        
+        // Update with server response to ensure consistency
+        setIssue(updatedIssue)
+        updateIssue(issue.id, updatedIssue)
+        
+        toast({
+          title: "Priority updated",
+          description: `Issue priority changed to ${newPriority.toLowerCase()}.`,
+        })
+      } catch (error) {
+        // Don't show error or rollback if request was aborted
+        if (error instanceof Error && error.name === 'AbortError') {
+          return
+        }
+        
+        // Rollback on error
+        setIssue(prev => prev ? { ...prev, priority: previousPriority } : prev)
+        updateIssue(issue.id, { priority: previousPriority })
+        
+        console.error('Failed to update issue priority:', error)
+        toast({
+          title: "Failed to update priority",
+          description: error instanceof Error ? error.message : "An error occurred while updating the issue priority.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsUpdatingPriority(false)
+        priorityChangeTimeoutRef.current = null
+        priorityAbortControllerRef.current = null
       }
-
-      const { issue: updatedIssue } = await response.json()
-      
-      // Update with server response to ensure consistency
-      setIssue(updatedIssue)
-      updateIssue(issue.id, updatedIssue)
-      
-      toast({
-        title: "Priority updated",
-        description: `Issue priority changed to ${newPriority.toLowerCase()}.`,
-      })
-    } catch (error) {
-      // Rollback on error
-      setIssue(prev => prev ? { ...prev, priority: previousPriority } : prev)
-      updateIssue(issue.id, { priority: previousPriority })
-      
-      console.error('Failed to update issue priority:', error)
-      toast({
-        title: "Failed to update priority",
-        description: error instanceof Error ? error.message : "An error occurred while updating the issue priority.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUpdatingPriority(false)
-    }
-  }
+    }, 300) // 300ms debounce
+  }, [issue, workspaceSlug, updateIssue, toast])
 
   const handleEdit = () => {
     setIsEditModalOpen(true)
