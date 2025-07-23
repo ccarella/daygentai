@@ -59,6 +59,7 @@ export const createMockSupabaseClient = (overrides: any = {}) => {
   return {
     auth: mockAuth,
     from: mockFrom,
+    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
     ...overrides,
   }
 }

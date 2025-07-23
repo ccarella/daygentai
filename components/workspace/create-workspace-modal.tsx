@@ -110,38 +110,34 @@ export function CreateWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }:
         return
       }
 
-      // Create workspace
-      const { data: newWorkspace, error: insertError } = await supabase
-        .from('workspaces')
-        .insert({
-          name: name,
-          slug: slug,
-          avatar_url: selectedAvatar || '🏢',
-          owner_id: user.id
-        })
-        .select()
-        .single()
+      // Create workspace using the RPC function
+      const { data: result, error: createError } = await supabase.rpc('create_workspace', {
+        p_name: name,
+        p_slug: slug,
+        p_avatar_url: selectedAvatar || '🏢'
+      })
 
-      if (insertError) {
-        throw insertError
+      if (createError || !result?.success) {
+        // Check for duplicate slug error
+        if (result?.detail === 'DUPLICATE_SLUG') {
+          setError('This workspace URL is already taken. Please choose a different one.')
+          setIsLoading(false)
+          return
+        }
+        throw createError || new Error(result?.error || 'Failed to create workspace')
       }
 
-      // Add user as owner in workspace_members
-      const { error: memberError } = await supabase
-        .from('workspace_members')
-        .insert({
-          workspace_id: newWorkspace.id,
-          user_id: user.id,
-          role: 'owner'
-        })
-
-      if (memberError) {
-        console.error('Error adding user to workspace_members:', memberError)
-      }
-
-      // Call the callback if provided
+      // Fetch the created workspace for the callback
       if (onWorkspaceCreated) {
-        onWorkspaceCreated(newWorkspace)
+        const { data: newWorkspace } = await supabase
+          .from('workspaces')
+          .select('id, name, slug, avatar_url')
+          .eq('id', result.workspace_id)
+          .single()
+          
+        if (newWorkspace) {
+          onWorkspaceCreated(newWorkspace)
+        }
       }
 
       // Navigate to the new workspace

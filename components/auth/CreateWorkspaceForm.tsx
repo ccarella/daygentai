@@ -59,9 +59,9 @@ export default function CreateWorkspaceForm() {
     setError(null)
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
       
-      if (!user) {
+      if (!user || userError) {
         router.push('/')
         return
       }
@@ -80,33 +80,20 @@ export default function CreateWorkspaceForm() {
       }
 
       // Create workspace
-      const { data: newWorkspace, error: insertError } = await supabase
-        .from('workspaces')
-        .insert({
-          name: name,
-          slug: slug,
-          avatar_url: selectedAvatar || '🏢',
-          owner_id: user.id
-        })
-        .select()
-        .single()
-
-      if (insertError) {
-        throw insertError
-      }
-
-      // Add user as owner in workspace_members
-      const { error: memberError } = await supabase
-        .from('workspace_members')
-        .insert({
-          workspace_id: newWorkspace.id,
-          user_id: user.id,
-          role: 'owner'
-        })
-
-      if (memberError) {
-        console.error('Error adding user to workspace_members:', memberError)
-        // Don't throw here as workspace is already created
+      const { data: result, error: createError } = await supabase.rpc('create_workspace', {
+        p_name: name,
+        p_slug: slug,
+        p_avatar_url: selectedAvatar || '🏢'
+      })
+      
+      if (createError || !result?.success) {
+        // Check for duplicate slug error
+        if (result?.detail === 'DUPLICATE_SLUG') {
+          setError('This workspace URL is already taken. Please choose a different one.')
+          setIsLoading(false)
+          return
+        }
+        throw createError || new Error(result?.error || 'Failed to create workspace')
       }
 
       // Invalidate middleware cache for this user
@@ -124,7 +111,23 @@ export default function CreateWorkspaceForm() {
 
       router.push(`/${slug}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      console.error('Workspace creation error:', err)
+      
+      // Provide more detailed error messages based on the error type
+      if (err instanceof Error) {
+        // Check for specific Supabase error codes
+        if (err.message.includes('duplicate key')) {
+          setError('This workspace URL is already taken. Please choose a different one.')
+        } else if (err.message.includes('violates row-level security policy')) {
+          setError('You do not have permission to create a workspace. Please ensure you are logged in.')
+        } else if (err.message.includes('null value in column')) {
+          setError('Missing required information. Please fill in all fields.')
+        } else {
+          setError(`Error creating workspace: ${err.message}`)
+        }
+      } else {
+        setError('An unexpected error occurred while creating your workspace. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }
