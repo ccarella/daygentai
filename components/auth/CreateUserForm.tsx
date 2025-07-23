@@ -17,7 +17,8 @@ export default function CreateUserForm() {
   const router = useRouter()
   const supabase = createClient()
 
-  const handleSave = async () => {
+  const handleSave = async (e?: React.FormEvent) => {
+    e?.preventDefault()
     setIsLoading(true)
     setError(null)
 
@@ -54,9 +55,14 @@ export default function CreateUserForm() {
         }
       }
 
-      // Refresh the router to get the latest data and then navigate
-      await router.refresh()
-      router.push('/CreateWorkspace')
+      // Use window.location for a hard refresh to ensure server-side cache is cleared
+      // This prevents the blank screen issue when the server component revalidates
+      if (typeof window !== 'undefined') {
+        window.location.href = '/CreateWorkspace'
+      } else {
+        // Fallback for SSR (shouldn't happen in client component)
+        router.push('/CreateWorkspace')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -74,7 +80,10 @@ export default function CreateUserForm() {
   }
 
   return (
-    <div className="bg-card p-4 md:p-6 lg:p-8 rounded-lg shadow-lg max-w-md w-full" onKeyDown={handleKeyDown}>
+    <form 
+      onSubmit={handleSave}
+      className="bg-card p-4 md:p-6 lg:p-8 rounded-lg shadow-lg max-w-md w-full" 
+      onKeyDown={handleKeyDown}>
       <h1 className="text-2xl font-bold text-center mb-8">Complete Your Profile</h1>
       
       <div className="mb-4 md:mb-6">
@@ -131,7 +140,7 @@ export default function CreateUserForm() {
       )}
 
       <button
-        onClick={handleSave}
+        type="submit"
         disabled={!isValidName || isLoading}
         className={`w-full py-2 px-4 md:py-2.5 md:px-5 rounded-lg font-medium transition-all ${
           isValidName && !isLoading
@@ -141,6 +150,6 @@ export default function CreateUserForm() {
       >
         {isLoading ? 'Saving...' : 'Save'}
       </button>
-    </div>
+    </form>
   )
 }
