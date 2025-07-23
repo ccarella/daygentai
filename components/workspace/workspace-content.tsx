@@ -510,7 +510,8 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                     aria-label="Filter"
                   >
                     <Filter className="h-4 w-4" />
-                    {/* Show indicator when filters are active */}
+                    {/* Show indicator when any filter differs from default values
+                        Default: statusFilter='exclude_done', others='all' */}
                     {(statusFilter !== 'exclude_done' || priorityFilter !== 'all' || typeFilter !== 'all' || tagFilter !== 'all') && (
                       <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
                     )}
