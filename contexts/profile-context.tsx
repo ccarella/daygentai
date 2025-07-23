@@ -18,14 +18,31 @@ interface ProfileContextType {
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined)
 
+// Cache duration in milliseconds (5 minutes)
+const CACHE_DURATION = 5 * 60 * 1000
+
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const fetchInProgress = useRef(false)
+  const lastFetchTime = useRef<number>(0)
+  const cachedUserId = useRef<string | null>(null)
 
-  const fetchProfile = async () => {
+  const fetchProfile = async (force = false) => {
     if (fetchInProgress.current) return
+    
+    const now = Date.now()
+    const isCacheValid = profile && 
+                        cachedUserId.current === profile.id && 
+                        !force && 
+                        (now - lastFetchTime.current) < CACHE_DURATION
+    
+    if (isCacheValid) {
+      setLoading(false)
+      return
+    }
+    
     fetchInProgress.current = true
     
     try {
@@ -54,12 +71,15 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       
       if (userProfile) {
         setProfile(userProfile)
+        cachedUserId.current = user.id
+        lastFetchTime.current = Date.now()
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
       console.error('Error fetching profile:', error)
       setError(errorMessage)
       setProfile(null)
+      cachedUserId.current = null
     } finally {
       fetchInProgress.current = false
       setLoading(false)
@@ -71,13 +91,17 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
     const supabase = createClient()
     
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
-        fetchProfile()
+        // Force refresh on sign in or user update events
+        const shouldForceRefresh = event === 'SIGNED_IN' || event === 'USER_UPDATED'
+        fetchProfile(shouldForceRefresh)
       } else {
         setProfile(null)
         setError(null)
         setLoading(false)
+        cachedUserId.current = null
+        lastFetchTime.current = 0
       }
     })
 
@@ -87,7 +111,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const refreshProfile = async () => {
     setLoading(true)
     setError(null)
-    await fetchProfile()
+    await fetchProfile(true) // Force refresh, bypass cache
   }
 
   return (
