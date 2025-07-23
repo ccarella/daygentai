@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { KeyboardProvider } from "@/lib/keyboard";
+import { ProfileProvider } from "@/contexts/profile-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,10 +36,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden`}
       >
-        <KeyboardProvider>
-          {children}
-          <Toaster />
-        </KeyboardProvider>
+        <ProfileProvider>
+          <KeyboardProvider>
+            {children}
+            <Toaster />
+          </KeyboardProvider>
+        </ProfileProvider>
       </body>
     </html>
   );

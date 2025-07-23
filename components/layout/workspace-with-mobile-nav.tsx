@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Header } from './header'
 import { WorkspaceLayout } from './workspace-layout'
 import { useWorkspaceNavigation } from '@/hooks/use-workspace-navigation'
+import { useProfile } from '@/contexts/profile-context'
 import type { UserWorkspace } from '@/lib/supabase/workspaces'
 
 interface WorkspaceWithMobileNavProps {
@@ -23,7 +24,7 @@ interface WorkspaceWithMobileNavProps {
 }
 
 export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, onNavigateToIssues, onNavigateToInbox, onNavigateToCookbook }: WorkspaceWithMobileNavProps) {
-  const [profile, setProfile] = useState<{ name: string; avatar_url: string | null } | null>(null)
+  const { profile, loading: profileLoading } = useProfile()
   const [workspaces, setWorkspaces] = useState<UserWorkspace[]>([])
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
@@ -35,15 +36,6 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) return
-      
-      // Fetch profile
-      const { data: profile } = await supabase
-        .from('users')
-        .select('name, avatar_url')
-        .eq('id', user.id)
-        .single()
-      
-      setProfile(profile)
       
       // Fetch workspaces
       const { data: workspacesData, error: workspacesError } = await supabase
@@ -110,16 +102,38 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
     mainContentRef,
   })
 
+  if (profileLoading) {
+    return (
+      <>
+        <div className="fixed top-0 left-0 right-0 bg-background border-b border-border z-50">
+          <div className="w-full px-4 md:px-6 lg:px-8">
+            <div className="flex items-center h-11">
+              <div className="flex items-center flex-1">
+                <div className="text-xl font-bold text-foreground">Daygent</div>
+              </div>
+              <div className="flex items-center flex-1 justify-end">
+                <div className="w-11 h-11 md:w-10 md:h-10 rounded-full bg-secondary animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="pt-11">
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-foreground mx-auto"></div>
+              <p className="mt-4 text-muted-foreground">Loading...</p>
+            </div>
+          </div>
+        </div>
+      </>
+    )
+  }
+
   return (
     <>
-      {profile ? (
+      {profile && (
         <Header 
           initialProfile={profile} 
-          onMenuToggle={handleMenuToggle}
-          isMobileMenuOpen={isMobileMenuOpen}
-        />
-      ) : (
-        <Header 
           onMenuToggle={handleMenuToggle}
           isMobileMenuOpen={isMobileMenuOpen}
         />
