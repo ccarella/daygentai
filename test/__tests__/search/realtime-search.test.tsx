@@ -89,6 +89,31 @@ vi.mock('@/contexts/issue-cache-context', () => ({
   })
 }))
 
+vi.mock('@/lib/keyboard', () => ({
+  useKeyboardContext: vi.fn(),
+  KeyboardPriority: {
+    FOCUSED: 1,
+    NORMAL: 0
+  }
+}))
+
+vi.mock('@/lib/events/issue-events', () => ({
+  subscribeToNavigateToIssues: vi.fn(() => vi.fn()),
+  subscribeToNavigateToInbox: vi.fn(() => vi.fn()),
+  subscribeToToggleViewMode: vi.fn(() => vi.fn()),
+  subscribeToToggleSearch: vi.fn(() => vi.fn()),
+  subscribeToSetStatusFilter: vi.fn(() => vi.fn()),
+  emitCreateIssueRequest: vi.fn()
+}))
+
+vi.mock('@/hooks/use-debounce', () => ({
+  useDebounce: (value: any) => value
+}))
+
+vi.mock('@/lib/tags', () => ({
+  getWorkspaceTags: vi.fn(() => Promise.resolve([]))
+}))
+
 describe('Real-time Search Filtering', () => {
   let mockRouter: any
   

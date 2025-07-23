@@ -40,6 +40,7 @@ interface KanbanBoardProps {
   priorityFilter?: string
   typeFilter?: string
   tagFilter?: string
+  sortBy?: string
   searchQuery?: string
 }
 
@@ -81,6 +82,7 @@ export function KanbanBoard({
   priorityFilter = 'all',
   typeFilter = 'all',
   tagFilter = 'all',
+  sortBy = 'newest',
   searchQuery = ''
 }: KanbanBoardProps) {
   const [issues, setIssues] = useState<Issue[]>([])
@@ -146,8 +148,34 @@ export function KanbanBoard({
           )
         }
         
-        // Apply pagination on filtered results
-        data = filteredData.slice(from, to + 1)
+        // Apply sorting to filtered results
+        const sortedData = [...filteredData].sort((a, b) => {
+          switch (sortBy) {
+            case 'oldest':
+              return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            case 'priority_high':
+              // Priority order: critical(0) > high(1) > medium(2) > low(3)
+              const priorityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
+              return (priorityOrder[a.priority] || 4) - (priorityOrder[b.priority] || 4)
+            case 'priority_low':
+              // Priority order: low(0) > medium(1) > high(2) > critical(3)
+              const priorityOrderReverse: Record<string, number> = { low: 0, medium: 1, high: 2, critical: 3 }
+              return (priorityOrderReverse[a.priority] || 4) - (priorityOrderReverse[b.priority] || 4)
+            case 'type':
+              return a.type.localeCompare(b.type)
+            case 'tag':
+              // Get first tag name for each issue (or empty string if no tags)
+              const aTagName = a.issue_tags && a.issue_tags.length > 0 && a.issue_tags[0]?.tags ? a.issue_tags[0].tags.name : ''
+              const bTagName = b.issue_tags && b.issue_tags.length > 0 && b.issue_tags[0]?.tags ? b.issue_tags[0].tags.name : ''
+              return aTagName.localeCompare(bTagName)
+            case 'newest':
+            default:
+              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          }
+        })
+        
+        // Apply pagination on sorted results
+        data = sortedData.slice(from, to + 1)
       }
     } else {
       // Original query logic for non-search cases with creator info
@@ -168,8 +196,36 @@ export function KanbanBoard({
           )
         `)
         .eq('workspace_id', workspaceId)
-        .order('created_at', { ascending: false })
-        .range(from, to)
+
+      // Apply ordering based on sortBy
+      switch (sortBy) {
+        case 'oldest':
+          query = query.order('created_at', { ascending: true })
+          break
+        case 'priority_high':
+          // Order by priority: critical > high > medium > low
+          query = query.order('priority', { ascending: true })
+          break
+        case 'priority_low':
+          // Order by priority: low > medium > high > critical
+          query = query.order('priority', { ascending: false })
+          break
+        case 'type':
+          // Order by type alphabetically
+          query = query.order('type', { ascending: true })
+          break
+        case 'tag':
+          // For tag sorting, we'll need to sort client-side after fetching
+          // since Supabase doesn't support ordering by joined table data directly
+          query = query.order('created_at', { ascending: false })
+          break
+        case 'newest':
+        default:
+          query = query.order('created_at', { ascending: false })
+          break
+      }
+      
+      query = query.range(from, to)
 
       if (statusFilter !== 'all') {
         if (statusFilter === 'exclude_done') {
@@ -213,6 +269,15 @@ export function KanbanBoard({
       )
     }
     
+    // Apply client-side sorting for tag option
+    if (sortBy === 'tag' && !searchQuery) {
+      newIssues = [...newIssues].sort((a, b) => {
+        const aTagName = a.issue_tags && a.issue_tags.length > 0 && a.issue_tags[0]?.tags ? a.issue_tags[0].tags.name : ''
+        const bTagName = b.issue_tags && b.issue_tags.length > 0 && b.issue_tags[0]?.tags ? b.issue_tags[0].tags.name : ''
+        return aTagName.localeCompare(bTagName)
+      })
+    }
+    
     if (append) {
       setIssues(prev => [...prev, ...newIssues])
     } else {
@@ -228,14 +293,14 @@ export function KanbanBoard({
       const issueIds = newIssues.map(issue => issue.id)
       preloadIssues(issueIds)
     }
-  }, [workspaceId, statusFilter, priorityFilter, typeFilter, tagFilter, searchQuery, preloadIssues])
+  }, [workspaceId, statusFilter, priorityFilter, typeFilter, tagFilter, sortBy, searchQuery, preloadIssues])
 
   useEffect(() => {
     setLoading(true)
     setPage(0)
     fetchIssues(0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, priorityFilter, typeFilter, tagFilter, searchQuery, workspaceId])
+  }, [statusFilter, priorityFilter, typeFilter, tagFilter, sortBy, searchQuery, workspaceId])
 
   const loadMore = () => {
     const nextPage = page + 1

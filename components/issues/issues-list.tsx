@@ -41,6 +41,7 @@ interface IssuesListProps {
   priorityFilter?: string
   typeFilter?: string
   tagFilter?: string
+  sortBy?: string
   searchQuery?: string
   onSearchResultsChange?: (count: number) => void
   onSearchingChange?: (isSearching: boolean) => void
@@ -76,6 +77,20 @@ const priorityLabels = {
   low: 'Low'
 }
 
+const statusColors = {
+  todo: 'text-muted-foreground bg-muted border border-border',
+  in_progress: 'text-primary bg-primary/10 border border-primary/20',
+  in_review: 'text-yellow-700 bg-yellow-50 border border-yellow-200',
+  done: 'text-green-700 bg-green-50 border border-green-200'
+}
+
+const statusLabels = {
+  todo: 'To Do',
+  in_progress: 'In Progress',
+  in_review: 'In Review',
+  done: 'Done'
+}
+
 const ISSUES_PER_PAGE = 50
 
 export function IssuesList({ 
@@ -86,6 +101,7 @@ export function IssuesList({
   priorityFilter = 'all',
   typeFilter = 'all',
   tagFilter = 'all',
+  sortBy = 'newest',
   searchQuery = '',
   onSearchResultsChange,
   onSearchingChange
@@ -119,6 +135,7 @@ export function IssuesList({
       priorityFilter,
       typeFilter,
       tagFilter,
+      sortBy,
       searchQuery,
       page: pageNum
     }
@@ -187,12 +204,38 @@ export function IssuesList({
         )
       }
 
-      // Apply pagination to filtered results
+      // Apply sorting to filtered results
+      const sortedResults = [...filteredResults].sort((a, b) => {
+        switch (sortBy) {
+          case 'oldest':
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          case 'priority_high':
+            // Priority order: critical(0) > high(1) > medium(2) > low(3)
+            const priorityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
+            return (priorityOrder[a.priority] || 4) - (priorityOrder[b.priority] || 4)
+          case 'priority_low':
+            // Priority order: low(0) > medium(1) > high(2) > critical(3)
+            const priorityOrderReverse: Record<string, number> = { low: 0, medium: 1, high: 2, critical: 3 }
+            return (priorityOrderReverse[a.priority] || 4) - (priorityOrderReverse[b.priority] || 4)
+          case 'type':
+            return a.type.localeCompare(b.type)
+          case 'tag':
+            // Get first tag name for each issue (or empty string if no tags)
+            const aTagName = a.issue_tags && a.issue_tags.length > 0 && a.issue_tags[0]?.tags ? a.issue_tags[0].tags.name : ''
+            const bTagName = b.issue_tags && b.issue_tags.length > 0 && b.issue_tags[0]?.tags ? b.issue_tags[0].tags.name : ''
+            return aTagName.localeCompare(bTagName)
+          case 'newest':
+          default:
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        }
+      })
+
+      // Apply pagination to sorted results
       const start = pageNum * ISSUES_PER_PAGE
-      const paginatedResults = filteredResults.slice(start, start + ISSUES_PER_PAGE)
-      const hasMorePages = filteredResults.length > start + ISSUES_PER_PAGE
+      const paginatedResults = sortedResults.slice(start, start + ISSUES_PER_PAGE)
+      const hasMorePages = sortedResults.length > start + ISSUES_PER_PAGE
       
-      return { issues: paginatedResults, hasMore: hasMorePages, totalCount: filteredResults.length }
+      return { issues: paginatedResults, hasMore: hasMorePages, totalCount: sortedResults.length }
     }
     
     // Original query logic for non-search cases
@@ -253,8 +296,33 @@ export function IssuesList({
       query = query.eq('type', typeFilter)
     }
 
-    // Apply ordering
-    query = query.order('created_at', { ascending: false })
+    // Apply ordering based on sortBy
+    switch (sortBy) {
+      case 'oldest':
+        query = query.order('created_at', { ascending: true })
+        break
+      case 'priority_high':
+        // Order by priority: critical > high > medium > low
+        query = query.order('priority', { ascending: true })
+        break
+      case 'priority_low':
+        // Order by priority: low > medium > high > critical
+        query = query.order('priority', { ascending: false })
+        break
+      case 'type':
+        // Order by type alphabetically
+        query = query.order('type', { ascending: true })
+        break
+      case 'tag':
+        // For tag sorting, we'll need to sort client-side after fetching
+        // since Supabase doesn't support ordering by joined table data directly
+        query = query.order('created_at', { ascending: false })
+        break
+      case 'newest':
+      default:
+        query = query.order('created_at', { ascending: false })
+        break
+    }
 
     // Apply range for pagination
     const start = pageNum * ISSUES_PER_PAGE
@@ -277,6 +345,15 @@ export function IssuesList({
       newIssues = newIssues.filter((issue: Issue) => 
         issue.issue_tags && issue.issue_tags.some(({ tags }) => tags.id === tagFilter)
       )
+    }
+    
+    // Apply client-side sorting for tag option
+    if (sortBy === 'tag') {
+      newIssues = [...newIssues].sort((a, b) => {
+        const aTagName = a.issue_tags && a.issue_tags.length > 0 && a.issue_tags[0]?.tags ? a.issue_tags[0].tags.name : ''
+        const bTagName = b.issue_tags && b.issue_tags.length > 0 && b.issue_tags[0]?.tags ? b.issue_tags[0].tags.name : ''
+        return aTagName.localeCompare(bTagName)
+      })
     }
     
     const totalCount = totalFilteredCount || 0
@@ -314,7 +391,7 @@ export function IssuesList({
     }
     
     return result
-  }, [workspaceId, statusFilter, priorityFilter, typeFilter, tagFilter, searchQuery, preloadIssues, getListCache, setListCache])
+  }, [workspaceId, statusFilter, priorityFilter, typeFilter, tagFilter, sortBy, searchQuery, preloadIssues, getListCache, setListCache])
 
   // Initial load when component mounts or filters change
   useEffect(() => {
@@ -332,6 +409,7 @@ export function IssuesList({
         priorityFilter,
         typeFilter,
         tagFilter,
+        sortBy,
         searchQuery,
         page: 0
       }
@@ -415,7 +493,7 @@ export function IssuesList({
         clearTimeout(preloadTimeoutRef.current)
       }
     }
-  }, [workspaceId, statusFilter, priorityFilter, typeFilter, tagFilter, searchQuery, getListCache]) // Added getListCache dependency
+  }, [workspaceId, statusFilter, priorityFilter, typeFilter, tagFilter, sortBy, searchQuery, getListCache]) // Added getListCache dependency
 
   // Setup IntersectionObserver for viewport-based preloading
   useEffect(() => {
@@ -679,24 +757,19 @@ export function IssuesList({
                 )}
                 
                 <div className="mt-2 flex items-center gap-2 text-xs">
-                  {/* Type */}
-                  <span className={`inline-flex items-center px-2 py-1 rounded-md font-medium ${typeColors[issue.type]}`}>
-                    {typeLabels[issue.type]}
-                  </span>
-                  
                   {/* Priority */}
                   <span className={`inline-flex items-center px-2 py-1 rounded-md font-medium ${priorityColors[issue.priority]}`}>
                     {priorityLabels[issue.priority]}
                   </span>
                   
-                  {/* Status */}
-                  <span className="text-muted-foreground capitalize ml-2">
-                    {issue.status.replace('_', ' ')}
+                  {/* Type */}
+                  <span className={`inline-flex items-center px-2 py-1 rounded-md font-medium ${typeColors[issue.type]}`}>
+                    {typeLabels[issue.type]}
                   </span>
                   
                   {/* Tags */}
                   {issue.issue_tags && issue.issue_tags.length > 0 && (
-                    <div className="flex items-center gap-1 ml-2">
+                    <>
                       {issue.issue_tags.map(({ tags }) => (
                         <TagComponent
                           key={tags.id}
@@ -706,11 +779,16 @@ export function IssuesList({
                           {tags.name}
                         </TagComponent>
                       ))}
-                    </div>
+                    </>
                   )}
                   
+                  {/* Status */}
+                  <span className={`inline-flex items-center px-2 py-1 rounded-md font-medium ${statusColors[issue.status]}`}>
+                    {statusLabels[issue.status]}
+                  </span>
+                  
                   {/* Created Date - Hidden on mobile */}
-                  <span className="hidden sm:inline text-muted-foreground ml-2">
+                  <span className="hidden sm:inline text-muted-foreground ml-auto">
                     {formatDistanceToNow(new Date(issue.created_at), { addSuffix: true })}
                   </span>
                 </div>
