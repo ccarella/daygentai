@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -26,6 +26,7 @@ export default function CreateWorkspaceForm() {
   const [slugError, setSlugError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (name) {
@@ -35,6 +36,15 @@ export default function CreateWorkspaceForm() {
       setSlug('')
     }
   }, [name])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [])
 
   const validateSlug = (value: string): boolean => {
     if (!value) return false
@@ -62,17 +72,28 @@ export default function CreateWorkspaceForm() {
     setIsLoading(true)
     setError(null)
 
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+
     // Set a timeout for the operation
-    const timeoutId = setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       setError('The request is taking longer than expected. Please check your connection and try again.')
       setIsLoading(false)
+      timeoutRef.current = null
     }, 30000) // 30 second timeout
 
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser()
       
+      // Clear timeout immediately after getting response
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+      
       if (!user || userError) {
-        clearTimeout(timeoutId)
         router.push('/')
         return
       }
@@ -84,7 +105,11 @@ export default function CreateWorkspaceForm() {
         p_avatar_url: selectedAvatar || '🏢'
       })
       
-      clearTimeout(timeoutId)
+      // Clear timeout again after RPC response (in case it wasn't cleared earlier)
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
       
       if (createError) {
         // Handle Supabase RPC errors
@@ -101,6 +126,7 @@ export default function CreateWorkspaceForm() {
         } else {
           setError(`Error creating workspace: ${createError.message}`)
         }
+        setIsLoading(false)
         return
       }
       
@@ -114,6 +140,7 @@ export default function CreateWorkspaceForm() {
         } else {
           setError(result?.error || 'Failed to create workspace. Please try again.')
         }
+        setIsLoading(false)
         return
       }
 
@@ -166,7 +193,11 @@ export default function CreateWorkspaceForm() {
         return
       }
     } catch (err) {
-      clearTimeout(timeoutId)
+      // Always clear timeout on error
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
       console.error('Workspace creation error:', err)
       
       // Provide more detailed error messages based on the error type
