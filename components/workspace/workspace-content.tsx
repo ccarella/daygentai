@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useImperativeHandle, forwardRef, useEffect, useRef, useCallback } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { IssuesList } from '@/components/issues/issues-list'
 import dynamic from 'next/dynamic'
 import { useDebounce } from '@/hooks/use-debounce'
@@ -130,7 +130,6 @@ const sortOptions = [
 export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContentProps>(
   function WorkspaceContent({ workspace, initialView = 'list', initialIssueId, typeFilter: presetTypeFilter }, ref) {
   const pathname = usePathname()
-  const router = useRouter()
   
   // Extract issue ID from URL if present
   const getIssueIdFromPath = () => {
@@ -313,23 +312,23 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   }
 
   const handleBackToList = useCallback(() => {
-    // If we're on a different page route (sprint-board, design, product), 
-    // we need to use Next.js router for navigation
+    // Always use AJAX navigation for consistency
+    setCurrentView('list')
+    setCurrentIssueId(null)
+    setCurrentRecipeId(null)
+    // Update URL without page refresh
+    window.history.pushState({}, '', `/${workspace.slug}`)
+    
+    // If we're on a page with a different initial view, we need to force a re-render
+    // to override the initialView prop from the parent page component
     const currentPath = window.location.pathname
     if (currentPath.includes('/sprint-board') || 
         currentPath.includes('/design') || 
         currentPath.includes('/product')) {
-      // Use Next.js router for better performance and consistency
-      router.push(`/${workspace.slug}`)
-    } else {
-      // Otherwise, just update the view state
-      setCurrentView('list')
-      setCurrentIssueId(null)
-      setCurrentRecipeId(null)
-      // Update URL without page refresh
-      window.history.pushState({}, '', `/${workspace.slug}`)
+      // Dispatch a custom event to notify the parent page that view has changed
+      window.dispatchEvent(new CustomEvent('workspace-navigate-to-list'))
     }
-  }, [workspace.slug, router])
+  }, [workspace.slug])
 
   const handleBackToCookbook = useCallback(() => {
     setCurrentView('cookbook')
