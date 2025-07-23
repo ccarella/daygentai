@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
@@ -21,16 +21,9 @@ export function MarkdownEditor({
   rows = 6,
 }: MarkdownEditorProps) {
   const [preview, setPreview] = useState(false);
-  const [localValue, setLocalValue] = useState(value);
-
-  useEffect(() => {
-    setLocalValue(value);
-  }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    setLocalValue(newValue);
-    onChange(newValue);
+    onChange(e.target.value);
   };
 
   return (
@@ -75,7 +68,7 @@ export function MarkdownEditor({
       >
         {!preview ? (
           <textarea
-            value={localValue}
+            value={value}
             onChange={handleChange}
             placeholder={placeholder}
             rows={rows}
@@ -86,10 +79,10 @@ export function MarkdownEditor({
             className="px-3 py-2 text-sm min-h-[inherit]"
             style={{ minHeight: `${rows * 1.5}rem` }}
           >
-            {localValue ? (
+            {value ? (
               <div className="prose prose-sm max-w-none">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {localValue}
+                  {value}
                 </ReactMarkdown>
               </div>
             ) : (
