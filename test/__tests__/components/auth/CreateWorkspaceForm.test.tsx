@@ -272,7 +272,7 @@ describe('CreateWorkspaceForm', () => {
           p_slug: 'test-workspace',
           p_avatar_url: '🚀'
         })
-        expect(mockRouter.push).toHaveBeenCalledWith('/success')
+        expect(mockRouter.replace).toHaveBeenCalledWith('/success')
       })
     })
 
@@ -332,9 +332,9 @@ describe('CreateWorkspaceForm', () => {
         expect(screen.getByLabelText('Workspace URL (Required)')).toHaveValue('test-workspace')
       })
       
-      // Simulate Cmd+Enter on the container
-      const container = screen.getByText('Create Your Workspace').closest('div')!
-      fireEvent.keyDown(container, {
+      // Simulate Cmd+Enter on the form
+      const form = screen.getByText('Create Your Workspace').closest('form')!
+      fireEvent.keyDown(form, {
         key: 'Enter',
         metaKey: true,
       })

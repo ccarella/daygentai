@@ -54,7 +54,11 @@ export default function CreateWorkspaceForm() {
     }
   }
 
-  const handleNext = async () => {
+  const handleNext = async (e?: React.MouseEvent) => {
+    // Prevent any default behavior
+    e?.preventDefault()
+    e?.stopPropagation()
+    
     setIsLoading(true)
     setError(null)
 
@@ -113,28 +117,54 @@ export default function CreateWorkspaceForm() {
         return
       }
 
-      // Success - invalidate middleware cache for this user
-      if (typeof window !== 'undefined') {
+      // Workspace created successfully - we MUST redirect no matter what
+      let redirected = false
+      
+      try {
+        // Try to invalidate middleware cache for this user
+        if (typeof window !== 'undefined') {
+          try {
+            await Promise.race([
+              fetch('/api/cache/invalidate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id })
+              }),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Cache invalidation timeout')), 5000)
+              )
+            ])
+          } catch (cacheError) {
+            // Don't block navigation on cache invalidation failure
+            console.warn('Failed to invalidate cache:', cacheError)
+          }
+        }
+        
+        // Navigate to success page first to ensure cache is properly invalidated
+        // The success page will then redirect to the workspace
+        // Use replace to prevent back button issues
+        router.replace('/success')
+        redirected = true
+      } catch (navError) {
+        // If navigation fails, try direct navigation to workspace
+        console.error('Failed to navigate to success page:', navError)
         try {
-          await Promise.race([
-            fetch('/api/cache/invalidate', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: user.id })
-            }),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Cache invalidation timeout')), 5000)
-            )
-          ])
-        } catch (cacheError) {
-          // Don't block navigation on cache invalidation failure
-          console.warn('Failed to invalidate cache:', cacheError)
+          router.replace(`/${slug}`)
+          redirected = true
+        } catch (fallbackError) {
+          console.error('Failed to navigate to workspace:', fallbackError)
+          // Last resort - use window.location.replace to prevent back button
+          if (typeof window !== 'undefined') {
+            window.location.replace('/success')
+            redirected = true
+          }
         }
       }
-
-      // Navigate to success page first to ensure cache is properly invalidated
-      // The success page will then redirect to the workspace
-      router.push('/success')
+      
+      // If we successfully redirected, return early to prevent error handling
+      if (redirected) {
+        return
+      }
     } catch (err) {
       clearTimeout(timeoutId)
       console.error('Workspace creation error:', err)
@@ -170,7 +200,13 @@ export default function CreateWorkspaceForm() {
   }
 
   return (
-    <div className="bg-white p-4 md:p-6 lg:p-8 rounded-lg shadow-lg max-w-md w-full" onKeyDown={handleKeyDown}>
+    <form 
+      onSubmit={(e) => {
+        e.preventDefault()
+        handleNext()
+      }}
+      className="bg-white p-4 md:p-6 lg:p-8 rounded-lg shadow-lg max-w-md w-full" 
+      onKeyDown={handleKeyDown}>
       <h1 className="text-2xl font-bold text-center mb-8">Create Your Workspace</h1>
       
       <div className="mb-4 md:mb-6">
@@ -258,7 +294,7 @@ export default function CreateWorkspaceForm() {
       )}
 
       <button
-        onClick={handleNext}
+        type="submit"
         disabled={!isValidForm || isLoading}
         className={`w-full py-2 px-4 md:py-2.5 md:px-5 rounded-lg font-medium transition-all ${
           isValidForm && !isLoading
@@ -268,6 +304,6 @@ export default function CreateWorkspaceForm() {
       >
         {isLoading ? 'Creating...' : 'Next'}
       </button>
-    </div>
+    </form>
   )
 }
