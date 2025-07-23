@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -26,6 +26,7 @@ export default function CreateWorkspaceForm() {
   const [slugError, setSlugError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (name) {
@@ -35,6 +36,15 @@ export default function CreateWorkspaceForm() {
       setSlug('')
     }
   }, [name])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [])
 
   const validateSlug = (value: string): boolean => {
     if (!value) return false
@@ -54,21 +64,36 @@ export default function CreateWorkspaceForm() {
     }
   }
 
-  const handleNext = async () => {
+  const handleNext = async (e?: React.MouseEvent) => {
+    // Prevent any default behavior
+    e?.preventDefault()
+    e?.stopPropagation()
+    
     setIsLoading(true)
     setError(null)
 
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+
     // Set a timeout for the operation
-    const timeoutId = setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       setError('The request is taking longer than expected. Please check your connection and try again.')
       setIsLoading(false)
+      timeoutRef.current = null
     }, 30000) // 30 second timeout
 
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser()
       
+      // Clear timeout immediately after getting response
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+      
       if (!user || userError) {
-        clearTimeout(timeoutId)
         router.push('/')
         return
       }
@@ -80,7 +105,11 @@ export default function CreateWorkspaceForm() {
         p_avatar_url: selectedAvatar || '🏢'
       })
       
-      clearTimeout(timeoutId)
+      // Clear timeout again after RPC response (in case it wasn't cleared earlier)
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
       
       if (createError) {
         // Handle Supabase RPC errors
@@ -97,6 +126,7 @@ export default function CreateWorkspaceForm() {
         } else {
           setError(`Error creating workspace: ${createError.message}`)
         }
+        setIsLoading(false)
         return
       }
       
@@ -110,33 +140,64 @@ export default function CreateWorkspaceForm() {
         } else {
           setError(result?.error || 'Failed to create workspace. Please try again.')
         }
+        setIsLoading(false)
         return
       }
 
-      // Success - invalidate middleware cache for this user
-      if (typeof window !== 'undefined') {
+      // Workspace created successfully - we MUST redirect no matter what
+      let redirected = false
+      
+      try {
+        // Try to invalidate middleware cache for this user
+        if (typeof window !== 'undefined') {
+          try {
+            await Promise.race([
+              fetch('/api/cache/invalidate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id })
+              }),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Cache invalidation timeout')), 5000)
+              )
+            ])
+          } catch (cacheError) {
+            // Don't block navigation on cache invalidation failure
+            console.warn('Failed to invalidate cache:', cacheError)
+          }
+        }
+        
+        // Navigate to success page first to ensure cache is properly invalidated
+        // The success page will then redirect to the workspace
+        // Use replace to prevent back button issues
+        router.replace('/success')
+        redirected = true
+      } catch (navError) {
+        // If navigation fails, try direct navigation to workspace
+        console.error('Failed to navigate to success page:', navError)
         try {
-          await Promise.race([
-            fetch('/api/cache/invalidate', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: user.id })
-            }),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Cache invalidation timeout')), 5000)
-            )
-          ])
-        } catch (cacheError) {
-          // Don't block navigation on cache invalidation failure
-          console.warn('Failed to invalidate cache:', cacheError)
+          router.replace(`/${slug}`)
+          redirected = true
+        } catch (fallbackError) {
+          console.error('Failed to navigate to workspace:', fallbackError)
+          // Last resort - use window.location.replace to prevent back button
+          if (typeof window !== 'undefined') {
+            window.location.replace('/success')
+            redirected = true
+          }
         }
       }
-
-      // Navigate to success page first to ensure cache is properly invalidated
-      // The success page will then redirect to the workspace
-      router.push('/success')
+      
+      // If we successfully redirected, return early to prevent error handling
+      if (redirected) {
+        return
+      }
     } catch (err) {
-      clearTimeout(timeoutId)
+      // Always clear timeout on error
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
       console.error('Workspace creation error:', err)
       
       // Provide more detailed error messages based on the error type
@@ -170,7 +231,13 @@ export default function CreateWorkspaceForm() {
   }
 
   return (
-    <div className="bg-white p-4 md:p-6 lg:p-8 rounded-lg shadow-lg max-w-md w-full" onKeyDown={handleKeyDown}>
+    <form 
+      onSubmit={(e) => {
+        e.preventDefault()
+        handleNext()
+      }}
+      className="bg-white p-4 md:p-6 lg:p-8 rounded-lg shadow-lg max-w-md w-full" 
+      onKeyDown={handleKeyDown}>
       <h1 className="text-2xl font-bold text-center mb-8">Create Your Workspace</h1>
       
       <div className="mb-4 md:mb-6">
@@ -258,7 +325,7 @@ export default function CreateWorkspaceForm() {
       )}
 
       <button
-        onClick={handleNext}
+        type="submit"
         disabled={!isValidForm || isLoading}
         className={`w-full py-2 px-4 md:py-2.5 md:px-5 rounded-lg font-medium transition-all ${
           isValidForm && !isLoading
@@ -268,6 +335,6 @@ export default function CreateWorkspaceForm() {
       >
         {isLoading ? 'Creating...' : 'Next'}
       </button>
-    </div>
+    </form>
   )
 }
