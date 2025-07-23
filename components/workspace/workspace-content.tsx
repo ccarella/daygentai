@@ -312,11 +312,22 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   }
 
   const handleBackToList = useCallback(() => {
-    setCurrentView('list')
-    setCurrentIssueId(null)
-    setCurrentRecipeId(null)
-    // Update URL without page refresh
-    window.history.pushState({}, '', `/${workspace.slug}`)
+    // If we're on a different page route (sprint-board, design, product), 
+    // we need to actually navigate, not just update the view
+    const currentPath = window.location.pathname
+    if (currentPath.includes('/sprint-board') || 
+        currentPath.includes('/design') || 
+        currentPath.includes('/product')) {
+      // Use actual navigation to go to the main workspace page
+      window.location.href = `/${workspace.slug}`
+    } else {
+      // Otherwise, just update the view state
+      setCurrentView('list')
+      setCurrentIssueId(null)
+      setCurrentRecipeId(null)
+      // Update URL without page refresh
+      window.history.pushState({}, '', `/${workspace.slug}`)
+    }
   }, [workspace.slug])
 
   const handleBackToCookbook = useCallback(() => {
