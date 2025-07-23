@@ -278,9 +278,8 @@ export function IssueCacheProvider({ children }: { children: ReactNode }) {
       storeIssues(issuesToStore)
     }
     
-    // Capture size before setState to avoid stale closure
-    const newCacheSize = cache.size + issuesToStore.length
-    setCacheStats(prev => ({ ...prev, size: newCacheSize }))
+    // Update cache size using previous state to avoid stale closure
+    setCacheStats(prev => ({ ...prev, size: prev.size + issuesToStore.length }))
   }, [cache])
 
   const invalidateListCache = useCallback((workspaceId: string) => {
