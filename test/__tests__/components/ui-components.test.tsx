@@ -497,18 +497,29 @@ describe('UI Components', () => {
       const onChange = vi.fn()
       const user = userEvent.setup()
       
-      render(
-        <MarkdownEditor 
-          value=""
-          onChange={onChange}
-          placeholder="Type markdown..."
-        />
-      )
+      const TestComponent = () => {
+        const [value, setValue] = React.useState('')
+        return (
+          <MarkdownEditor 
+            value={value}
+            onChange={(newValue) => {
+              onChange(newValue)
+              setValue(newValue)
+            }}
+            placeholder="Type markdown..."
+          />
+        )
+      }
+      
+      render(<TestComponent />)
 
       const textarea = screen.getByPlaceholderText('Type markdown...')
       await user.type(textarea, '# Title')
       
-      expect(onChange).toHaveBeenCalledWith('# Title')
+      // onChange is called for each character typed
+      expect(onChange).toHaveBeenCalledTimes(7)
+      expect(onChange).toHaveBeenLastCalledWith('# Title')
+      expect(textarea).toHaveValue('# Title')
     })
 
     it('shows markdown support indicator', () => {
