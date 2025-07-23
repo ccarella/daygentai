@@ -192,7 +192,7 @@ export function WorkspaceLayout({
             onClick={onNavigateToIssues}
             className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}` && !pathname.includes('/sprint-board') && !pathname.includes('/design') && !pathname.includes('/product')
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
@@ -205,7 +205,7 @@ export function WorkspaceLayout({
             href={`/${workspace.slug}`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}` && !pathname.includes('/sprint-board') && !pathname.includes('/design') && !pathname.includes('/product')
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
@@ -221,7 +221,7 @@ export function WorkspaceLayout({
             onClick={onNavigateToSprintBoard}
             className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/sprint-board`
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
@@ -234,7 +234,7 @@ export function WorkspaceLayout({
             href={`/${workspace.slug}/sprint-board`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/sprint-board`
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
@@ -250,7 +250,7 @@ export function WorkspaceLayout({
             onClick={onNavigateToDesign}
             className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/design`
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
@@ -263,7 +263,7 @@ export function WorkspaceLayout({
             href={`/${workspace.slug}/design`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/design`
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
@@ -279,7 +279,7 @@ export function WorkspaceLayout({
             onClick={onNavigateToProduct}
             className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/product`
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
@@ -292,7 +292,7 @@ export function WorkspaceLayout({
             href={`/${workspace.slug}/product`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/product`
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
@@ -308,7 +308,7 @@ export function WorkspaceLayout({
             onClick={onNavigateToCookbook}
             className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/cookbook` 
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
@@ -321,7 +321,7 @@ export function WorkspaceLayout({
             href={`/${workspace.slug}/cookbook`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/cookbook` 
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
@@ -347,7 +347,7 @@ export function WorkspaceLayout({
             href={`/${workspace.slug}/settings`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
               pathname === `/${workspace.slug}/settings` 
-                ? 'bg-accent text-foreground' 
+                ? 'bg-accent text-foreground font-bold' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
@@ -451,7 +451,7 @@ export function WorkspaceLayout({
                   onClick={onNavigateToIssues}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}` && !pathname.includes('/sprint-board') && !pathname.includes('/design') && !pathname.includes('/product')
-                      ? 'bg-accent' 
+                      ? 'bg-accent font-bold' 
                       : 'hover:bg-accent'
                   }`}
                   title="All Issues"
@@ -463,7 +463,7 @@ export function WorkspaceLayout({
                   href={`/${workspace.slug}`}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}` && !pathname.includes('/sprint-board') && !pathname.includes('/design') && !pathname.includes('/product')
-                      ? 'bg-accent' 
+                      ? 'bg-accent font-bold' 
                       : 'hover:bg-accent'
                   }`}
                   title="All Issues"
@@ -477,7 +477,7 @@ export function WorkspaceLayout({
                   onClick={onNavigateToSprintBoard}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}/sprint-board` 
-                      ? 'bg-accent' 
+                      ? 'bg-accent font-bold' 
                       : 'hover:bg-accent'
                   }`}
                   title="Sprint Board"
@@ -489,7 +489,7 @@ export function WorkspaceLayout({
                   href={`/${workspace.slug}/sprint-board`}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}/sprint-board` 
-                      ? 'bg-accent' 
+                      ? 'bg-accent font-bold' 
                       : 'hover:bg-accent'
                   }`}
                   title="Sprint Board"
@@ -503,7 +503,7 @@ export function WorkspaceLayout({
                   onClick={onNavigateToDesign}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}/design` 
-                      ? 'bg-accent' 
+                      ? 'bg-accent font-bold' 
                       : 'hover:bg-accent'
                   }`}
                   title="Design"
@@ -515,7 +515,7 @@ export function WorkspaceLayout({
                   href={`/${workspace.slug}/design`}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}/design` 
-                      ? 'bg-accent' 
+                      ? 'bg-accent font-bold' 
                       : 'hover:bg-accent'
                   }`}
                   title="Design"
@@ -529,7 +529,7 @@ export function WorkspaceLayout({
                   onClick={onNavigateToProduct}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}/product` 
-                      ? 'bg-accent' 
+                      ? 'bg-accent font-bold' 
                       : 'hover:bg-accent'
                   }`}
                   title="Product"
@@ -541,7 +541,7 @@ export function WorkspaceLayout({
                   href={`/${workspace.slug}/product`}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}/product` 
-                      ? 'bg-accent' 
+                      ? 'bg-accent font-bold' 
                       : 'hover:bg-accent'
                   }`}
                   title="Product"
@@ -555,7 +555,7 @@ export function WorkspaceLayout({
                   onClick={onNavigateToCookbook}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}/cookbook` 
-                      ? 'bg-accent' 
+                      ? 'bg-accent font-bold' 
                       : 'hover:bg-accent'
                   }`}
                   title="Recipes"
@@ -567,7 +567,7 @@ export function WorkspaceLayout({
                   href={`/${workspace.slug}/cookbook`}
                   className={`p-2 rounded mb-2 transition-colors ${
                     pathname === `/${workspace.slug}/cookbook` 
-                      ? 'bg-accent' 
+                      ? 'bg-accent font-bold' 
                       : 'hover:bg-accent'
                   }`}
                   title="Recipes"
@@ -588,7 +588,7 @@ export function WorkspaceLayout({
                   href={`/${workspace.slug}/settings`}
                   className={`p-2 rounded transition-colors ${
                     pathname === `/${workspace.slug}/settings` 
-                      ? 'bg-accent' 
+                      ? 'bg-accent font-bold' 
                       : 'hover:bg-accent'
                   }`}
                   title="Settings"
