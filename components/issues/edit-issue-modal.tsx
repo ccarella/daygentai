@@ -58,12 +58,14 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [selectedTags, setSelectedTags] = useState<TagOption[]>([]);
   const [availableTags, setAvailableTags] = useState<TagOption[]>([]);
+  const previousOpenRef = useRef(false);
   
   const hasApiKey = workspace?.hasApiKey || false;
 
-  // Initialize form with issue data when modal opens or issue changes
+  // Initialize form with issue data only when modal opens (not when issue changes)
   useEffect(() => {
-    if (issue && open) {
+    // Only initialize when transitioning from closed to open
+    if (issue && open && !previousOpenRef.current) {
       setTitle(issue.title || '');
       setDescription(issue.description || '');
       setType(issue.type || 'feature');
@@ -78,6 +80,9 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
       loadTags();
       loadIssueTags();
     }
+    
+    // Update the previous open state
+    previousOpenRef.current = open;
   }, [issue, open, hasApiKey]);
   
   const loadTags = async () => {
