@@ -424,7 +424,7 @@ describe('CreateWorkspaceForm', () => {
       await user.click(nextButton)
       
       await waitFor(() => {
-        expect(screen.getByText('An unexpected error occurred while creating your workspace. Please try again.')).toBeInTheDocument()
+        expect(screen.getByText('An unexpected error occurred. Please try again.')).toBeInTheDocument()
       })
     })
   })

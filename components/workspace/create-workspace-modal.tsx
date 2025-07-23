@@ -88,47 +88,62 @@ export function CreateWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }:
     setIsLoading(true)
     setError(null)
 
+    // Set a timeout for the operation
+    const timeoutId = setTimeout(() => {
+      setError('The request is taking longer than expected. Please check your connection and try again.')
+      setIsLoading(false)
+    }, 30000) // 30 second timeout
+
     try {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
+        clearTimeout(timeoutId)
         setError('You must be logged in to create a workspace')
-        setIsLoading(false)
         return
       }
 
-      // Check if slug is already taken
-      const { data: existingWorkspace } = await supabase
-        .from('workspaces')
-        .select('id')
-        .eq('slug', slug)
-        .single()
-
-      if (existingWorkspace) {
-        setError('This workspace URL is already taken. Please choose a different one.')
-        setIsLoading(false)
-        return
-      }
-
-      // Create workspace using the RPC function
+      // Create workspace using the RPC function - rely on its atomic validation
       const { data: result, error: createError } = await supabase.rpc('create_workspace', {
         p_name: name,
         p_slug: slug,
         p_avatar_url: selectedAvatar || '🏢'
       })
 
-      if (createError || !result?.success) {
-        // Check for duplicate slug error
+      clearTimeout(timeoutId)
+
+      if (createError) {
+        // Handle Supabase RPC errors
+        console.error('RPC error:', createError)
+        
+        if (createError.message?.includes('duplicate key') || 
+            createError.message?.includes('already exists')) {
+          setError('This workspace URL is already taken. Please choose a different one.')
+        } else if (createError.message?.includes('violates row-level security')) {
+          setError('You do not have permission to create a workspace. Please ensure you are logged in.')
+        } else if (createError.message?.includes('timeout') || 
+                   createError.message?.includes('network')) {
+          setError('Network error. Please check your connection and try again.')
+        } else {
+          setError(`Error creating workspace: ${createError.message}`)
+        }
+        return
+      }
+
+      if (!result?.success) {
+        // Handle RPC function's custom error responses
         if (result?.detail === 'DUPLICATE_SLUG') {
           setError('This workspace URL is already taken. Please choose a different one.')
-          setIsLoading(false)
-          return
+        } else if (result?.error === 'Not authenticated') {
+          setError('You must be logged in to create a workspace.')
+        } else {
+          setError(result?.error || 'Failed to create workspace. Please try again.')
         }
-        throw createError || new Error(result?.error || 'Failed to create workspace')
+        return
       }
 
       // Fetch the created workspace for the callback
-      if (onWorkspaceCreated) {
+      if (onWorkspaceCreated && result.workspace_id) {
         const { data: newWorkspace } = await supabase
           .from('workspaces')
           .select('id, name, slug, avatar_url')
@@ -144,7 +159,25 @@ export function CreateWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }:
       router.push(`/${slug}`)
       onOpenChange(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      clearTimeout(timeoutId)
+      console.error('Workspace creation error:', err)
+      
+      // Provide more detailed error messages based on the error type
+      if (err instanceof Error) {
+        if (err.name === 'AbortError' || err.message.includes('aborted')) {
+          setError('Request was cancelled. Please try again.')
+        } else if (err.message.includes('fetch failed') || 
+                   err.message.includes('network') ||
+                   err.message.includes('ERR_INTERNET_DISCONNECTED')) {
+          setError('Network connection error. Please check your internet connection and try again.')
+        } else if (err.message.includes('timeout')) {
+          setError('The request timed out. Please try again.')
+        } else {
+          setError('An unexpected error occurred. Please try again.')
+        }
+      } else {
+        setError('An unexpected error occurred. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }
