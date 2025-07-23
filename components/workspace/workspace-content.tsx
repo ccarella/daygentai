@@ -118,18 +118,6 @@ const priorityOptions = [
   { value: 'low', label: 'Low' },
 ]
 
-const typeOptions = [
-  { value: 'all', label: 'All' },
-  { value: 'bug', label: 'Bug' },
-  { value: 'feature', label: 'Feature' },
-  { value: 'task', label: 'Task' },
-  { value: 'epic', label: 'Epic' },
-  { value: 'spike', label: 'Spike' },
-  { value: 'chore', label: 'Chore' },
-  { value: 'design', label: 'Design' },
-  { value: 'non-technical', label: 'Non-technical' },
-]
-
 const sortOptions = [
   { value: 'newest', label: 'Newest' },
   { value: 'oldest', label: 'Oldest' },
@@ -178,7 +166,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
   // List view defaults to Active (exclude_done), Kanban defaults to All
   const [statusFilter, setStatusFilter] = useState<string>('exclude_done')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
-  const [typeFilter, setTypeFilter] = useState<string>(presetTypeFilter || 'all')
+  const [typeFilter] = useState<string>(presetTypeFilter || 'all')
   const [tagFilter, setTagFilter] = useState<string>('all')
   const [sortBy, setSortBy] = useState<string>('newest')
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -367,7 +355,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
     }
     // Reset other filters to default
     setPriorityFilter('all')
-    setTypeFilter('all')
+    // Keep typeFilter as is since it may be preset for specific views
   }
 
   // Handler to toggle between list and kanban views
@@ -516,7 +504,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                     <Filter className="h-4 w-4" />
                     {/* Show indicator when any filter differs from default values
                         Default: statusFilter='exclude_done', others='all' */}
-                    {(statusFilter !== 'exclude_done' || priorityFilter !== 'all' || (!presetTypeFilter && typeFilter !== 'all') || tagFilter !== 'all') && (
+                    {(statusFilter !== 'exclude_done' || priorityFilter !== 'all' || tagFilter !== 'all') && (
                       <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
                     )}
                   </button>
@@ -558,25 +546,6 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                         </SelectContent>
                       </Select>
                     </div>
-                    
-                    {/* Type Filter - disabled if preset */}
-                    {!presetTypeFilter && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted-foreground">Type</label>
-                        <Select value={typeFilter} onValueChange={setTypeFilter}>
-                          <SelectTrigger className="w-full h-8 text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {typeOptions.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
                     
                     {/* Tag Filter */}
                     {availableTags.length > 0 && (
@@ -706,25 +675,6 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
                   </SelectContent>
                 </Select>
               </div>
-              
-              {/* Type Filter - disabled if preset */}
-              {!presetTypeFilter && (
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-foreground">Type</label>
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="w-full h-8 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {typeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
               
               {/* Tag Filter */}
               {availableTags.length > 0 && (
