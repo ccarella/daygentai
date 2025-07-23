@@ -92,7 +92,7 @@ export function Cookbook({ workspaceId, workspaceSlug, onRecipeClick }: Cookbook
       <div ref={mainContentRef} className="flex-1 flex flex-col bg-background">
         {/* Header */}
         <div className="border-b border-border px-6 py-4">
-          <h1 className="text-2xl font-bold mb-4">Cookbook</h1>
+          <h1 className="text-2xl font-bold mb-4">Recipes</h1>
           
           {/* Search and Filters */}
           <div className="flex items-center gap-4">
