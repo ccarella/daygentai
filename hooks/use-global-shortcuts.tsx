@@ -198,7 +198,35 @@ export function useGlobalShortcuts({
           }
           return true
         },
-        description: 'Go to issues',
+        description: 'Go to all issues',
+      },
+      'gs': {
+        handler: () => {
+          router.push(`/${workspaceSlug}/sprint-board`)
+          return true
+        },
+        description: 'Go to sprint board',
+      },
+      'gd': {
+        handler: () => {
+          router.push(`/${workspaceSlug}/design`)
+          return true
+        },
+        description: 'Go to design',
+      },
+      'gp': {
+        handler: () => {
+          router.push(`/${workspaceSlug}/product`)
+          return true
+        },
+        description: 'Go to product',
+      },
+      'gr': {
+        handler: () => {
+          router.push(`/${workspaceSlug}/cookbook`)
+          return true
+        },
+        description: 'Go to recipes',
       },
       /* Go to inbox shortcut - hidden for now but preserved for future use
       'gn': {

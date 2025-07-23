@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, FileText, /* Inbox, */ Plus, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle, Circle, Loader2 } from "lucide-react"
+import { Search, FileText, /* Inbox, */ Plus, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle, Circle, Loader2, ListTodo, Kanban, Palette, Package, BookOpen } from "lucide-react"
 import { 
   emitIssueStatusUpdate, 
   emitCreateIssueRequest,
@@ -315,11 +315,63 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
 
     baseCommands.push({
       id: "go-issues",
-      title: "Go to Issues",
-      icon: <FileText className="w-4 h-4" />,
+      title: "Go to All Issues",
+      icon: <ListTodo className="w-4 h-4" />,
       shortcut: "G then I",
       action: handleNavigateToIssues,
-      keywords: ["navigate", "view", "list", "issues"],
+      keywords: ["navigate", "view", "list", "issues", "all"],
+      group: "Quick Access"
+    })
+
+    baseCommands.push({
+      id: "go-sprint-board",
+      title: "Go to Sprint Board",
+      icon: <Kanban className="w-4 h-4" />,
+      shortcut: "G then S",
+      action: () => {
+        setIsOpen(false)
+        window.location.href = `/${workspaceSlug}/sprint-board`
+      },
+      keywords: ["navigate", "sprint", "board", "kanban", "feature", "bug"],
+      group: "Quick Access"
+    })
+
+    baseCommands.push({
+      id: "go-design",
+      title: "Go to Design",
+      icon: <Palette className="w-4 h-4" />,
+      shortcut: "G then D",
+      action: () => {
+        setIsOpen(false)
+        window.location.href = `/${workspaceSlug}/design`
+      },
+      keywords: ["navigate", "design", "ui", "ux", "mockup"],
+      group: "Quick Access"
+    })
+
+    baseCommands.push({
+      id: "go-product",
+      title: "Go to Product",
+      icon: <Package className="w-4 h-4" />,
+      shortcut: "G then P",
+      action: () => {
+        setIsOpen(false)
+        window.location.href = `/${workspaceSlug}/product`
+      },
+      keywords: ["navigate", "product", "non-technical", "business"],
+      group: "Quick Access"
+    })
+
+    baseCommands.push({
+      id: "go-recipes",
+      title: "Go to Recipes",
+      icon: <BookOpen className="w-4 h-4" />,
+      shortcut: "G then R",
+      action: () => {
+        setIsOpen(false)
+        window.location.href = `/${workspaceSlug}/cookbook`
+      },
+      keywords: ["navigate", "recipes", "cookbook", "guides", "templates"],
       group: "Quick Access"
     })
 
@@ -528,8 +580,11 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
         shortcuts: [
           { keys: ["C"], description: "Create new issue" },
           { keys: [modKey, "N"], description: "Get next issue recommendation" },
-          { keys: ["G", "then", "I"], description: "Go to Issues" },
-          { keys: ["G", "then", "N"], description: "Go to Inbox" },
+          { keys: ["G", "then", "I"], description: "Go to All Issues" },
+          { keys: ["G", "then", "S"], description: "Go to Sprint Board" },
+          { keys: ["G", "then", "D"], description: "Go to Design" },
+          { keys: ["G", "then", "P"], description: "Go to Product" },
+          { keys: ["G", "then", "R"], description: "Go to Recipes" },
         ]
       },
       ...(currentIssue ? [{

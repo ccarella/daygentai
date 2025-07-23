@@ -125,7 +125,7 @@ describe('Command Palette (Simplified)', () => {
       await user.click(screen.getByText('Open Command Palette'))
       
       // All commands visible initially (except hidden inbox command)
-      expect(screen.getByText('Go to Issues')).toBeInTheDocument()
+      expect(screen.getByText('Go to All Issues')).toBeInTheDocument()
       expect(screen.queryByText('Go to Inbox')).not.toBeInTheDocument() // Inbox command is hidden
       expect(screen.getByText('New Issue')).toBeInTheDocument()
       
@@ -134,7 +134,7 @@ describe('Command Palette (Simplified)', () => {
       await user.type(searchInput, 'issues')
       
       // Only issues command visible
-      expect(screen.getByText('Go to Issues')).toBeInTheDocument()
+      expect(screen.getByText('Go to All Issues')).toBeInTheDocument()
       expect(screen.queryByText('Go to Inbox')).not.toBeInTheDocument()
       expect(screen.queryByText('New Issue')).not.toBeInTheDocument()
     })
@@ -158,7 +158,7 @@ describe('Command Palette (Simplified)', () => {
       const searchInput = screen.getByPlaceholderText('Type a command or search...')
       await user.type(searchInput, 'ISSUES')
       
-      expect(screen.getByText('Go to Issues')).toBeInTheDocument()
+      expect(screen.getByText('Go to All Issues')).toBeInTheDocument()
     })
   })
 
@@ -171,7 +171,7 @@ describe('Command Palette (Simplified)', () => {
       // Wait for commands to be visible
       await waitFor(() => {
         expect(screen.getByText('New Issue')).toBeInTheDocument()
-        expect(screen.getByText('Go to Issues')).toBeInTheDocument()
+        expect(screen.getByText('Go to All Issues')).toBeInTheDocument()
       })
       
       // Get command items by their unique data-command-id attributes

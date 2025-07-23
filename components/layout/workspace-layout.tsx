@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus, ChevronLeft, ChevronRight, HelpCircle, Settings, Terminal, BookOpen, Search } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, HelpCircle, Settings, Terminal, BookOpen, Search, ListTodo, Kanban, Palette, Package } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import type { UserWorkspace } from '@/lib/supabase/workspaces'
 import { subscribeToCreateIssueRequests, emitToggleSearch } from '@/lib/events/issue-events'
@@ -23,6 +23,7 @@ const WorkspaceSwitcher = dynamic(
   }
 )
 import { useCommandPalette } from '@/hooks/use-command-palette'
+import { useWorkspace } from '@/contexts/workspace-context'
 
 interface WorkspaceLayoutProps {
   workspace: {
@@ -38,6 +39,9 @@ interface WorkspaceLayoutProps {
   onNavigateToIssues?: () => void
   onNavigateToInbox?: () => void // Currently hidden but preserved for future use
   onNavigateToCookbook?: () => void
+  onNavigateToSprintBoard?: () => void
+  onNavigateToDesign?: () => void
+  onNavigateToProduct?: () => void
   isMobileMenuOpen?: boolean
   setIsMobileMenuOpen?: (open: boolean) => void
   sidebarRef?: React.RefObject<HTMLDivElement | null>
@@ -52,6 +56,9 @@ export function WorkspaceLayout({
   // @ts-expect-error - Currently hidden but preserved for future use
   onNavigateToInbox,
   onNavigateToCookbook,
+  onNavigateToSprintBoard,
+  onNavigateToDesign,
+  onNavigateToProduct,
   isMobileMenuOpen: propIsMobileMenuOpen,
   setIsMobileMenuOpen: propSetIsMobileMenuOpen,
   sidebarRef: propSidebarRef
@@ -62,6 +69,7 @@ export function WorkspaceLayout({
   const [isSidebarHovered, setIsSidebarHovered] = useState(false)
   const pathname = usePathname()
   const { openWithMode } = useCommandPalette()
+  const { currentUserRole } = useWorkspace()
   const localSidebarRef = useRef<HTMLDivElement>(null)
   const sidebarRef = propSidebarRef || localSidebarRef
   
@@ -177,39 +185,123 @@ export function WorkspaceLayout({
         )}
         */}
         
+        {/* All Issues */}
         {onNavigateToIssues ? (
           <button
             data-sidebar-item
             onClick={onNavigateToIssues}
             className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
-              pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
+              pathname === `/${workspace.slug}` && !pathname.includes('/sprint-board') && !pathname.includes('/design') && !pathname.includes('/product')
                 ? 'bg-accent text-foreground' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>Issues</span>
+            <ListTodo className="w-5 h-5" />
+            <span>All Issues</span>
           </button>
         ) : (
           <Link
             data-sidebar-item
             href={`/${workspace.slug}`}
             className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
-              pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
+              pathname === `/${workspace.slug}` && !pathname.includes('/sprint-board') && !pathname.includes('/design') && !pathname.includes('/product')
                 ? 'bg-accent text-foreground' 
                 : 'hover:bg-accent text-foreground'
             }`}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>Issues</span>
+            <ListTodo className="w-5 h-5" />
+            <span>All Issues</span>
           </Link>
         )}
         
-        {/* Cookbook */}
+        {/* Sprint Board */}
+        {onNavigateToSprintBoard ? (
+          <button
+            data-sidebar-item
+            onClick={onNavigateToSprintBoard}
+            className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
+              pathname === `/${workspace.slug}/sprint-board`
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
+            }`}
+          >
+            <Kanban className="w-5 h-5" />
+            <span>Sprint Board</span>
+          </button>
+        ) : (
+          <Link
+            data-sidebar-item
+            href={`/${workspace.slug}/sprint-board`}
+            className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
+              pathname === `/${workspace.slug}/sprint-board`
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
+            }`}
+          >
+            <Kanban className="w-5 h-5" />
+            <span>Sprint Board</span>
+          </Link>
+        )}
+        
+        {/* Design */}
+        {onNavigateToDesign ? (
+          <button
+            data-sidebar-item
+            onClick={onNavigateToDesign}
+            className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
+              pathname === `/${workspace.slug}/design`
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
+            }`}
+          >
+            <Palette className="w-5 h-5" />
+            <span>Design</span>
+          </button>
+        ) : (
+          <Link
+            data-sidebar-item
+            href={`/${workspace.slug}/design`}
+            className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
+              pathname === `/${workspace.slug}/design`
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
+            }`}
+          >
+            <Palette className="w-5 h-5" />
+            <span>Design</span>
+          </Link>
+        )}
+        
+        {/* Product */}
+        {onNavigateToProduct ? (
+          <button
+            data-sidebar-item
+            onClick={onNavigateToProduct}
+            className={`w-full flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
+              pathname === `/${workspace.slug}/product`
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
+            }`}
+          >
+            <Package className="w-5 h-5" />
+            <span>Product</span>
+          </button>
+        ) : (
+          <Link
+            data-sidebar-item
+            href={`/${workspace.slug}/product`}
+            className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
+              pathname === `/${workspace.slug}/product`
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
+            }`}
+          >
+            <Package className="w-5 h-5" />
+            <span>Product</span>
+          </Link>
+        )}
+        
+        {/* Recipes (formerly Cookbook) */}
         {onNavigateToCookbook ? (
           <button
             data-sidebar-item
@@ -221,7 +313,7 @@ export function WorkspaceLayout({
             }`}
           >
             <BookOpen className="w-5 h-5" />
-            <span>Cookbook</span>
+            <span>Recipes</span>
           </button>
         ) : (
           <Link
@@ -234,7 +326,7 @@ export function WorkspaceLayout({
             }`}
           >
             <BookOpen className="w-5 h-5" />
-            <span>Cookbook</span>
+            <span>Recipes</span>
           </Link>
         )}
         
@@ -248,18 +340,21 @@ export function WorkspaceLayout({
           <span>Commands</span>
         </button>
         
-        <Link
-          data-sidebar-item
-          href={`/${workspace.slug}/settings`}
-          className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
-            pathname === `/${workspace.slug}/settings` 
-              ? 'bg-accent text-foreground' 
-              : 'hover:bg-accent text-foreground'
-          }`}
-        >
-          <Settings className="w-5 h-5" />
-          <span>Settings</span>
-        </Link>
+        {/* Settings - only visible to workspace owners */}
+        {currentUserRole === 'owner' && (
+          <Link
+            data-sidebar-item
+            href={`/${workspace.slug}/settings`}
+            className={`flex items-center space-x-2 md:space-x-3 px-3 md:px-3 min-h-[44px] md:min-h-0 md:py-2 rounded-lg transition-colors mt-1 focus:outline-none ${
+              pathname === `/${workspace.slug}/settings` 
+                ? 'bg-accent text-foreground' 
+                : 'hover:bg-accent text-foreground'
+            }`}
+          >
+            <Settings className="w-5 h-5" />
+            <span>Settings</span>
+          </Link>
+        )}
       </nav>
 
       {/* Info Icon at Bottom - Hidden on mobile */}
@@ -350,33 +445,111 @@ export function WorkspaceLayout({
                 </Link>
               )}
               */}
+              {/* All Issues */}
               {onNavigateToIssues ? (
                 <button
                   onClick={onNavigateToIssues}
                   className={`p-2 rounded mb-2 transition-colors ${
-                    pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
+                    pathname === `/${workspace.slug}` && !pathname.includes('/sprint-board') && !pathname.includes('/design') && !pathname.includes('/product')
                       ? 'bg-accent' 
                       : 'hover:bg-accent'
                   }`}
+                  title="All Issues"
                 >
-                  <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <ListTodo className="w-5 h-5 text-muted-foreground" />
                 </button>
               ) : (
                 <Link
                   href={`/${workspace.slug}`}
                   className={`p-2 rounded mb-2 transition-colors ${
-                    pathname === `/${workspace.slug}` || pathname.startsWith(`/${workspace.slug}/issue/`)
+                    pathname === `/${workspace.slug}` && !pathname.includes('/sprint-board') && !pathname.includes('/design') && !pathname.includes('/product')
                       ? 'bg-accent' 
                       : 'hover:bg-accent'
                   }`}
+                  title="All Issues"
                 >
-                  <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <ListTodo className="w-5 h-5 text-muted-foreground" />
                 </Link>
               )}
+              {/* Sprint Board */}
+              {onNavigateToSprintBoard ? (
+                <button
+                  onClick={onNavigateToSprintBoard}
+                  className={`p-2 rounded mb-2 transition-colors ${
+                    pathname === `/${workspace.slug}/sprint-board` 
+                      ? 'bg-accent' 
+                      : 'hover:bg-accent'
+                  }`}
+                  title="Sprint Board"
+                >
+                  <Kanban className="w-5 h-5 text-muted-foreground" />
+                </button>
+              ) : (
+                <Link
+                  href={`/${workspace.slug}/sprint-board`}
+                  className={`p-2 rounded mb-2 transition-colors ${
+                    pathname === `/${workspace.slug}/sprint-board` 
+                      ? 'bg-accent' 
+                      : 'hover:bg-accent'
+                  }`}
+                  title="Sprint Board"
+                >
+                  <Kanban className="w-5 h-5 text-muted-foreground" />
+                </Link>
+              )}
+              {/* Design */}
+              {onNavigateToDesign ? (
+                <button
+                  onClick={onNavigateToDesign}
+                  className={`p-2 rounded mb-2 transition-colors ${
+                    pathname === `/${workspace.slug}/design` 
+                      ? 'bg-accent' 
+                      : 'hover:bg-accent'
+                  }`}
+                  title="Design"
+                >
+                  <Palette className="w-5 h-5 text-muted-foreground" />
+                </button>
+              ) : (
+                <Link
+                  href={`/${workspace.slug}/design`}
+                  className={`p-2 rounded mb-2 transition-colors ${
+                    pathname === `/${workspace.slug}/design` 
+                      ? 'bg-accent' 
+                      : 'hover:bg-accent'
+                  }`}
+                  title="Design"
+                >
+                  <Palette className="w-5 h-5 text-muted-foreground" />
+                </Link>
+              )}
+              {/* Product */}
+              {onNavigateToProduct ? (
+                <button
+                  onClick={onNavigateToProduct}
+                  className={`p-2 rounded mb-2 transition-colors ${
+                    pathname === `/${workspace.slug}/product` 
+                      ? 'bg-accent' 
+                      : 'hover:bg-accent'
+                  }`}
+                  title="Product"
+                >
+                  <Package className="w-5 h-5 text-muted-foreground" />
+                </button>
+              ) : (
+                <Link
+                  href={`/${workspace.slug}/product`}
+                  className={`p-2 rounded mb-2 transition-colors ${
+                    pathname === `/${workspace.slug}/product` 
+                      ? 'bg-accent' 
+                      : 'hover:bg-accent'
+                  }`}
+                  title="Product"
+                >
+                  <Package className="w-5 h-5 text-muted-foreground" />
+                </Link>
+              )}
+              {/* Recipes */}
               {onNavigateToCookbook ? (
                 <button
                   onClick={onNavigateToCookbook}
@@ -385,7 +558,7 @@ export function WorkspaceLayout({
                       ? 'bg-accent' 
                       : 'hover:bg-accent'
                   }`}
-                  title="Cookbook"
+                  title="Recipes"
                 >
                   <BookOpen className="w-5 h-5 text-muted-foreground" />
                 </button>
@@ -397,7 +570,7 @@ export function WorkspaceLayout({
                       ? 'bg-accent' 
                       : 'hover:bg-accent'
                   }`}
-                  title="Cookbook"
+                  title="Recipes"
                 >
                   <BookOpen className="w-5 h-5 text-muted-foreground" />
                 </Link>
@@ -409,17 +582,20 @@ export function WorkspaceLayout({
               >
                 <Terminal className="w-5 h-5 text-muted-foreground" />
               </button>
-              <Link
-                href={`/${workspace.slug}/settings`}
-                className={`p-2 rounded transition-colors ${
-                  pathname === `/${workspace.slug}/settings` 
-                    ? 'bg-accent' 
-                    : 'hover:bg-accent'
-                }`}
-                title="Settings"
-              >
-                <Settings className="w-5 h-5 text-muted-foreground" />
-              </Link>
+              {/* Settings - only for owners */}
+              {currentUserRole === 'owner' && (
+                <Link
+                  href={`/${workspace.slug}/settings`}
+                  className={`p-2 rounded transition-colors ${
+                    pathname === `/${workspace.slug}/settings` 
+                      ? 'bg-accent' 
+                      : 'hover:bg-accent'
+                  }`}
+                  title="Settings"
+                >
+                  <Settings className="w-5 h-5 text-muted-foreground" />
+                </Link>
+              )}
               <button
                 onClick={() => openWithMode('help')}
                 className="p-2 rounded hover:bg-accent mt-auto"

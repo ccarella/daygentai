@@ -16,6 +16,7 @@ interface WorkspaceData {
 
 interface WorkspaceContextType {
   workspace: WorkspaceData | null
+  currentUserRole: 'owner' | 'admin' | 'member' | 'viewer' | null
   isLoading: boolean
   refreshWorkspace: () => Promise<void>
   updateApiKeyStatus: (hasKey: boolean, provider?: string | null, agentsContent?: string | null) => void
@@ -45,6 +46,7 @@ export function WorkspaceProvider({
       ...initialWorkspace
     } : null
   )
+  const [currentUserRole, setCurrentUserRole] = useState<'owner' | 'admin' | 'member' | 'viewer' | null>(null)
   const [isLoading, setIsLoading] = useState(!initialWorkspace)
 
   const fetchWorkspaceData = async () => {
@@ -81,6 +83,9 @@ export function WorkspaceProvider({
         return
       }
       
+      // Extract user role from workspace_members array
+      const userRole = workspaceData.workspace_members?.[0]?.role || null
+      
       setWorkspace({
         id: workspaceData.id,
         name: workspaceData.name,
@@ -91,6 +96,7 @@ export function WorkspaceProvider({
         apiProvider: workspaceData.api_provider,
         agentsContent: workspaceData.agents_content
       })
+      setCurrentUserRole(userRole)
     } catch (error) {
       console.error('Error fetching workspace data:', error)
     } finally {
@@ -129,12 +135,14 @@ export function WorkspaceProvider({
             .single()
           
           if (!error && workspaceData) {
+            const userRole = workspaceData.workspace_members?.[0]?.role || null
             setWorkspace(prev => prev ? {
               ...prev,
               hasApiKey: !!(workspaceData.api_key && workspaceData.api_key.length > 0),
               apiProvider: workspaceData.api_provider,
               agentsContent: workspaceData.agents_content
             } : null)
+            setCurrentUserRole(userRole)
           }
         } catch (error) {
           console.error('Error checking API key:', error)
@@ -161,7 +169,7 @@ export function WorkspaceProvider({
   }
 
   return (
-    <WorkspaceContext.Provider value={{ workspace, isLoading, refreshWorkspace, updateApiKeyStatus }}>
+    <WorkspaceContext.Provider value={{ workspace, currentUserRole, isLoading, refreshWorkspace, updateApiKeyStatus }}>
       {children}
     </WorkspaceContext.Provider>
   )
