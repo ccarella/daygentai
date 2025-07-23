@@ -1,7 +1,7 @@
 'use client'
 
 import { WorkspaceWithMobileNav } from '@/components/layout/workspace-with-mobile-nav'
-import { ApiSettings } from '@/components/settings/api-settings'
+import { ApiUsageDisplay } from '@/components/settings/api-usage-display'
 import { DangerZoneSettings } from '@/components/settings/danger-zone-settings'
 import { useWorkspace } from '@/contexts/workspace-context'
 import { createClient } from '@/lib/supabase/client'
@@ -58,10 +58,7 @@ export function SettingsPageContent({ workspace: serverWorkspace, initialSetting
           <p className="text-muted-foreground">Manage your workspace configuration and integrations</p>
         </div>
         
-        <ApiSettings 
-          workspaceId={currentWorkspace.id}
-          initialSettings={settings}
-        />
+        <ApiUsageDisplay workspaceId={currentWorkspace.id} />
         
         {isOwner && (
           <DangerZoneSettings workspaceId={currentWorkspace.id} />

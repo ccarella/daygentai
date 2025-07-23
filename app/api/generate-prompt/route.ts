@@ -155,7 +155,6 @@ async function handlePOST(req: NextRequest) {
     console.log('[Generate Prompt] Workspace found:', {
       id: workspace.id,
       hasApiKey: !!workspace.api_key,
-      apiKeyLength: workspace.api_key?.length,
       provider: workspace.api_provider
     })
 
