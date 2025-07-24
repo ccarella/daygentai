@@ -7,8 +7,6 @@ export default function LandingPageClient() {
   return (
     <div style={{ backgroundColor: '#FDF9F4', minHeight: '100vh' }}>
       <div className={styles['container']}>
-        <div className={styles['wordmark']}>DAYGENT</div>
-        
         <header className={styles['header']}>
           <h1>Your AI Development Team, Managed</h1>
           <p className={styles['subtitle']}>
@@ -22,8 +20,19 @@ export default function LandingPageClient() {
         
         <div className={styles['emailSection']}>
           <div className={styles['emailContent']}>
-            <h2 className={styles['loginTitle']}>LOG IN</h2>
-            <EmailLogin />
+            <div className={styles['terminalHeader']}>
+              <div className={styles['terminalButtons']}>
+                <span className={styles['terminalButton']} data-color="red"></span>
+                <span className={styles['terminalButton']} data-color="yellow"></span>
+                <span className={styles['terminalButton']} data-color="green"></span>
+              </div>
+              <div className={styles['terminalTitle']}>DAYGENT TERMINAL v2.0</div>
+            </div>
+            <div className={styles['terminalBody']}>
+              <div className={styles['terminalLogo']}>DAYGENT</div>
+              <div className={styles['terminalSubtext']}>SYSTEM ACCESS PORTAL</div>
+              <EmailLogin />
+            </div>
           </div>
         </div>
         
