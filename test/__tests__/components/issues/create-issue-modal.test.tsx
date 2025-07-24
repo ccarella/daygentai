@@ -109,6 +109,22 @@ describe('CreateIssueModal - Prompt Generation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     
+    // Mock fetch API
+    global.fetch = vi.fn((url) => {
+      // Mock the centralized key check endpoint
+      if (url && url.includes('/api/workspace/has-centralized-key')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ hasCentralizedKey: false })
+        } as Response)
+      }
+      // Default response for other endpoints
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ success: true })
+      } as Response)
+    })
+    
     // Reset the mock to handle all tables properly
     mockSupabase.from.mockImplementation((table) => {
       if (table === 'issue_tags') {
@@ -142,7 +158,27 @@ describe('CreateIssueModal - Prompt Generation', () => {
           }))
         }
       }
-      // Default for workspaces
+      // For workspaces table
+      if (table === 'workspaces') {
+        // Support chained .eq() calls properly
+        const chainableQuery = {
+          eq: vi.fn(() => chainableQuery),
+          single: vi.fn(() => Promise.resolve({ 
+            data: { 
+              id: 'test-workspace', 
+              name: 'Test Workspace', 
+              api_key: 'test-key', 
+              api_provider: 'openai',
+              workspace_members: [{ user_id: 'test-user-id', role: 'owner' }]
+            }, 
+            error: null 
+          }))
+        }
+        return {
+          select: vi.fn(() => chainableQuery)
+        }
+      }
+      // Default
       return {
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
