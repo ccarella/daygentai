@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { updateApiSettings } from '@/app/actions/update-api-settings'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Key, Save, AlertCircle } from 'lucide-react'
+import { Key, Save, AlertCircle, CheckCircle } from 'lucide-react'
 import { useWorkspace } from '@/contexts/workspace-context'
 
 interface ApiSettingsProps {
@@ -28,6 +28,23 @@ export function ApiSettings({ workspaceId, initialSettings }: ApiSettingsProps) 
   const [agentsContent, setAgentsContent] = useState(initialSettings?.agents_content || '')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [hasCentralizedKey, setHasCentralizedKey] = useState(false)
+
+  useEffect(() => {
+    // Check if centralized API key is available
+    const checkCentralizedKey = async () => {
+      try {
+        const response = await fetch('/api/workspace/has-centralized-key')
+        if (response.ok) {
+          const data = await response.json()
+          setHasCentralizedKey(data.hasCentralizedKey === true)
+        }
+      } catch (error) {
+        console.error('Error checking centralized key:', error)
+      }
+    }
+    checkCentralizedKey()
+  }, [])
 
   const handleSave = async () => {
     setSaving(true)
@@ -88,6 +105,13 @@ export function ApiSettings({ workspaceId, initialSettings }: ApiSettingsProps) 
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {hasCentralizedKey && (
+          <div className="p-3 rounded-md flex items-center gap-2 bg-green-50 text-green-900">
+            <CheckCircle className="w-4 h-4" />
+            <span className="text-sm">AI features are enabled for all workspaces using centralized API keys</span>
+          </div>
+        )}
+        
         {message && (
           <div className={`p-3 rounded-md flex items-center gap-2 ${
             message.type === 'success' ? 'bg-green-50 text-green-900' : 'bg-red-50 text-red-900'
@@ -111,19 +135,24 @@ export function ApiSettings({ workspaceId, initialSettings }: ApiSettingsProps) 
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="api-key">API Key</Label>
+          <Label htmlFor="api-key">API Key {hasCentralizedKey && '(Optional - Centralized key active)'}</Label>
           <Input
             id="api-key"
             type="password"
-            placeholder="sk-..."
+            placeholder={hasCentralizedKey ? "Using centralized API key" : "sk-..."}
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
+            disabled={hasCentralizedKey}
           />
           <p className="text-xs text-muted-foreground">
-            Your API key is encrypted and stored securely. Get your key from{' '}
-            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-              OpenAI Platform
-            </a>
+            {hasCentralizedKey ? (
+              'A centralized API key is configured for all workspaces. Individual workspace keys are not needed.'
+            ) : (
+              <>Your API key is encrypted and stored securely. Get your key from{' '}
+              <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                OpenAI Platform
+              </a></>
+            )}
           </p>
         </div>
         
@@ -143,9 +172,9 @@ export function ApiSettings({ workspaceId, initialSettings }: ApiSettingsProps) 
         </div>
         
         <div className="pt-4 space-y-4">
-          <Button onClick={handleSave} disabled={saving} className="w-full">
+          <Button onClick={handleSave} disabled={saving || hasCentralizedKey} className="w-full">
             <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Saving...' : 'Save API Settings'}
+            {saving ? 'Saving...' : hasCentralizedKey ? 'Using Centralized API Key' : 'Save API Settings'}
           </Button>
           
           <div className="p-4 bg-muted rounded-lg">
