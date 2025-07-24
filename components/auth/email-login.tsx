@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import styles from './email-login.module.css'
 
 export function EmailLogin() {
   const [email, setEmail] = useState('')
@@ -55,30 +56,34 @@ export function EmailLogin() {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <form onSubmit={handleLogin} onKeyDown={handleKeyDown} className="space-y-4 md:space-y-5">
+    <div className="w-full max-w-md mx-auto relative">
+      <div className={styles['scanlineEffect']} />
+      <form onSubmit={handleLogin} onKeyDown={handleKeyDown} className={`space-y-4 md:space-y-5 ${styles['cyberpunkForm']}`}>
         <div className="space-y-2">
-          <Label htmlFor="email">Email address</Label>
+          <Label htmlFor="email" className={styles['cyberpunkLabel']}>Email address</Label>
           <Input
             id="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            placeholder="user@cyberspace.net"
             required
             autoComplete="email"
             autoCapitalize="off"
             autoCorrect="off"
             disabled={loading}
+            className={styles['cyberpunkInput']}
           />
         </div>
 
         <Button
           type="submit"
           disabled={loading}
-          className="w-full"
+          className={`w-full ${styles['cyberpunkButton']}`}
         >
-          {loading ? 'Connecting...' : 'Connect'}
+          <span className={styles['glitchText']} data-text={loading ? 'INITIALIZING...' : 'JACK IN'}>
+            {loading ? 'INITIALIZING...' : 'JACK IN'}
+          </span>
         </Button>
       </form>
     </div>

@@ -154,8 +154,9 @@
 }
 
 .emailSection {
-  background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
-  border-radius: 16px;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+  border: 1px solid #00ff88;
+  border-radius: 0;
   padding: 48px;
   margin: 48px 0;
   display: flex;
@@ -163,6 +164,20 @@
   align-items: center;
   position: relative;
   overflow: hidden;
+  box-shadow: 
+    0 0 20px rgba(0, 255, 136, 0.5),
+    inset 0 0 20px rgba(0, 255, 136, 0.1),
+    0 0 40px rgba(0, 255, 136, 0.3);
+  clip-path: polygon(
+    0 20px,
+    20px 0,
+    calc(100% - 20px) 0,
+    100% 20px,
+    100% calc(100% - 20px),
+    calc(100% - 20px) 100%,
+    20px 100%,
+    0 calc(100% - 20px)
+  );
 }
 
 .emailContent {
@@ -170,16 +185,25 @@
   z-index: 1;
   width: 100%;
   max-width: 400px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid #00ff88;
+  padding: 32px;
+  backdrop-filter: blur(10px);
 }
 
 .loginTitle {
   font-family: 'Orbitron', sans-serif;
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
-  letter-spacing: 0.15em;
-  color: #2c3e50;
+  letter-spacing: 0.2em;
+  color: #00ff88;
   text-align: center;
   margin-bottom: 32px;
+  text-shadow: 
+    0 0 10px #00ff88,
+    0 0 20px #00ff88,
+    0 0 30px #00ff88;
+  animation: neonFlicker 2s infinite;
 }
 
 .emailSection::before {
@@ -189,13 +213,57 @@
   right: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
-  animation: pulse 4s ease-in-out infinite;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 50%, rgba(0, 255, 255, 0.1) 0%, transparent 50%);
+  animation: cyberpulse 4s ease-in-out infinite;
+}
+
+.emailSection::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
 }
 
 @keyframes pulse {
   0%, 100% { transform: scale(1); opacity: 0.5; }
   50% { transform: scale(1.1); opacity: 0.3; }
+}
+
+@keyframes cyberpulse {
+  0%, 100% { 
+    transform: scale(1) rotate(0deg); 
+    opacity: 0.3; 
+  }
+  50% { 
+    transform: scale(1.2) rotate(180deg); 
+    opacity: 0.5; 
+  }
+}
+
+@keyframes neonFlicker {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 
+      0 0 10px #00ff88,
+      0 0 20px #00ff88,
+      0 0 30px #00ff88;
+  }
+  50% {
+    opacity: 0.8;
+    text-shadow: 
+      0 0 5px #00ff88,
+      0 0 10px #00ff88,
+      0 0 15px #00ff88;
+  }
 }
 
 .connectButton {
