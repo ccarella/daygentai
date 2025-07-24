@@ -102,58 +102,38 @@ export function WorkspaceWithMobileNav({ workspace, children, onIssueCreated, on
     mainContentRef,
   })
 
-  if (profileLoading) {
-    return (
-      <>
-        <div className="fixed top-0 left-0 right-0 bg-background border-b border-border z-50">
-          <div className="w-full px-4 md:px-6 lg:px-8">
-            <div className="flex items-center h-11">
-              <div className="flex items-center flex-1">
-                <div className="text-xl font-bold text-foreground">Daygent</div>
-              </div>
-              <div className="flex items-center flex-1 justify-end">
-                <div className="w-11 h-11 md:w-10 md:h-10 rounded-full bg-secondary animate-pulse" />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="pt-11">
+  return (
+    <>
+      <Header 
+        initialProfile={profile} 
+        onMenuToggle={handleMenuToggle}
+        isMobileMenuOpen={isMobileMenuOpen}
+      />
+      <div className="pt-11">
+        {profileLoading ? (
           <div className="min-h-screen flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-foreground mx-auto"></div>
               <p className="mt-4 text-muted-foreground">Loading...</p>
             </div>
           </div>
-        </div>
-      </>
-    )
-  }
-
-  return (
-    <>
-      {profile && (
-        <Header 
-          initialProfile={profile} 
-          onMenuToggle={handleMenuToggle}
-          isMobileMenuOpen={isMobileMenuOpen}
-        />
-      )}
-      <div className="pt-11">
-        <WorkspaceLayout 
-          workspace={workspace}
-          workspaces={workspaces}
-          {...(onIssueCreated && { onIssueCreated })}
-          {...(onNavigateToIssues && { onNavigateToIssues })}
-          {...(onNavigateToInbox && { onNavigateToInbox })}
-          {...(onNavigateToCookbook && { onNavigateToCookbook })}
-          isMobileMenuOpen={isMobileMenuOpen}
-          setIsMobileMenuOpen={setIsMobileMenuOpen}
-          sidebarRef={sidebarRef}
-        >
-          <div ref={mainContentRef}>
-            {children}
-          </div>
-        </WorkspaceLayout>
+        ) : (
+          <WorkspaceLayout 
+            workspace={workspace}
+            workspaces={workspaces}
+            {...(onIssueCreated && { onIssueCreated })}
+            {...(onNavigateToIssues && { onNavigateToIssues })}
+            {...(onNavigateToInbox && { onNavigateToInbox })}
+            {...(onNavigateToCookbook && { onNavigateToCookbook })}
+            isMobileMenuOpen={isMobileMenuOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+            sidebarRef={sidebarRef}
+          >
+            <div ref={mainContentRef}>
+              {children}
+            </div>
+          </WorkspaceLayout>
+        )}
       </div>
     </>
   )

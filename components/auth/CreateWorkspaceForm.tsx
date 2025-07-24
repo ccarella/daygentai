@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useProfile } from '@/contexts/profile-context'
 
 const WORKSPACE_AVATARS = [
   '🏢', '🚀', '💼', '🎯', '🌟', '💡', '🔧', '🎨',
@@ -24,6 +25,7 @@ export default function CreateWorkspaceForm() {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
+  const { refreshProfile } = useProfile()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,6 +63,14 @@ export default function CreateWorkspaceForm() {
         throw new Error(result?.error || 'Failed to create workspace')
       }
 
+      // Refresh profile to ensure it's loaded before redirect
+      try {
+        await refreshProfile()
+      } catch (error) {
+        // If profile refresh fails, continue with redirect
+        console.error('Profile refresh failed:', error)
+      }
+      
       // Simple redirect to the new workspace
       router.push(`/${slug}`)
     } catch (err) {

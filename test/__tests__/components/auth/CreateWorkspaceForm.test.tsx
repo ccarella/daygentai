@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import CreateWorkspaceForm from '@/components/auth/CreateWorkspaceForm'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { createMockSupabaseClient, createMockRouter } from '@/test/utils/mock-factory'
 import { createMockUser } from '@/test/fixtures/users'
+import { ProfileProvider } from '@/contexts/profile-context'
 
 vi.mock('@/lib/supabase/client')
 vi.mock('next/navigation')
@@ -15,6 +16,18 @@ describe('CreateWorkspaceForm', () => {
   let mockRouter: any
   const user = userEvent.setup()
   const mockUser = createMockUser()
+
+  const renderWithProfile = async (component: React.ReactElement) => {
+    let result
+    await act(async () => {
+      result = render(
+        <ProfileProvider>
+          {component}
+        </ProfileProvider>
+      )
+    })
+    return result
+  }
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -37,10 +50,31 @@ describe('CreateWorkspaceForm', () => {
       data: { user: mockUser },
       error: null,
     })
+    
+    // Mock profile data for ProfileProvider
+    mockSupabase.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: {
+              id: mockUser.id,
+              name: 'Test User',
+              avatar_url: '🧑'
+            },
+            error: null
+          })
+        })
+      })
+    })
+    
+    // Mock auth state change subscription
+    mockSupabase.auth.onAuthStateChange.mockReturnValue({
+      data: { subscription: { unsubscribe: vi.fn() } }
+    })
   })
 
-  it('renders the form with avatar options and name input', () => {
-    render(<CreateWorkspaceForm />)
+  it('renders the form with avatar options and name input', async () => {
+    await renderWithProfile(<CreateWorkspaceForm />)
     
     expect(screen.getByText('Create Your Workspace')).toBeInTheDocument()
     expect(screen.getByText('Choose a Workspace Avatar')).toBeInTheDocument()
@@ -56,7 +90,7 @@ describe('CreateWorkspaceForm', () => {
   })
 
   it('validates workspace name length', async () => {
-    render(<CreateWorkspaceForm />)
+    await renderWithProfile(<CreateWorkspaceForm />)
     
     const nameInput = screen.getByPlaceholderText('My Awesome Workspace')
     const submitButton = screen.getByRole('button', { name: 'Next' })
@@ -75,7 +109,7 @@ describe('CreateWorkspaceForm', () => {
   })
 
   it('allows avatar selection', async () => {
-    render(<CreateWorkspaceForm />)
+    await renderWithProfile(<CreateWorkspaceForm />)
     
     const rocketAvatar = screen.getByRole('button', { name: '🚀' })
     
@@ -88,7 +122,7 @@ describe('CreateWorkspaceForm', () => {
   })
 
   it('creates workspace and redirects on success', async () => {
-    render(<CreateWorkspaceForm />)
+    await renderWithProfile(<CreateWorkspaceForm />)
     
     const nameInput = screen.getByPlaceholderText('My Awesome Workspace')
     const submitButton = screen.getByRole('button', { name: 'Next' })
@@ -113,7 +147,7 @@ describe('CreateWorkspaceForm', () => {
       error: new Error('Workspace already exists')
     })
     
-    render(<CreateWorkspaceForm />)
+    await renderWithProfile(<CreateWorkspaceForm />)
     
     const nameInput = screen.getByPlaceholderText('My Awesome Workspace')
     const submitButton = screen.getByRole('button', { name: 'Next' })
@@ -134,7 +168,7 @@ describe('CreateWorkspaceForm', () => {
       error: null
     })
     
-    render(<CreateWorkspaceForm />)
+    await renderWithProfile(<CreateWorkspaceForm />)
     
     const nameInput = screen.getByPlaceholderText('My Awesome Workspace')
     const submitButton = screen.getByRole('button', { name: 'Next' })
@@ -148,12 +182,12 @@ describe('CreateWorkspaceForm', () => {
   })
 
   it('redirects unauthenticated users to home', async () => {
-    mockSupabase.auth.getUser.mockResolvedValueOnce({
+    mockSupabase.auth.getUser.mockResolvedValue({
       data: { user: null },
       error: null,
     })
     
-    render(<CreateWorkspaceForm />)
+    await renderWithProfile(<CreateWorkspaceForm />)
     
     const nameInput = screen.getByPlaceholderText('My Awesome Workspace')
     const submitButton = screen.getByRole('button', { name: 'Next' })
@@ -169,7 +203,7 @@ describe('CreateWorkspaceForm', () => {
   })
 
   it('generates slug from workspace name', async () => {
-    render(<CreateWorkspaceForm />)
+    await renderWithProfile(<CreateWorkspaceForm />)
     
     const nameInput = screen.getByPlaceholderText('My Awesome Workspace')
     const submitButton = screen.getByRole('button', { name: 'Next' })
@@ -195,7 +229,7 @@ describe('CreateWorkspaceForm', () => {
       }), 100))
     )
     
-    render(<CreateWorkspaceForm />)
+    await renderWithProfile(<CreateWorkspaceForm />)
     
     const nameInput = screen.getByPlaceholderText('My Awesome Workspace')
     const submitButton = screen.getByRole('button', { name: 'Next' })
