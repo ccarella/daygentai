@@ -221,13 +221,14 @@ export function useGlobalShortcuts({
         },
         description: 'Go to product',
       },
+      /* Go to recipes shortcut - HIDDEN
       'gr': {
         handler: () => {
           router.push(`/${workspaceSlug}/cookbook`)
           return true
         },
         description: 'Go to recipes',
-      },
+      }, */
       /* Go to inbox shortcut - hidden for now but preserved for future use
       'gn': {
         handler: () => {
