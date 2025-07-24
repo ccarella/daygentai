@@ -75,6 +75,17 @@ export function useGlobalShortcuts({
     }
   }
 
+  // Check if any dialog is currently open
+  const isDialogOpen = React.useCallback(() => {
+    // Check for any open dialog elements
+    const dialogs = document.querySelectorAll('[role="dialog"]')
+    return Array.from(dialogs).some(dialog => {
+      // Check if dialog is visible (not hidden)
+      const style = window.getComputedStyle(dialog)
+      return style.display !== 'none' && style.visibility !== 'hidden'
+    })
+  }, [])
+
   // Register global keyboard shortcuts
   useKeyboardContext({
     id: 'global-shortcuts',
@@ -175,6 +186,10 @@ export function useGlobalShortcuts({
       },
       'c': {
         handler: () => {
+          // Don't trigger if a dialog is open
+          if (isDialogOpen()) {
+            return false
+          }
           onCreateIssue?.()
           return true
         },
@@ -273,7 +288,7 @@ export function useGlobalShortcuts({
         description: 'Set status to Done',
       },
     },
-    deps: [workspaceSlug, onCreateIssue, onShowHelp, onToggleViewMode, onToggleSearch, currentIssue, onIssueStatusChange, onNavigateToIssues, onNavigateToInbox],
+    deps: [workspaceSlug, onCreateIssue, onShowHelp, onToggleViewMode, onToggleSearch, currentIssue, onIssueStatusChange, onNavigateToIssues, onNavigateToInbox, isDialogOpen],
   })
   
   // Cleanup on unmount
