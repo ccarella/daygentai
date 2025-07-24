@@ -49,7 +49,7 @@ export function CreateIssueModal({
   const { invalidateListCache } = useIssueCache()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [type, setType] = useState<'feature' | 'bug' | 'chore' | 'design' | 'non-technical'>('feature')
+  const [type, setType] = useState<'feature' | 'bug' | 'design' | 'product'>('feature')
   const [priority, setPriority] = useState<'critical' | 'high' | 'medium' | 'low'>('medium')
   const [createPrompt, setCreatePrompt] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -251,9 +251,8 @@ export function CreateIssueModal({
                   <SelectContent>
                     <SelectItem value="feature">✨ Feature</SelectItem>
                     <SelectItem value="bug">🐛 Bug</SelectItem>
-                    <SelectItem value="chore">🔧 Chore</SelectItem>
                     <SelectItem value="design">🎨 Design</SelectItem>
-                    <SelectItem value="non-technical">📝 Non-technical</SelectItem>
+                    <SelectItem value="product">📝 Product</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -20,7 +20,7 @@ interface Issue {
   id: string
   title: string
   description: string | null
-  type: 'feature' | 'bug' | 'chore' | 'design' | 'non-technical'
+  type: 'feature' | 'bug' | 'design' | 'product'
   priority: 'critical' | 'high' | 'medium' | 'low'
   status: 'todo' | 'in_progress' | 'in_review' | 'done'
   created_at: string
@@ -50,17 +50,15 @@ interface IssuesListProps {
 const typeColors = {
   feature: 'text-primary bg-primary/10 border border-primary/20',
   bug: 'text-destructive bg-destructive/10 border border-destructive/20',
-  chore: 'text-primary bg-primary/10 border border-primary/20',
   design: 'text-primary bg-primary/10 border border-primary/20',
-  'non-technical': 'text-muted-foreground bg-muted border border-border'
+  product: 'text-muted-foreground bg-muted border border-border'
 }
 
 const typeLabels = {
   feature: 'Feature',
   bug: 'Bug',
-  chore: 'Chore',
   design: 'Design',
-  'non-technical': 'Non-technical'
+  product: 'Product'
 }
 
 const priorityColors = {

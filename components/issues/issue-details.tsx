@@ -49,7 +49,7 @@ interface Issue {
   id: string
   title: string
   description: string | null
-  type: 'feature' | 'bug' | 'chore' | 'design' | 'non-technical'
+  type: 'feature' | 'bug' | 'design' | 'product'
   priority: 'critical' | 'high' | 'medium' | 'low'
   status: 'todo' | 'in_progress' | 'in_review' | 'done'
   created_at: string
@@ -74,9 +74,8 @@ interface IssueDetailsProps {
 const typeIcons = {
   feature: '✨',
   bug: '🐛',
-  chore: '🔧',
   design: '🎨',
-  'non-technical': '📝'
+  product: '📝'
 }
 
 const priorityColors = {
@@ -103,9 +102,8 @@ const statusOptions = [
 const typeOptions = [
   { value: 'feature', label: 'Feature', icon: '✨' },
   { value: 'bug', label: 'Bug', icon: '🐛' },
-  { value: 'chore', label: 'Chore', icon: '🔧' },
   { value: 'design', label: 'Design', icon: '🎨' },
-  { value: 'non-technical', label: 'Non-technical', icon: '📝' },
+  { value: 'product', label: 'Product', icon: '📝' },
 ]
 
 export function IssueDetails({ issueId, workspaceSlug, onBack, onDeleted }: IssueDetailsProps) {

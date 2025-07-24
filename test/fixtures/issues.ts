@@ -4,7 +4,7 @@ export interface Issue {
   id: string
   title: string
   description: string | null
-  type: 'feature' | 'bug' | 'task' | 'epic' | 'spike' | 'chore' | 'design' | 'non-technical'
+  type: 'feature' | 'bug' | 'task' | 'epic' | 'spike' | 'design' | 'product'
   priority: 'critical' | 'high' | 'medium' | 'low'
   status: 'todo' | 'in_progress' | 'in_review' | 'done'
   created_at: string
@@ -42,7 +42,7 @@ export function createMockIssues(count: number, overrides?: Partial<Issue>): Iss
 }
 
 export const issueTypes: Issue['type'][] = [
-  'feature', 'bug', 'task', 'epic', 'spike', 'chore', 'design', 'non-technical'
+  'feature', 'bug', 'task', 'epic', 'spike', 'design', 'product'
 ]
 
 export const issuePriorities: Issue['priority'][] = [

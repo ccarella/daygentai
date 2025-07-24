@@ -20,7 +20,7 @@ interface Issue {
   id: string;
   title: string;
   description: string | null;
-  type: 'feature' | 'bug' | 'chore' | 'design' | 'non-technical';
+  type: 'feature' | 'bug' | 'design' | 'product';
   priority: 'critical' | 'high' | 'medium' | 'low';
   status: 'todo' | 'in_progress' | 'in_review' | 'done';
   workspace_id: string;
@@ -294,9 +294,8 @@ export function EditIssueModal({ open, onOpenChange, issue, onIssueUpdated }: Ed
                   <SelectContent>
                     <SelectItem value="feature">✨ Feature</SelectItem>
                     <SelectItem value="bug">🐛 Bug</SelectItem>
-                    <SelectItem value="chore">🔧 Chore</SelectItem>
                     <SelectItem value="design">🎨 Design</SelectItem>
-                    <SelectItem value="non-technical">📝 Non-technical</SelectItem>
+                    <SelectItem value="product">📝 Product</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

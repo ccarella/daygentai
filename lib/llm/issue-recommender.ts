@@ -5,7 +5,7 @@ interface Issue {
   id: string
   title: string
   description: string | null
-  type: 'feature' | 'bug' | 'chore' | 'design' | 'non-technical'
+  type: 'feature' | 'bug' | 'design' | 'product'
   priority: 'critical' | 'high' | 'medium' | 'low'
   status: 'todo' | 'in_progress' | 'in_review' | 'done'
   created_at: string

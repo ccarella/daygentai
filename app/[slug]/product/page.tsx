@@ -43,7 +43,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
         key={refreshKey} 
         workspace={workspace}
         initialView="product"
-        typeFilter="non-technical"
+        typeFilter="product"
       />
     </WorkspaceWithMobileNav>
   )

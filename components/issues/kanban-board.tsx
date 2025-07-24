@@ -18,7 +18,7 @@ interface Issue {
   id: string
   title: string
   description: string | null
-  type: 'feature' | 'bug' | 'chore' | 'design' | 'non-technical'
+  type: 'feature' | 'bug' | 'design' | 'product'
   priority: 'critical' | 'high' | 'medium' | 'low'
   status: 'todo' | 'in_progress' | 'in_review' | 'done'
   created_at: string
@@ -54,17 +54,15 @@ const columns = [
 const typeColors = {
   feature: 'text-purple-700 bg-purple-50 border border-purple-200',
   bug: 'text-destructive bg-destructive/10 border border-destructive/20',
-  chore: 'text-primary bg-primary/10 border border-primary/20',
   design: 'text-pink-700 bg-pink-50 border border-pink-200',
-  'non-technical': 'text-muted-foreground bg-muted border border-border'
+  product: 'text-muted-foreground bg-muted border border-border'
 }
 
 const typeLabels = {
   feature: 'Feature',
   bug: 'Bug',
-  chore: 'Chore',
   design: 'Design',
-  'non-technical': 'Non-technical'
+  product: 'Product'
 }
 
 const priorityColors = {
@@ -136,7 +134,7 @@ export function KanbanBoard({
         }
         
         if (typeFilter !== 'all') {
-          const validTypes = ['feature', 'bug', 'chore', 'design', 'non-technical']
+          const validTypes = ['feature', 'bug', 'design', 'product']
           if (validTypes.includes(typeFilter)) {
             filteredData = filteredData.filter(issue => issue.type === typeFilter)
           }
@@ -241,7 +239,7 @@ export function KanbanBoard({
 
       if (typeFilter !== 'all') {
         // Only apply type filter if it's a valid type
-        const validTypes = ['feature', 'bug', 'chore', 'design', 'non-technical']
+        const validTypes = ['feature', 'bug', 'design', 'product']
         if (validTypes.includes(typeFilter)) {
           query = query.eq('type', typeFilter)
         }

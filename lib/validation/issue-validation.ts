@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 
 // Valid enum values based on database schema
 export const ISSUE_STATUS = ['todo', 'in_progress', 'in_review', 'done'] as const
-export const ISSUE_TYPE = ['bug', 'feature', 'task', 'epic', 'spike', 'chore', 'design', 'non-technical'] as const
+export const ISSUE_TYPE = ['bug', 'feature', 'task', 'epic', 'spike', 'design', 'product'] as const
 export const ISSUE_PRIORITY = ['critical', 'high', 'medium', 'low'] as const
 
 export type IssueStatus = typeof ISSUE_STATUS[number]
