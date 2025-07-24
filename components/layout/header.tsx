@@ -12,7 +12,7 @@ interface UserProfile {
 }
 
 interface HeaderProps {
-  initialProfile?: UserProfile
+  initialProfile?: UserProfile | null
   onMenuToggle?: () => void
   isMobileMenuOpen?: boolean
 }
@@ -40,10 +40,6 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/')
-  }
-
-  if (!userProfile) {
-    return null
   }
 
   return (
@@ -75,37 +71,41 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
           
           {/* Right Section - Avatar */}
           <div className="flex items-center flex-1 justify-end gap-2">
-            <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center justify-center w-11 h-11 md:w-10 md:h-10 rounded-full bg-secondary hover:bg-secondary/80 transition-colors text-xl"
-            >
-              {userProfile.avatar_url || '👤'}
-            </button>
-            
-            {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-background rounded-lg shadow-lg border border-border py-1 md:py-1.5">
-                <div className="px-3 py-1.5 md:px-4 md:py-2 border-b border-border">
-                  <p className="text-sm font-medium text-foreground">{userProfile.name}</p>
-                </div>
-                
-                <Link
-                  href="/user/settings"
-                  onClick={() => setIsDropdownOpen(false)}
-                  className="block w-full text-left px-4 py-3 md:px-4 md:py-2 text-sm text-muted-foreground hover:bg-accent"
-                >
-                  Profile Settings
-                </Link>
-                
+            {userProfile ? (
+              <div className="relative" ref={dropdownRef}>
                 <button
-                  onClick={handleLogout}
-                  className="block w-full text-left px-4 py-3 md:px-4 md:py-2 text-sm text-muted-foreground hover:bg-accent"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center justify-center w-11 h-11 md:w-10 md:h-10 rounded-full bg-secondary hover:bg-secondary/80 transition-colors text-xl"
                 >
-                  Logout
+                  {userProfile.avatar_url || '👤'}
                 </button>
+                
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-background rounded-lg shadow-lg border border-border py-1 md:py-1.5">
+                    <div className="px-3 py-1.5 md:px-4 md:py-2 border-b border-border">
+                      <p className="text-sm font-medium text-foreground">{userProfile.name}</p>
+                    </div>
+                    
+                    <Link
+                      href="/user/settings"
+                      onClick={() => setIsDropdownOpen(false)}
+                      className="block w-full text-left px-4 py-3 md:px-4 md:py-2 text-sm text-muted-foreground hover:bg-accent"
+                    >
+                      Profile Settings
+                    </Link>
+                    
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-3 md:px-4 md:py-2 text-sm text-muted-foreground hover:bg-accent"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
+            ) : (
+              <div className="w-11 h-11 md:w-10 md:h-10 rounded-full bg-secondary animate-pulse" />
             )}
-            </div>
           </div>
         </div>
       </div>
