@@ -78,7 +78,7 @@ export function EmailLogin() {
           disabled={loading}
           className="w-full"
         >
-          {loading ? 'Signing in...' : 'Sign in with email'}
+          {loading ? 'Connecting...' : 'Connect'}
         </Button>
       </form>
     </div>
