@@ -1,0 +1,259 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;500;600&family=Orbitron:wght@500;700&display=swap');
+
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 60px 40px;
+  background: #FDF9F4;
+  min-height: 100vh;
+}
+
+.headerNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 48px;
+}
+
+.wordmark {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #2c3e50;
+  display: inline-block;
+}
+
+.loginButton {
+  background: transparent;
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 10px 24px;
+  border: 2px solid #2c3e50;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: -0.011em;
+}
+
+.loginButton:hover {
+  background: #2c3e50;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.15);
+}
+
+.header {
+  margin-bottom: 48px;
+  position: relative;
+}
+
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: -24px;
+  left: 0;
+  width: 60px;
+  height: 2px;
+  background: #2c3e50;
+}
+
+.header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #1a1a1a;
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 20px;
+  color: #6b7280;
+  font-weight: 300;
+  line-height: 1.4;
+}
+
+.lead {
+  font-size: 22px;
+  line-height: 1.6;
+  color: #1a1a1a;
+  margin: 40px 0;
+  font-weight: 300;
+  letter-spacing: -0.011em;
+  max-width: 750px;
+}
+
+.section {
+  margin: 64px 0;
+}
+
+.section h2 {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6b7280;
+  margin-bottom: 32px;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 40px;
+  margin: 32px 0;
+}
+
+.feature {
+  padding: 0;
+}
+
+.feature h3 {
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: #1a1a1a;
+  letter-spacing: -0.011em;
+}
+
+.feature p {
+  font-size: 15px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.valueSection {
+  text-align: center;
+  margin: 80px 0 48px;
+  padding: 48px 0;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.valueSection h3 {
+  font-size: 28px;
+  font-weight: 300;
+  line-height: 1.3;
+  color: #1a1a1a;
+  letter-spacing: -0.011em;
+  margin-bottom: 16px;
+}
+
+.valueSection p {
+  font-size: 16px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.cta {
+  text-align: center;
+  margin: 40px 0;
+}
+
+.emailSection {
+  background: linear-gradient(135deg, #f8f8f8 0%, #f0f0f0 100%);
+  border-radius: 16px;
+  padding: 48px;
+  margin: 48px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.emailContent {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 400px;
+}
+
+.loginTitle {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.emailSection::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
+  animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 0.3; }
+}
+
+.connectButton {
+  background: #2c3e50;
+  color: white;
+  font-size: 18px;
+  font-weight: 500;
+  padding: 16px 48px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: -0.011em;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 4px 12px rgba(44, 62, 80, 0.2);
+}
+
+.connectButton:hover {
+  background: #1a252f;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(44, 62, 80, 0.3);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 40px 20px;
+  }
+  
+  .headerNav {
+    margin-bottom: 32px;
+  }
+  
+  .loginButton {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+  
+  .header h1 {
+    font-size: 36px;
+  }
+  
+  .lead {
+    font-size: 18px;
+  }
+  
+  .features {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  
+  .emailSection {
+    padding: 32px 20px;
+    margin: 32px 0;
+  }
+  
+  .connectButton {
+    width: 100%;
+    max-width: 300px;
+  }
+}

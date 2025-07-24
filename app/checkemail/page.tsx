@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
+import '@/app/page.module.css'
 
 export const metadata: Metadata = {
   title: 'Check Your Email - Daygent',
@@ -14,10 +15,26 @@ export default async function CheckEmailPage(props: {
   const isGmailUser = email?.toLowerCase().endsWith('@gmail.com')
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 md:p-6 lg:p-8">
-      <div className="max-w-md w-full text-center space-y-8">
-        {/* Large Mailbox Icon */}
-        <div className="mx-auto w-32 h-32 flex items-center justify-center">
+    <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: '#FDF9F4' }}>
+      {/* DAYGENT Wordmark */}
+      <div className="max-w-4xl mx-auto mb-8">
+        <div 
+          style={{ 
+            fontFamily: 'Orbitron, sans-serif',
+            fontSize: '24px',
+            fontWeight: 700,
+            letterSpacing: '0.15em',
+            color: '#2c3e50'
+          }}
+        >
+          DAYGENT
+        </div>
+      </div>
+      
+      <div className="flex items-center justify-center">
+        <div className="max-w-md w-full text-center space-y-8">
+          {/* Large Mailbox Icon */}
+          <div className="mx-auto w-32 h-32 flex items-center justify-center">
           <svg
             className="w-full h-full text-primary"
             fill="none"
@@ -88,6 +105,7 @@ export default async function CheckEmailPage(props: {
             </Link>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )
