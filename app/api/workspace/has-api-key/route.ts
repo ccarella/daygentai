@@ -52,9 +52,15 @@ async function handlePOST(req: NextRequest) {
       )
     }
 
-    // Return whether the workspace has an API key configured
+    // Check for centralized API key in environment variables
+    const hasCentralizedKey = !!(
+      process.env['CENTRALIZED_OPENAI_API_KEY'] || 
+      process.env['CENTRALIZED_ANTHROPIC_API_KEY']
+    )
+    
+    // Return whether the workspace has an API key configured (either workspace-specific or centralized)
     return NextResponse.json({ 
-      hasApiKey: !!workspace.api_key 
+      hasApiKey: !!workspace.api_key || hasCentralizedKey
     })
 
   } catch (error) {

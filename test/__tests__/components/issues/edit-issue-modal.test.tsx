@@ -117,12 +117,20 @@ describe('EditIssueModal - Prompt Generation', () => {
     vi.clearAllMocks()
     
     // Mock fetch API
-    global.fetch = vi.fn(() => 
-      Promise.resolve({
+    global.fetch = vi.fn((url) => {
+      // Mock the centralized key check endpoint
+      if (url && url.includes('/api/workspace/has-centralized-key')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ hasCentralizedKey: false })
+        } as Response)
+      }
+      // Default response for other endpoints
+      return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ success: true })
       } as Response)
-    )
+    })
     
     // Reset the mock implementation but preserve the tag-related functionality
     mockSupabase.from.mockImplementation((table: any) => {
@@ -156,7 +164,13 @@ describe('EditIssueModal - Prompt Generation', () => {
             const chainableQuery = {
               eq: vi.fn(() => chainableQuery),
               single: vi.fn(() => Promise.resolve({ 
-                data: { id: 'test-workspace-id', name: 'Test Workspace', api_key: 'test-key', api_provider: 'openai' }, 
+                data: { 
+                  id: 'test-workspace-id', 
+                  name: 'Test Workspace', 
+                  api_key: 'test-key', 
+                  api_provider: 'openai',
+                  workspace_members: [{ user_id: 'test-user-id', role: 'owner' }]
+                }, 
                 error: null 
               }))
             }

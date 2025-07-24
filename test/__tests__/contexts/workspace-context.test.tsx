@@ -10,6 +10,9 @@ vi.mock('@/lib/supabase/client', () => ({
   createClient: vi.fn()
 }))
 
+// Mock fetch for centralized key check
+global.fetch = vi.fn()
+
 // Test component that uses the workspace context
 function TestComponent() {
   const { workspace, isLoading } = useWorkspace()
@@ -30,6 +33,12 @@ describe('WorkspaceContext', () => {
     vi.clearAllMocks()
     mockSupabase = createMockSupabaseClient()
     ;(createClient as any).mockReturnValue(mockSupabase)
+    
+    // Mock fetch to return no centralized key by default
+    ;(global.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => ({ hasCentralizedKey: false })
+    })
   })
 
   it('should provide initial workspace data', async () => {
@@ -41,7 +50,8 @@ describe('WorkspaceContext', () => {
     const mockQuery = createMockQueryBuilder({ 
       api_key: 'test-key', 
       api_provider: 'openai', 
-      agents_content: null 
+      agents_content: null,
+      workspace_members: [{ user_id: 'user-123', role: 'owner' }]
     })
     
     mockSupabase.from.mockReturnValue({
@@ -73,7 +83,8 @@ describe('WorkspaceContext', () => {
     const mockWorkspaceData = {
       api_key: 'sk-test-key',
       api_provider: 'openai',
-      agents_content: 'test content'
+      agents_content: 'test content',
+      workspace_members: [{ user_id: 'user-123', role: 'owner' }]
     }
 
     mockSupabase.auth.getSession.mockResolvedValue({
@@ -115,7 +126,8 @@ describe('WorkspaceContext', () => {
     const mockWorkspaceData = {
       api_key: '',
       api_provider: null,
-      agents_content: null
+      agents_content: null,
+      workspace_members: [{ user_id: 'user-123', role: 'owner' }]
     }
 
     mockSupabase.auth.getSession.mockResolvedValue({

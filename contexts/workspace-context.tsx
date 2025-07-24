@@ -24,6 +24,20 @@ interface WorkspaceContextType {
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined)
 
+// Helper function to check for centralized API key
+async function checkCentralizedKey(): Promise<boolean> {
+  try {
+    const response = await fetch('/api/workspace/has-centralized-key')
+    if (response.ok) {
+      const data = await response.json()
+      return data.hasCentralizedKey === true
+    }
+  } catch (error) {
+    console.error('Error checking centralized key:', error)
+  }
+  return false
+}
+
 export function WorkspaceProvider({ 
   children, 
   workspaceId,
@@ -86,13 +100,17 @@ export function WorkspaceProvider({
       // Extract user role from workspace_members array
       const userRole = workspaceData.workspace_members?.[0]?.role || null
       
+      // Check if workspace has API key or if centralized key exists
+      const hasWorkspaceKey = !!(workspaceData.api_key && workspaceData.api_key.length > 0)
+      const hasCentralizedKey = await checkCentralizedKey()
+      
       setWorkspace({
         id: workspaceData.id,
         name: workspaceData.name,
         slug: workspaceData.slug,
         avatar_url: workspaceData.avatar_url,
         owner_id: workspaceData.owner_id,
-        hasApiKey: !!(workspaceData.api_key && workspaceData.api_key.length > 0),
+        hasApiKey: hasWorkspaceKey || hasCentralizedKey,
         apiProvider: workspaceData.api_provider,
         agentsContent: workspaceData.agents_content
       })
@@ -136,9 +154,13 @@ export function WorkspaceProvider({
           
           if (!error && workspaceData) {
             const userRole = workspaceData.workspace_members?.[0]?.role || null
+            // Check if workspace has API key or if centralized key exists
+            const hasWorkspaceKey = !!(workspaceData.api_key && workspaceData.api_key.length > 0)
+            const hasCentralizedKey = await checkCentralizedKey()
+            
             setWorkspace(prev => prev ? {
               ...prev,
-              hasApiKey: !!(workspaceData.api_key && workspaceData.api_key.length > 0),
+              hasApiKey: hasWorkspaceKey || hasCentralizedKey,
               apiProvider: workspaceData.api_provider,
               agentsContent: workspaceData.agents_content
             } : null)
