@@ -47,6 +47,8 @@ interface WorkspaceLayoutProps {
   sidebarRef?: React.RefObject<HTMLDivElement | null>
 }
 
+import { CreateWorkspaceModal } from '@/components/workspace/create-workspace-modal'
+
 export function WorkspaceLayout({ 
   workspace, 
   workspaces = [],
@@ -68,6 +70,7 @@ export function WorkspaceLayout({
   const [localIsMobileMenuOpen, setLocalIsMobileMenuOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isSidebarHovered, setIsSidebarHovered] = useState(false)
+  const [createWorkspaceModalOpen, setCreateWorkspaceModalOpen] = useState(false)
   const pathname = usePathname()
   const { openWithMode } = useCommandPalette()
   const { currentUserRole } = useWorkspace()
@@ -125,6 +128,7 @@ export function WorkspaceLayout({
             currentWorkspace={workspace} 
             workspaces={workspaces}
             collapsed={false}
+            onRequestCreateWorkspace={() => setCreateWorkspaceModalOpen(true)}
           />
           <button 
             className="hidden md:flex min-h-[40px] min-w-[40px] p-2 md:p-1 hover:bg-accent rounded items-center justify-center"
@@ -409,6 +413,7 @@ export function WorkspaceLayout({
                   currentWorkspace={workspace} 
                   workspaces={workspaces}
                   collapsed={true}
+                  onRequestCreateWorkspace={() => setCreateWorkspaceModalOpen(true)}
                 />
               </div>
               <button 
@@ -641,6 +646,15 @@ export function WorkspaceLayout({
           onIssueCreated={handleIssueCreated}
         />
       )}
+      
+      <CreateWorkspaceModal
+        open={createWorkspaceModalOpen}
+        onOpenChange={setCreateWorkspaceModalOpen}
+        onWorkspaceCreated={() => {
+          setCreateWorkspaceModalOpen(false)
+          // The modal handles navigation
+        }}
+      />
     </>
   )
 }

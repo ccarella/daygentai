@@ -45,6 +45,11 @@ export function CreateWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }:
   const router = useRouter()
   const supabase = createClient()
 
+  // Log modal state changes
+  useEffect(() => {
+    console.log('[CreateWorkspaceModal] Modal state changed:', { open })
+  }, [open])
+
   useEffect(() => {
     if (name) {
       const generatedSlug = generateSlug(name)
@@ -85,6 +90,7 @@ export function CreateWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }:
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('[CreateWorkspaceModal] Form submitted')
     setIsLoading(true)
     setError(null)
 
@@ -186,7 +192,11 @@ export function CreateWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }:
   const isValidForm = name.length >= 3 && validateSlug(slug) && !slugError
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      console.log('[CreateWorkspaceModal] onOpenChange called:', { newOpen })
+      console.trace('[CreateWorkspaceModal] Stack trace for onOpenChange')
+      onOpenChange(newOpen)
+    }}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Create New Workspace</DialogTitle>
@@ -195,7 +205,13 @@ export function CreateWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }:
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" onKeyDown={(e) => {
+          console.log('[CreateWorkspaceModal] Form keydown:', { key: e.key, target: e.target })
+          if (e.key === 'Enter' && e.target instanceof HTMLInputElement && e.target.type !== 'submit') {
+            console.log('[CreateWorkspaceModal] Preventing Enter key submit in input field')
+            e.preventDefault()
+          }
+        }}>
           <div className="space-y-2">
             <Label>Choose a Workspace Avatar (Optional)</Label>
             <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
@@ -222,7 +238,15 @@ export function CreateWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }:
               id="name"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                console.log('[CreateWorkspaceModal] Name input changed:', e.target.value)
+                e.stopPropagation()
+                setName(e.target.value)
+              }}
+              onKeyDown={(e) => {
+                console.log('[CreateWorkspaceModal] Input keydown:', e.key)
+                e.stopPropagation()
+              }}
               placeholder="My Awesome Workspace"
               autoComplete="organization"
               autoCapitalize="words"
@@ -276,7 +300,10 @@ export function CreateWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }:
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => {
+                console.log('[CreateWorkspaceModal] Cancel button clicked')
+                onOpenChange(false)
+              }}
               disabled={isLoading}
             >
               Cancel
