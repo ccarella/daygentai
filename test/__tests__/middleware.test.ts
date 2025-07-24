@@ -173,9 +173,7 @@ describe('middleware', () => {
       // Override the createServerClient mock for this test
       vi.mocked(createServerClient).mockImplementation((_url, _key, options) => {
         // Call setAll with test cookies
-        if (options.cookies?.setAll) {
-          options.cookies.setAll(cookiesToSet)
-        }
+        options?.cookies?.setAll?.(cookiesToSet)
         return mockSupabase
       })
       
