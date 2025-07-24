@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Check, ChevronsUpDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -38,13 +38,24 @@ export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = fa
   const [open, setOpen] = useState(false)
   const [createModalOpen, setCreateModalOpen] = useState(false)
 
+  // Debug logging
+  useEffect(() => {
+    console.log('WorkspaceSwitcher - Popover open:', open, 'Modal open:', createModalOpen)
+  }, [open, createModalOpen])
+
   const handleWorkspaceChange = (slug: string) => {
     if (slug === 'create-new') {
-      setCreateModalOpen(true)
+      setOpen(false)  // Close the popover before opening modal
+      // Use setTimeout to ensure popover is fully closed before opening modal
+      setTimeout(() => {
+        setCreateModalOpen(true)
+      }, 100)
     } else if (!currentWorkspace || slug !== currentWorkspace.slug) {
       router.push(`/${slug}`)
+      setOpen(false)
+    } else {
+      setOpen(false)
     }
-    setOpen(false)
   }
 
   const handleWorkspaceCreated = () => {
@@ -67,7 +78,7 @@ export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = fa
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[240px] p-0" align="start">
-          <Command>
+          <Command shouldFilter={!createModalOpen}>
             <CommandInput placeholder="Search workspace..." />
             <CommandList>
               <CommandEmpty>No workspace found.</CommandEmpty>
@@ -140,7 +151,7 @@ export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = fa
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[280px] p-0" align="start">
-        <Command>
+        <Command shouldFilter={!createModalOpen}>
           <CommandInput placeholder="Search workspace..." />
           <CommandList>
             <CommandEmpty>No workspace found.</CommandEmpty>

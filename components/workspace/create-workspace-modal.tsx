@@ -45,6 +45,11 @@ export function CreateWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }:
   const router = useRouter()
   const supabase = createClient()
 
+  // Debug logging for modal state changes
+  useEffect(() => {
+    console.log('CreateWorkspaceModal open state changed:', open)
+  }, [open])
+
   useEffect(() => {
     if (name) {
       const generatedSlug = generateSlug(name)
@@ -186,8 +191,29 @@ export function CreateWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }:
   const isValidForm = name.length >= 3 && validateSlug(slug) && !slugError
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+    <Dialog 
+      open={open} 
+      onOpenChange={(newOpen) => {
+        console.log('Dialog onOpenChange called:', newOpen, 'Current open:', open)
+        console.trace('onOpenChange call stack')
+        onOpenChange(newOpen)
+      }}
+      modal={true}
+    >
+      <DialogContent 
+        className="sm:max-w-lg"
+        onPointerDownOutside={(e) => {
+          console.log('Dialog clicked outside')
+          e.preventDefault()
+        }}
+        onEscapeKeyDown={() => {
+          console.log('Escape key pressed in dialog')
+        }}
+        onInteractOutside={(e) => {
+          console.log('Dialog interact outside')
+          e.preventDefault()
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Create New Workspace</DialogTitle>
           <DialogDescription>
@@ -222,7 +248,17 @@ export function CreateWorkspaceModal({ open, onOpenChange, onWorkspaceCreated }:
               id="name"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                console.log('Input onChange triggered, value:', e.target.value)
+                setName(e.target.value)
+              }}
+              onKeyDown={(e) => {
+                console.log('Input onKeyDown:', e.key, 'ctrlKey:', e.ctrlKey, 'metaKey:', e.metaKey)
+                e.stopPropagation()
+              }}
+              onFocus={() => {
+                console.log('Input focused')
+              }}
               placeholder="My Awesome Workspace"
               autoComplete="organization"
               autoCapitalize="words"
