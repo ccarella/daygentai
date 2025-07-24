@@ -59,12 +59,13 @@ export async function recommendNextIssueAction(
       return { error: 'Failed to fetch issues' }
     }
 
-    // Get API key from workspace settings, fallback to environment variable
-    const apiKey = workspace.api_key || process.env['OPENAI_API_KEY']
+    // Get API key - prioritize centralized environment variable over workspace settings
     const provider = workspace.api_provider || 'openai'
+    const centralizedKey = process.env[`CENTRALIZED_${provider.toUpperCase()}_API_KEY`]
+    const apiKey = centralizedKey || workspace.api_key
     
     if (!apiKey) {
-      return { error: 'AI recommendation not configured. Please add an OpenAI API key in workspace settings.' }
+      return { error: 'AI recommendation not configured. Please contact support to enable this feature.' }
     }
 
     // Get recommendation (the recommendNextIssue function will filter for 'todo' status)
