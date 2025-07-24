@@ -61,10 +61,50 @@ export async function recommendNextIssueAction(
 
     // Get API key - prioritize centralized environment variable over workspace settings
     const provider = workspace.api_provider || 'openai'
-    const centralizedKey = process.env[`CENTRALIZED_${provider.toUpperCase()}_API_KEY`]
+    
+    // Check for centralized API key first
+    const centralizedOpenAIKey = process.env['CENTRALIZED_OPENAI_API_KEY']
+    const centralizedAnthropicKey = process.env['CENTRALIZED_ANTHROPIC_API_KEY']
+    const centralizedKey = provider === 'anthropic' ? centralizedAnthropicKey : centralizedOpenAIKey
+    
+    // Use centralized key if available, otherwise fall back to workspace key
     const apiKey = centralizedKey || workspace.api_key
     
     if (!apiKey) {
+      // If no workspace provider is set and we have a centralized key, use it
+      if (!workspace.api_provider && (centralizedOpenAIKey || centralizedAnthropicKey)) {
+        const defaultProvider = centralizedOpenAIKey ? 'openai' : 'anthropic'
+        const defaultKey = centralizedOpenAIKey || centralizedAnthropicKey
+        
+        // Use the available centralized key with its corresponding provider
+        const result = await recommendNextIssue(
+          issues, 
+          defaultKey!, // We know defaultKey is defined because of the if condition above
+          defaultProvider as 'openai' | 'anthropic',
+          workspace.agents_content,
+          workspaceId,
+          user.id
+        )
+        
+        if (result.error || !result.recommendedIssue) {
+          return { error: result.error || 'Failed to get recommendation' }
+        }
+
+        const response: RecommendIssueResult = {
+          issueId: result.recommendedIssue.id,
+          title: result.recommendedIssue.title,
+          justification: result.justification,
+          prompt: result.prompt || undefined,
+          issueGeneratedPrompt: result.recommendedIssue.generated_prompt || undefined
+        }
+        
+        if (result.retryCount !== undefined) {
+          response.retryCount = result.retryCount
+        }
+        
+        return response
+      }
+      
       return { error: 'AI recommendation not configured. Please contact support to enable this feature.' }
     }
 
