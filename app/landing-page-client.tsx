@@ -7,6 +7,8 @@ export default function LandingPageClient() {
   return (
     <div style={{ backgroundColor: '#FDF9F4', minHeight: '100vh' }}>
       <div className={styles['container']}>
+        <div className={styles['wordmark']}>DAYGENT</div>
+        
         <header className={styles['header']}>
           <h1>Your AI Development Team, Managed</h1>
           <p className={styles['subtitle']}>
@@ -20,19 +22,19 @@ export default function LandingPageClient() {
         
         <div className={styles['emailSection']}>
           <div className={styles['emailContent']}>
-            <div className={styles['terminalHeader']}>
-              <div className={styles['terminalButtons']}>
-                <span className={styles['terminalButton']} data-color="red"></span>
-                <span className={styles['terminalButton']} data-color="yellow"></span>
-                <span className={styles['terminalButton']} data-color="green"></span>
-              </div>
-              <div className={styles['terminalTitle']}>DAYGENT TERMINAL v2.0</div>
-            </div>
-            <div className={styles['terminalBody']}>
-              <div className={styles['terminalLogo']}>DAYGENT</div>
-              <div className={styles['terminalSubtext']}>SYSTEM ACCESS PORTAL</div>
-              <EmailLogin />
-            </div>
+            <svg 
+              className={styles['loginIcon']} 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="1.5" 
+              viewBox="0 0 24 24" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+            <h2 className={styles['loginTitle']}>Welcome back</h2>
+            <p className={styles['loginSubtitle']}>Sign in to your account to continue</p>
+            <EmailLogin />
           </div>
         </div>
         
