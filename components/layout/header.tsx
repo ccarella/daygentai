@@ -61,7 +61,7 @@ export function Header({ initialProfile, onMenuToggle, isMobileMenuOpen }: Heade
                 )}
               </button>
             )}
-            <Link href="/daygent" className="text-xl font-bold text-foreground">
+            <Link href="/daygent" className="text-xl font-bold text-foreground font-[family-name:var(--font-orbitron)] tracking-[0.15em]">
               Daygent
             </Link>
           </div>

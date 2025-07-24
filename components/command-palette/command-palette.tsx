@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, FileText, /* Inbox, */ Plus, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle, Circle, Loader2, ListTodo, Kanban, Palette, Package, BookOpen } from "lucide-react"
+import { Search, FileText, /* Inbox, */ Plus, Clock, LayoutGrid, Keyboard, Sparkles, CheckCircle, Circle, Loader2, ListTodo, Kanban, Palette, Package /* BookOpen */ } from "lucide-react"
 import { 
   emitIssueStatusUpdate, 
   emitCreateIssueRequest,
@@ -362,6 +362,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       group: "Quick Access"
     })
 
+    /* Go to Recipes command - HIDDEN
     baseCommands.push({
       id: "go-recipes",
       title: "Go to Recipes",
@@ -373,7 +374,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
       },
       keywords: ["navigate", "recipes", "cookbook", "guides", "templates"],
       group: "Quick Access"
-    })
+    }) */
 
     /* Go to Inbox command - hidden for now but preserved for future use
     baseCommands.push({

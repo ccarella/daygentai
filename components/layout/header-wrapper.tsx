@@ -12,7 +12,7 @@ export function HeaderWrapper() {
         <div className="w-full px-4 md:px-6 lg:px-8">
           <div className="flex items-center h-11">
             <div className="flex items-center flex-1">
-              <div className="text-xl font-bold text-foreground">Daygent</div>
+              <div className="text-xl font-bold text-foreground font-[family-name:var(--font-orbitron)] tracking-[0.15em]">Daygent</div>
             </div>
             <div className="flex items-center flex-1 justify-end">
               <div className="w-11 h-11 md:w-10 md:h-10 rounded-full bg-secondary animate-pulse" />
