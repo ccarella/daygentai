@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus, ChevronLeft, ChevronRight, HelpCircle, Settings, Terminal, BookOpen, Search, ListTodo, Kanban, Palette, Package } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, HelpCircle, Settings, Terminal, /* BookOpen, */ Search, ListTodo, Kanban, Palette, Package } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import type { UserWorkspace } from '@/lib/supabase/workspaces'
 import { subscribeToCreateIssueRequests, emitToggleSearch } from '@/lib/events/issue-events'
@@ -55,6 +55,7 @@ export function WorkspaceLayout({
   onNavigateToIssues,
   // @ts-expect-error - Currently hidden but preserved for future use
   onNavigateToInbox,
+  // @ts-expect-error - Currently hidden but preserved for future use
   onNavigateToCookbook,
   onNavigateToSprintBoard,
   onNavigateToDesign,
@@ -301,8 +302,8 @@ export function WorkspaceLayout({
           </Link>
         )}
         
-        {/* Recipes (formerly Cookbook) */}
-        {onNavigateToCookbook ? (
+        {/* Recipes (formerly Cookbook) - HIDDEN */}
+        {/* {onNavigateToCookbook ? (
           <button
             data-sidebar-item
             onClick={onNavigateToCookbook}
@@ -328,7 +329,7 @@ export function WorkspaceLayout({
             <BookOpen className="w-5 h-5" />
             <span>Recipes</span>
           </Link>
-        )}
+        )} */}
         
         {/* Command Palette */}
         <button
@@ -549,8 +550,8 @@ export function WorkspaceLayout({
                   <Package className="w-5 h-5 text-muted-foreground" />
                 </Link>
               )}
-              {/* Recipes */}
-              {onNavigateToCookbook ? (
+              {/* Recipes - HIDDEN */}
+              {/* {onNavigateToCookbook ? (
                 <button
                   onClick={onNavigateToCookbook}
                   className={`p-2 rounded mb-2 transition-colors ${
@@ -574,7 +575,7 @@ export function WorkspaceLayout({
                 >
                   <BookOpen className="w-5 h-5 text-muted-foreground" />
                 </Link>
-              )}
+              )} */}
               <button
                 onClick={() => openWithMode('normal')}
                 className="p-2 rounded mb-2 hover:bg-accent transition-colors"
