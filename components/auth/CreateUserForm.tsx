@@ -45,24 +45,26 @@ export default function CreateUserForm() {
       // Invalidate middleware cache for this user
       if (typeof window !== 'undefined') {
         try {
-          await fetch('/api/cache/invalidate', {
+          const response = await fetch('/api/cache/invalidate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: user.id })
           })
+          
+          // Wait for cache invalidation to be confirmed
+          if (response.ok) {
+            // Add a small delay to ensure cache invalidation propagates
+            await new Promise(resolve => setTimeout(resolve, 100))
+          }
         } catch (cacheError) {
           console.warn('Failed to invalidate cache:', cacheError)
         }
       }
 
-      // Use window.location for a hard refresh to ensure server-side cache is cleared
-      // This prevents the blank screen issue when the server component revalidates
-      if (typeof window !== 'undefined') {
-        window.location.href = '/CreateWorkspace'
-      } else {
-        // Fallback for SSR (shouldn't happen in client component)
-        router.push('/CreateWorkspace')
-      }
+      // Navigate to CreateWorkspace
+      // Using router.push with a refresh to ensure clean navigation
+      router.refresh()
+      router.push('/CreateWorkspace')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {

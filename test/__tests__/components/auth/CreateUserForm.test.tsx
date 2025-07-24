@@ -21,9 +21,11 @@ describe('CreateUserForm', () => {
     ;(createClient as any).mockReturnValue(mockSupabase)
     ;(useRouter as any).mockReturnValue(mockRouter)
     
-    // Mock window.location.href
-    delete (window as any).location
-    window.location = { href: '' } as any
+    // Mock fetch for cache invalidation
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true })
+    })
     
     // Default to authenticated user
     mockSupabase.auth.getUser.mockResolvedValue({
@@ -156,8 +158,9 @@ describe('CreateUserForm', () => {
       const catAvatar = screen.getByRole('button', { name: '🐱' })
       await user.click(catAvatar)
       
-      const saveButton = screen.getByRole('button', { name: 'Save' })
-      await user.click(saveButton)
+      // Submit the form
+      const form = screen.getByText('Complete Your Profile').closest('form')!
+      fireEvent.submit(form)
       
       await waitFor(() => {
         expect(mockSupabase.auth.getUser).toHaveBeenCalled()
@@ -167,7 +170,8 @@ describe('CreateUserForm', () => {
           name: 'Test User',
           avatar_url: '🐱',
         })
-        expect(window.location.href).toBe('/CreateWorkspace')
+        expect(mockRouter.refresh).toHaveBeenCalled()
+        expect(mockRouter.push).toHaveBeenCalledWith('/CreateWorkspace')
       })
     })
 
@@ -305,7 +309,8 @@ describe('CreateUserForm', () => {
       
       await waitFor(() => {
         expect(screen.queryByText('First error')).not.toBeInTheDocument()
-        expect(window.location.href).toBe('/CreateWorkspace')
+        expect(mockRouter.refresh).toHaveBeenCalled()
+        expect(mockRouter.push).toHaveBeenCalledWith('/CreateWorkspace')
       })
     })
   })
