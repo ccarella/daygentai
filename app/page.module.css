@@ -157,8 +157,8 @@
   background: #FFFFFF;
   border-radius: 16px;
   padding: 48px;
-  margin: 48px auto;
-  max-width: 500px;
+  margin: 48px 0;
+  width: 100%;
   position: relative;
   overflow: hidden;
   box-shadow: 
