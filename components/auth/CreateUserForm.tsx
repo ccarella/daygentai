@@ -62,9 +62,8 @@ export default function CreateUserForm() {
       }
 
       // Navigate to CreateWorkspace
-      // Using router.push with a refresh to ensure clean navigation
-      router.refresh()
-      router.push('/CreateWorkspace')
+      // Use replace to prevent back button issues and ensure clean navigation
+      router.replace('/CreateWorkspace')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -96,6 +95,7 @@ export default function CreateUserForm() {
           {AVATAR_OPTIONS.map((avatar) => (
             <button
               key={avatar}
+              type="button"
               onClick={() => setSelectedAvatar(avatar)}
               className={`min-h-[44px] min-w-[44px] p-2 md:p-3 text-2xl rounded-lg border-2 transition-all ${
                 selectedAvatar === avatar

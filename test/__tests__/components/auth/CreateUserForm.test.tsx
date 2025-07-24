@@ -170,8 +170,7 @@ describe('CreateUserForm', () => {
           name: 'Test User',
           avatar_url: '🐱',
         })
-        expect(mockRouter.refresh).toHaveBeenCalled()
-        expect(mockRouter.push).toHaveBeenCalledWith('/CreateWorkspace')
+        expect(mockRouter.replace).toHaveBeenCalledWith('/CreateWorkspace')
       })
     })
 
@@ -309,8 +308,7 @@ describe('CreateUserForm', () => {
       
       await waitFor(() => {
         expect(screen.queryByText('First error')).not.toBeInTheDocument()
-        expect(mockRouter.refresh).toHaveBeenCalled()
-        expect(mockRouter.push).toHaveBeenCalledWith('/CreateWorkspace')
+        expect(mockRouter.replace).toHaveBeenCalledWith('/CreateWorkspace')
       })
     })
   })
