@@ -1,38 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;500;600&family=Orbitron:wght@500;700&display=swap');
 
-.versionToggle {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 4px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-}
-
-.versionToggle button {
-  padding: 8px 16px;
-  border: none;
-  background: transparent;
-  color: #6b7280;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.versionToggle button:hover {
-  background: #f3f4f6;
-}
-
-.activeToggle {
-  background: #2c3e50 !important;
-  color: white !important;
-}
 
 .container {
   max-width: 900px;
@@ -254,16 +221,6 @@
 }
 
 @media (max-width: 768px) {
-  .versionToggle {
-    top: 10px;
-    right: 10px;
-  }
-  
-  .versionToggle button {
-    padding: 6px 12px;
-    font-size: 12px;
-  }
-  
   .container {
     padding: 40px 20px;
   }
