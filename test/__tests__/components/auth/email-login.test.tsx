@@ -38,7 +38,7 @@ describe('EmailLogin', () => {
       
       expect(screen.getByLabelText('Email address')).toBeInTheDocument()
       expect(screen.getByPlaceholderText('you@example.com')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Send login link' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument()
     })
 
     it('has correct input attributes for accessibility', () => {
@@ -57,7 +57,7 @@ describe('EmailLogin', () => {
     it('prevents submission with empty email', async () => {
       render(<EmailLogin />)
       
-      const submitButton = screen.getByRole('button', { name: 'Send login link' })
+      const submitButton = screen.getByRole('button', { name: 'Connect' })
       await user.click(submitButton)
       
       // Browser validation should prevent the form submission
@@ -86,7 +86,7 @@ describe('EmailLogin', () => {
       const emailInput = screen.getByLabelText('Email address')
       await user.type(emailInput, 'test@example.com')
       
-      const submitButton = screen.getByRole('button', { name: 'Send login link' })
+      const submitButton = screen.getByRole('button', { name: 'Connect' })
       await user.click(submitButton)
       
       await waitFor(() => {
@@ -110,7 +110,7 @@ describe('EmailLogin', () => {
       const emailInput = screen.getByLabelText('Email address')
       await user.type(emailInput, 'test@example.com')
       
-      const submitButton = screen.getByRole('button', { name: 'Send login link' })
+      const submitButton = screen.getByRole('button', { name: 'Connect' })
       await user.click(submitButton)
       
       await waitFor(() => {
@@ -131,17 +131,17 @@ describe('EmailLogin', () => {
       const emailInput = screen.getByLabelText('Email address')
       await user.type(emailInput, 'test@example.com')
       
-      const submitButton = screen.getByRole('button', { name: 'Send login link' })
+      const submitButton = screen.getByRole('button', { name: 'Connect' })
       await user.click(submitButton)
       
       // Check loading state
-      expect(screen.getByRole('button', { name: 'Sending...' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Connecting...' })).toBeInTheDocument()
       expect(screen.getByRole('button')).toBeDisabled()
       expect(emailInput).toBeDisabled()
       
       // Wait for completion
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Send login link' })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: 'Connect' })).toBeInTheDocument()
       })
     })
 
@@ -182,7 +182,7 @@ describe('EmailLogin', () => {
       const emailInput = screen.getByLabelText('Email address')
       await user.type(emailInput, 'test@example.com')
       
-      const submitButton = screen.getByRole('button', { name: 'Send login link' })
+      const submitButton = screen.getByRole('button', { name: 'Connect' })
       await user.click(submitButton)
       
       await waitFor(() => {
@@ -202,7 +202,7 @@ describe('EmailLogin', () => {
       const emailInput = screen.getByLabelText('Email address')
       await user.type(emailInput, 'test@example.com')
       
-      const submitButton = screen.getByRole('button', { name: 'Send login link' })
+      const submitButton = screen.getByRole('button', { name: 'Connect' })
       await user.click(submitButton)
       
       await waitFor(() => {
@@ -226,7 +226,7 @@ describe('EmailLogin', () => {
       const emailInput = screen.getByLabelText('Email address')
       await user.type(emailInput, 'test@example.com')
       
-      const submitButton = screen.getByRole('button', { name: 'Send login link' })
+      const submitButton = screen.getByRole('button', { name: 'Connect' })
       await user.click(submitButton)
       
       await waitFor(() => {
@@ -272,7 +272,7 @@ describe('EmailLogin', () => {
       const emailInput = screen.getByLabelText('Email address')
       await user.type(emailInput, 'test+tag@example.com')
       
-      const submitButton = screen.getByRole('button', { name: 'Send login link' })
+      const submitButton = screen.getByRole('button', { name: 'Connect' })
       await user.click(submitButton)
       
       await waitFor(() => {
@@ -300,7 +300,7 @@ describe('EmailLogin', () => {
       const emailInput = screen.getByLabelText('Email address')
       await user.type(emailInput, 'test@example.com')
       
-      const submitButton = screen.getByRole('button', { name: 'Send login link' })
+      const submitButton = screen.getByRole('button', { name: 'Connect' })
       
       // First click
       await user.click(submitButton)
@@ -332,7 +332,7 @@ describe('EmailLogin', () => {
       const emailInput = screen.getByLabelText('Email address')
       await user.type(emailInput, 'test@example.com')
       
-      const submitButton = screen.getByRole('button', { name: 'Send login link' })
+      const submitButton = screen.getByRole('button', { name: 'Connect' })
       await user.click(submitButton)
       
       await waitFor(() => {
