@@ -1,31 +1,6 @@
 import CreateUserForm from '@/components/auth/CreateUserForm'
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 
-export default async function CreateUserPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/')
-  }
-
-  // Check if user already has a profile
-  const { data: existingUser, error } = await supabase
-    .from('users')
-    .select('id')
-    .eq('id', user.id)
-    .maybeSingle()
-
-  // If there's an error fetching the profile, log it but continue
-  if (error) {
-    console.error('Error checking existing user profile:', error)
-  }
-
-  if (existingUser) {
-    redirect('/CreateWorkspace')
-  }
-
+export default function CreateUserPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <CreateUserForm />

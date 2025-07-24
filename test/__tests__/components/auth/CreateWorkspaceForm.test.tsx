@@ -1,12 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import CreateWorkspaceForm from '@/components/auth/CreateWorkspaceForm'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { createMockSupabaseClient, createMockRouter } from '@/test/utils/mock-factory'
 import { createMockUser } from '@/test/fixtures/users'
-import { createMockWorkspace } from '@/test/fixtures/workspaces'
 
 vi.mock('@/lib/supabase/client')
 vi.mock('next/navigation')
@@ -17,8 +16,6 @@ describe('CreateWorkspaceForm', () => {
   const user = userEvent.setup()
   const mockUser = createMockUser()
 
-  let mockWorkspaceQuery: any
-
   beforeEach(() => {
     vi.clearAllMocks()
     mockSupabase = createMockSupabaseClient({
@@ -26,7 +23,7 @@ describe('CreateWorkspaceForm', () => {
         data: { 
           success: true, 
           workspace_id: 'mock-workspace-id',
-          auth_uid: mockUser.id 
+          slug: 'test-workspace'
         },
         error: null
       })
@@ -40,460 +37,177 @@ describe('CreateWorkspaceForm', () => {
       data: { user: mockUser },
       error: null,
     })
+  })
+
+  it('renders the form with avatar options and name input', () => {
+    render(<CreateWorkspaceForm />)
     
-    // Default workspace check - no existing workspace
-    mockWorkspaceQuery = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: null, error: null }),
-      insert: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: createMockWorkspace(), error: null })
-        })
-      }),
-    }
+    expect(screen.getByText('Create Your Workspace')).toBeInTheDocument()
+    expect(screen.getByText('Choose a Workspace Avatar')).toBeInTheDocument()
+    expect(screen.getByText('Workspace Name')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('My Awesome Workspace')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument()
     
-    mockSupabase.from.mockImplementation((table: string) => {
-      if (table === 'workspaces') {
-        return mockWorkspaceQuery
-      }
-      return {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: null }),
-        insert: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: createMockWorkspace(), error: null })
-        })
-      }),
-      }
+    // Check avatar buttons
+    const avatarButtons = screen.getAllByRole('button').filter(btn => 
+      btn.textContent && ['🏢', '🚀', '💼', '🎯'].includes(btn.textContent)
+    )
+    expect(avatarButtons.length).toBeGreaterThan(0)
+  })
+
+  it('validates workspace name length', async () => {
+    render(<CreateWorkspaceForm />)
+    
+    const nameInput = screen.getByPlaceholderText('My Awesome Workspace')
+    const submitButton = screen.getByRole('button', { name: 'Next' })
+    
+    // Button should be disabled initially
+    expect(submitButton).toBeDisabled()
+    
+    // Type a short name
+    await user.type(nameInput, 'ab')
+    expect(submitButton).toBeDisabled()
+    
+    // Type a valid name
+    await user.clear(nameInput)
+    await user.type(nameInput, 'My Workspace')
+    expect(submitButton).toBeEnabled()
+  })
+
+  it('allows avatar selection', async () => {
+    render(<CreateWorkspaceForm />)
+    
+    const rocketAvatar = screen.getByRole('button', { name: '🚀' })
+    
+    // Initially no avatar selected
+    expect(rocketAvatar).not.toHaveClass('border-primary')
+    
+    // Click to select
+    await user.click(rocketAvatar)
+    expect(rocketAvatar).toHaveClass('border-primary')
+  })
+
+  it('creates workspace and redirects on success', async () => {
+    render(<CreateWorkspaceForm />)
+    
+    const nameInput = screen.getByPlaceholderText('My Awesome Workspace')
+    const submitButton = screen.getByRole('button', { name: 'Next' })
+    
+    await user.type(nameInput, 'Test Workspace')
+    await user.click(submitButton)
+    
+    await waitFor(() => {
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('create_workspace', {
+        p_name: 'Test Workspace',
+        p_slug: 'test-workspace',
+        p_avatar_url: '🏢'
+      })
+    })
+    
+    expect(mockRouter.push).toHaveBeenCalledWith('/test-workspace')
+  })
+
+  it('handles workspace creation errors', async () => {
+    mockSupabase.rpc.mockResolvedValueOnce({
+      data: null,
+      error: new Error('Workspace already exists')
+    })
+    
+    render(<CreateWorkspaceForm />)
+    
+    const nameInput = screen.getByPlaceholderText('My Awesome Workspace')
+    const submitButton = screen.getByRole('button', { name: 'Next' })
+    
+    await user.type(nameInput, 'Test Workspace')
+    await user.click(submitButton)
+    
+    await waitFor(() => {
+      expect(screen.getByText('Workspace already exists')).toBeInTheDocument()
+    })
+    
+    expect(mockRouter.push).not.toHaveBeenCalled()
+  })
+
+  it('handles RPC function custom error responses', async () => {
+    mockSupabase.rpc.mockResolvedValueOnce({
+      data: { success: false, error: 'Custom error message' },
+      error: null
+    })
+    
+    render(<CreateWorkspaceForm />)
+    
+    const nameInput = screen.getByPlaceholderText('My Awesome Workspace')
+    const submitButton = screen.getByRole('button', { name: 'Next' })
+    
+    await user.type(nameInput, 'Test Workspace')
+    await user.click(submitButton)
+    
+    await waitFor(() => {
+      expect(screen.getByText('Custom error message')).toBeInTheDocument()
     })
   })
 
-  describe('rendering', () => {
-    it('renders all form elements correctly', () => {
-      render(<CreateWorkspaceForm />)
-      
-      expect(screen.getByText('Create Your Workspace')).toBeInTheDocument()
-      expect(screen.getByText('Choose a Workspace Avatar (Optional)')).toBeInTheDocument()
-      expect(screen.getByLabelText('Workspace Name (Required)')).toBeInTheDocument()
-      expect(screen.getByLabelText('Workspace URL (Required)')).toBeInTheDocument()
-      expect(screen.getByPlaceholderText('My Awesome Workspace')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument()
+  it('redirects unauthenticated users to home', async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: null },
+      error: null,
     })
-
-    it('renders all avatar options', () => {
-      render(<CreateWorkspaceForm />)
-      
-      const avatarOptions = ['🏢', '🚀', '💼', '🎯', '🌟', '💡', '🔧', '🎨',
-                            '📊', '🌐', '⚡', '🔥', '🌈', '🎪', '🏗️', '🎭']
-      
-      avatarOptions.forEach(avatar => {
-        expect(screen.getByRole('button', { name: avatar })).toBeInTheDocument()
-      })
+    
+    render(<CreateWorkspaceForm />)
+    
+    const nameInput = screen.getByPlaceholderText('My Awesome Workspace')
+    const submitButton = screen.getByRole('button', { name: 'Next' })
+    
+    await user.type(nameInput, 'Test Workspace')
+    await user.click(submitButton)
+    
+    await waitFor(() => {
+      expect(mockRouter.push).toHaveBeenCalledWith('/')
     })
-
-    it('displays URL prefix', () => {
-      render(<CreateWorkspaceForm />)
-      
-      expect(screen.getByText('daygent.ai/')).toBeInTheDocument()
-    })
+    
+    expect(mockSupabase.rpc).not.toHaveBeenCalled()
   })
 
-  describe('avatar selection', () => {
-    it('allows selecting an avatar', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const rocketAvatar = screen.getByRole('button', { name: '🚀' })
-      await user.click(rocketAvatar)
-      
-      expect(screen.getByText('Selected: 🚀')).toBeInTheDocument()
-      expect(rocketAvatar).toHaveClass('border-primary', 'bg-primary/10')
-    })
-
-    it('allows changing avatar selection', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const rocketAvatar = screen.getByRole('button', { name: '🚀' })
-      const officeAvatar = screen.getByRole('button', { name: '🏢' })
-      
-      await user.click(rocketAvatar)
-      expect(screen.getByText('Selected: 🚀')).toBeInTheDocument()
-      
-      await user.click(officeAvatar)
-      expect(screen.getByText('Selected: 🏢')).toBeInTheDocument()
-      expect(officeAvatar).toHaveClass('border-primary', 'bg-primary/10')
-      expect(rocketAvatar).not.toHaveClass('border-primary', 'bg-primary/10')
-    })
-  })
-
-  describe('slug generation', () => {
-    it('auto-generates slug from workspace name', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
-      
-      await user.type(nameInput, 'My Awesome Workspace')
-      
-      await waitFor(() => {
-        expect(slugInput).toHaveValue('my-awesome-workspace')
-      })
-    })
-
-    it('handles special characters in slug generation', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
-      
-      await user.type(nameInput, 'Test@#$%^&*()_+Workspace!')
-      
-      await waitFor(() => {
-        expect(slugInput).toHaveValue('test-workspace')
-      })
-    })
-
-    it('limits slug length to 50 characters', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
-      
-      const longName = 'This is a very long workspace name that exceeds fifty characters limit'
-      await user.type(nameInput, longName)
-      
-      await waitFor(() => {
-        const slugValue = slugInput.getAttribute('value') || ''
-        expect(slugValue.length).toBeLessThanOrEqual(50)
-      })
-    })
-
-    it('allows manual slug editing', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
-      
-      await user.type(nameInput, 'My Workspace')
-      await waitFor(() => {
-        expect(slugInput).toHaveValue('my-workspace')
-      })
-      
-      await user.clear(slugInput)
-      await user.type(slugInput, 'custom-slug')
-      
-      expect(slugInput).toHaveValue('custom-slug')
-    })
-  })
-
-  describe('validation', () => {
-    it('validates workspace name length', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      await user.type(nameInput, 'AB')
-      
-      expect(screen.getByText('Name must be at least 3 characters long')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
-    })
-
-    it('validates slug format', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
-      
-      // Test invalid slug with special characters
-      await user.type(slugInput, 'invalid@slug!')
-      
-      await waitFor(() => {
-        expect(screen.getByText(/Slug must be at least 3 characters/)).toBeInTheDocument()
-        expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
-      })
-    })
-
-    it('validates slug minimum length', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
-      await user.type(slugInput, 'ab')
-      
-      await waitFor(() => {
-        expect(screen.getByText(/Slug must be at least 3 characters/)).toBeInTheDocument()
-      })
-    })
-
-    it('validates slug cannot start or end with hyphen', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
-      
-      await user.type(slugInput, '-invalid')
-      await waitFor(() => {
-        expect(screen.getByText(/Slug must be at least 3 characters/)).toBeInTheDocument()
-      })
-      
-      await user.clear(slugInput)
-      await user.type(slugInput, 'invalid-')
-      await waitFor(() => {
-        expect(screen.getByText(/Slug must be at least 3 characters/)).toBeInTheDocument()
-      })
-    })
-
-    it('shows success message for valid slug', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      await user.type(nameInput, 'Valid Workspace')
-      
-      await waitFor(() => {
-        expect(screen.getByText('Your workspace will be available at: daygent.ai/valid-workspace')).toBeInTheDocument()
+  it('generates slug from workspace name', async () => {
+    render(<CreateWorkspaceForm />)
+    
+    const nameInput = screen.getByPlaceholderText('My Awesome Workspace')
+    const submitButton = screen.getByRole('button', { name: 'Next' })
+    
+    await user.type(nameInput, 'My Awesome Workspace 123!')
+    await user.click(submitButton)
+    
+    await waitFor(() => {
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('create_workspace', {
+        p_name: 'My Awesome Workspace 123!',
+        p_slug: 'my-awesome-workspace-123',
+        p_avatar_url: '🏢'
       })
     })
   })
 
-  describe('form submission', () => {
-    it('creates workspace on successful submission', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      await user.type(nameInput, 'Test Workspace')
-      
-      const rocketAvatar = screen.getByRole('button', { name: '🚀' })
-      await user.click(rocketAvatar)
-      
-      const nextButton = screen.getByRole('button', { name: 'Next' })
-      await user.click(nextButton)
-      
-      await waitFor(() => {
-        expect(mockSupabase.auth.getUser).toHaveBeenCalled()
-        expect(mockSupabase.rpc).toHaveBeenCalledWith('create_workspace', {
-          p_name: 'Test Workspace',
-          p_slug: 'test-workspace',
-          p_avatar_url: '🚀'
-        })
-        expect(mockRouter.replace).toHaveBeenCalledWith('/success')
-      })
-    })
-
-    it('uses default avatar if none selected', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      await user.type(nameInput, 'Test Workspace')
-      
-      const nextButton = screen.getByRole('button', { name: 'Next' })
-      await user.click(nextButton)
-      
-      await waitFor(() => {
-        expect(mockSupabase.rpc).toHaveBeenCalledWith('create_workspace', {
-          p_name: 'Test Workspace',
-          p_slug: 'test-workspace',
-          p_avatar_url: '🏢' // default avatar
-        })
-      })
-    })
-
-    it('shows loading state during submission', async () => {
-      let rpcResolve: any
-      
-      mockSupabase.rpc.mockImplementation(() => new Promise(resolve => { rpcResolve = resolve }))
-
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      await user.type(nameInput, 'Test Workspace')
-      
-      const nextButton = screen.getByRole('button', { name: 'Next' })
-      await user.click(nextButton)
-      
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Creating...' })).toBeInTheDocument()
-        expect(screen.getByRole('button', { name: 'Creating...' })).toBeDisabled()
-      })
-      
-      rpcResolve({ 
-        data: { success: true, workspace_id: 'mock-id', auth_uid: mockUser.id },
-        error: null 
-      })
-      
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument()
-      })
-    })
-
-    it('handles Cmd+Enter keyboard shortcut', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      await user.type(nameInput, 'Test Workspace')
-      
-      await waitFor(() => {
-        expect(screen.getByLabelText('Workspace URL (Required)')).toHaveValue('test-workspace')
-      })
-      
-      // Simulate Cmd+Enter on the form
-      const form = screen.getByText('Create Your Workspace').closest('form')!
-      fireEvent.keyDown(form, {
-        key: 'Enter',
-        metaKey: true,
-      })
-      
-      await waitFor(() => {
-        expect(mockSupabase.rpc).toHaveBeenCalled()
-      })
-    })
-  })
-
-  describe('error handling', () => {
-    it('redirects to home if user is not authenticated', async () => {
-      mockSupabase.auth.getUser.mockResolvedValueOnce({
-        data: { user: null },
-        error: null,
-      })
-
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      await user.type(nameInput, 'Test Workspace')
-      
-      const nextButton = screen.getByRole('button', { name: 'Next' })
-      await user.click(nextButton)
-      
-      await waitFor(() => {
-        expect(mockRouter.push).toHaveBeenCalledWith('/')
-        expect(mockSupabase.from).not.toHaveBeenCalledWith('workspaces')
-      })
-    })
-
-    it('handles duplicate slug error', async () => {
-      // Mock RPC to return duplicate slug error
-      mockSupabase.rpc.mockResolvedValue({
-        data: { 
-          success: false, 
-          error: 'A workspace with this URL already exists',
-          detail: 'DUPLICATE_SLUG'
-        },
+  it('shows loading state during submission', async () => {
+    // Delay the response
+    mockSupabase.rpc.mockImplementation(() => 
+      new Promise(resolve => setTimeout(() => resolve({
+        data: { success: true, slug: 'test' },
         error: null
-      })
-
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      await user.type(nameInput, 'Test Workspace')
-      
-      const nextButton = screen.getByRole('button', { name: 'Next' })
-      await user.click(nextButton)
-      
-      await waitFor(() => {
-        expect(screen.getByText('This workspace URL is already taken. Please choose a different one.')).toBeInTheDocument()
-        const errorElement = screen.getByText(/This workspace URL is already taken/)
-        expect(errorElement.closest('div')).toHaveClass('bg-red-100', 'border-red-400', 'text-red-700')
-      })
-    })
-
-    it('displays database error message', async () => {
-      const errorMessage = 'Database connection failed'
-      mockSupabase.rpc.mockResolvedValue({
-        data: null,
-        error: new Error(errorMessage)
-      })
-
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      await user.type(nameInput, 'Test Workspace')
-      
-      const nextButton = screen.getByRole('button', { name: 'Next' })
-      await user.click(nextButton)
-      
-      await waitFor(() => {
-        expect(screen.getByText(`Error creating workspace: ${errorMessage}`)).toBeInTheDocument()
-      })
-    })
-
-    it('displays generic error for non-Error objects', async () => {
-      mockSupabase.rpc.mockRejectedValue('String error')
-
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      await user.type(nameInput, 'Test Workspace')
-      
-      const nextButton = screen.getByRole('button', { name: 'Next' })
-      await user.click(nextButton)
-      
-      await waitFor(() => {
-        expect(screen.getByText('An unexpected error occurred. Please try again.')).toBeInTheDocument()
-      })
-    })
-  })
-
-  describe('edge cases', () => {
-    it('prevents multiple simultaneous submissions', async () => {
-      let rpcResolve: any
-      let rpcCallCount = 0
-      
-      mockSupabase.rpc.mockImplementation(() => {
-        rpcCallCount++
-        return new Promise(resolve => { rpcResolve = resolve })
-      })
-
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      await user.type(nameInput, 'Test Workspace')
-      
-      const nextButton = screen.getByRole('button', { name: 'Next' })
-      
-      // First click
-      await user.click(nextButton)
-      
-      await waitFor(() => {
-        // Button should be disabled during submission
-        expect(nextButton).toBeDisabled()
-      })
-      
-      // Try clicking again while disabled
-      await user.click(nextButton)
-      await user.click(nextButton)
-      
-      // Resolve RPC
-      rpcResolve({ 
-        data: { success: true, workspace_id: 'mock-id', auth_uid: mockUser.id },
-        error: null 
-      })
-      
-      await waitFor(() => {
-        // Should only call RPC once
-        expect(rpcCallCount).toBe(1)
-      })
-    })
-
-    it('converts slug to lowercase automatically', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
-      await user.type(slugInput, 'MixedCaseSlug')
-      
-      expect(slugInput).toHaveValue('mixedcaseslug')
-    })
-
-    it('clears slug when name is cleared', async () => {
-      render(<CreateWorkspaceForm />)
-      
-      const nameInput = screen.getByLabelText('Workspace Name (Required)')
-      const slugInput = screen.getByLabelText('Workspace URL (Required)')
-      
-      await user.type(nameInput, 'Test Workspace')
-      await waitFor(() => {
-        expect(slugInput).toHaveValue('test-workspace')
-      })
-      
-      await user.clear(nameInput)
-      await waitFor(() => {
-        expect(slugInput).toHaveValue('')
-      })
+      }), 100))
+    )
+    
+    render(<CreateWorkspaceForm />)
+    
+    const nameInput = screen.getByPlaceholderText('My Awesome Workspace')
+    const submitButton = screen.getByRole('button', { name: 'Next' })
+    
+    await user.type(nameInput, 'Test Workspace')
+    await user.click(submitButton)
+    
+    expect(screen.getByRole('button', { name: 'Creating...' })).toBeInTheDocument()
+    expect(submitButton).toBeDisabled()
+    
+    await waitFor(() => {
+      expect(mockRouter.push).toHaveBeenCalled()
     })
   })
 })

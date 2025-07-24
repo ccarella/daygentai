@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get('next') || '/workspace'
+  const next = requestUrl.searchParams.get('next') || '/CreateUser'
   
   if (code) {
     const supabase = await createClient()
