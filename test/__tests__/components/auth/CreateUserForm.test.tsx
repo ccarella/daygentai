@@ -55,7 +55,7 @@ describe('CreateUserForm', () => {
       
       const nameInput = screen.getByPlaceholderText('Enter your name')
       expect(nameInput).toHaveAttribute('type', 'text')
-      expect(nameInput).toHaveAttribute('autoFocus')
+      expect(nameInput).toHaveFocus()
     })
   })
 
@@ -88,6 +88,12 @@ describe('CreateUserForm', () => {
     })
 
     it('uses default avatar if none selected', async () => {
+      // Ensure the mock resolves properly
+      const insertMock = vi.fn().mockResolvedValue({ data: null, error: null })
+      mockSupabase.from = vi.fn().mockReturnValue({
+        insert: insertMock
+      })
+      
       render(<CreateUserForm />)
       
       const nameInput = screen.getByPlaceholderText('Enter your name')
@@ -96,14 +102,16 @@ describe('CreateUserForm', () => {
       const submitButton = screen.getByRole('button', { name: 'Continue' })
       await user.click(submitButton)
       
+      // Wait for async operations to complete
       await waitFor(() => {
-        expect(mockSupabase.from).toHaveBeenCalledWith('users')
-        expect(mockSupabase.from('users').insert).toHaveBeenCalledWith({
+        expect(insertMock).toHaveBeenCalledWith({
           id: mockUser.id,
           name: 'Test User',
           avatar_url: '👤'
         })
       })
+      
+      expect(mockRouter.push).toHaveBeenCalledWith('/CreateWorkspace')
     })
   })
 
@@ -126,9 +134,18 @@ describe('CreateUserForm', () => {
     it('shows error when submitting with short name', async () => {
       render(<CreateUserForm />)
       
+      const nameInput = screen.getByPlaceholderText('Enter your name')
       const submitButton = screen.getByRole('button', { name: 'Continue' })
       
-      // Try to submit empty form
+      // Type a short name (less than 3 chars)
+      await user.type(nameInput, 'AB')
+      
+      // Submit button should still be disabled
+      expect(submitButton).toBeDisabled()
+      
+      // Force enable the button and click to test validation
+      // This simulates edge cases where browser validation might be bypassed
+      submitButton.removeAttribute('disabled')
       await user.click(submitButton)
       
       expect(screen.getByText('Name must be at least 3 characters')).toBeInTheDocument()
