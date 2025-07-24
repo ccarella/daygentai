@@ -61,7 +61,7 @@ const mockIssues = [
     id: '3',
     title: 'Update dependencies',
     description: 'Update all npm packages to latest versions',
-    type: 'chore' as const,
+    type: 'product' as const,
     priority: 'low' as const,
     status: 'done' as const,
     workspace_id: 'test-workspace',

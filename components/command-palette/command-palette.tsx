@@ -358,7 +358,7 @@ export function CommandPalette({ workspaceSlug, workspaceId, onCreateIssue, onTo
         setIsOpen(false)
         window.location.href = `/${workspaceSlug}/product`
       },
-      keywords: ["navigate", "product", "non-technical", "business"],
+      keywords: ["navigate", "product", "business"],
       group: "Quick Access"
     })
 
