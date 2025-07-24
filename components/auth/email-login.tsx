@@ -55,7 +55,7 @@ export function EmailLogin() {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto">
+    <div className="w-full max-w-md">
       <form onSubmit={handleLogin} onKeyDown={handleKeyDown} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="email">Email address</Label>
@@ -78,7 +78,7 @@ export function EmailLogin() {
           disabled={loading}
           className="w-full"
         >
-          {loading ? 'Connecting...' : 'Connect'}
+          {loading ? 'Entering...' : 'Enter'}
         </Button>
       </form>
     </div>
