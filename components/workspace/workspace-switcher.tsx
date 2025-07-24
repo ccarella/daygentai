@@ -20,7 +20,6 @@ import {
 } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import type { UserWorkspace } from '@/lib/supabase/workspaces'
-import { CreateWorkspaceModal } from './create-workspace-modal'
 
 interface WorkspaceSwitcherProps {
   currentWorkspace: {
@@ -31,26 +30,26 @@ interface WorkspaceSwitcherProps {
   } | null
   workspaces: UserWorkspace[]
   collapsed?: boolean
+  onRequestCreateWorkspace?: () => void
 }
 
-export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = false }: WorkspaceSwitcherProps) {
+export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = false, onRequestCreateWorkspace }: WorkspaceSwitcherProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [createModalOpen, setCreateModalOpen] = useState(false)
+  
 
   const handleWorkspaceChange = (slug: string) => {
     if (slug === 'create-new') {
-      setCreateModalOpen(true)
+      onRequestCreateWorkspace?.()
+      setOpen(false)
     } else if (!currentWorkspace || slug !== currentWorkspace.slug) {
       router.push(`/${slug}`)
+      setOpen(false)
+    } else {
+      setOpen(false)
     }
-    setOpen(false)
   }
 
-  const handleWorkspaceCreated = () => {
-    // The modal will handle navigation
-    setCreateModalOpen(false)
-  }
 
   if (collapsed) {
     return (
@@ -112,12 +111,6 @@ export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = fa
           </Command>
         </PopoverContent>
       </Popover>
-      
-      <CreateWorkspaceModal 
-        open={createModalOpen}
-        onOpenChange={setCreateModalOpen}
-        onWorkspaceCreated={handleWorkspaceCreated}
-      />
     </>
     )
   }
@@ -187,12 +180,6 @@ export function WorkspaceSwitcher({ currentWorkspace, workspaces, collapsed = fa
         </Command>
       </PopoverContent>
     </Popover>
-    
-    <CreateWorkspaceModal 
-      open={createModalOpen}
-      onOpenChange={setCreateModalOpen}
-      onWorkspaceCreated={handleWorkspaceCreated}
-    />
   </>
   )
 }
