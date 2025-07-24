@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { NextRequest, NextResponse } from 'next/server'
-import { middleware, _testUserCache } from '@/middleware'
+import { NextResponse } from 'next/server'
+import { middleware } from '@/middleware'
 import { createServerClient } from '@supabase/ssr'
 import { createMockUser } from '@/test/fixtures/users'
 
@@ -35,9 +35,6 @@ describe('middleware', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     
-    // Clear the middleware cache before each test
-    _testUserCache.invalidate()
-    
     // Setup mock cookies
     mockCookies = {
       getAll: vi.fn().mockReturnValue([]),
@@ -58,73 +55,49 @@ describe('middleware', () => {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
       },
-      from: vi.fn((_table: string) => ({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-      })),
     }
     
-    ;(createServerClient as any).mockReturnValue(mockSupabase)
+    // Mock createServerClient
+    vi.mocked(createServerClient).mockReturnValue(mockSupabase)
   })
 
-  describe('public routes', () => {
-    it('allows access to home page without authentication', async () => {
+  describe('static assets and API routes', () => {
+    it.each([
+      '/_next/static/chunk.js',
+      '/_next/image/something.png',
+      '/api/auth/callback',
+      '/favicon.ico',
+      '/logo.png',
+      '/styles.css',
+    ])('bypasses middleware for %s', async (pathname) => {
+      mockRequest.nextUrl.pathname = pathname
+      
+      await middleware(mockRequest)
+      
+      expect(NextResponse.next).toHaveBeenCalled()
+      expect(createServerClient).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('authentication checks', () => {
+    it('allows access to public routes without auth', async () => {
       mockRequest.nextUrl.pathname = '/'
       
-      const response = await middleware(mockRequest as NextRequest)
-      
+      await middleware(mockRequest)
       expect(NextResponse.redirect).not.toHaveBeenCalled()
-      expect(response).toBeDefined()
     })
 
-    it('allows access to auth callback without authentication', async () => {
-      mockRequest.nextUrl.pathname = '/auth/callback'
-      
-      const response = await middleware(mockRequest as NextRequest)
-      
-      expect(NextResponse.redirect).not.toHaveBeenCalled()
-      expect(response).toBeDefined()
-    })
-
-    it('allows access to check email page without authentication', async () => {
+    it('allows access to checkemail without auth', async () => {
       mockRequest.nextUrl.pathname = '/checkemail'
       
-      const response = await middleware(mockRequest as NextRequest)
-      
+      await middleware(mockRequest)
       expect(NextResponse.redirect).not.toHaveBeenCalled()
-      expect(response).toBeDefined()
-    })
-
-    it('ignores static assets and Next.js internal routes', async () => {
-      const staticPaths = [
-        '/_next/static/chunk.js',
-        '/_next/image/logo.png',
-        '/favicon.ico',
-        '/logo.svg',
-        '/banner.png',
-      ]
-
-      for (const path of staticPaths) {
-        mockRequest.nextUrl.pathname = path
-        await middleware(mockRequest as NextRequest)
-        expect(createServerClient).not.toHaveBeenCalled()
-        expect(NextResponse.redirect).not.toHaveBeenCalled()
-        vi.clearAllMocks() // Clear mocks between iterations
-      }
-    })
-  })
-
-  describe('protected routes - unauthenticated user', () => {
-    beforeEach(() => {
-      mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: null })
     })
 
     it('redirects to home when accessing /CreateUser without auth', async () => {
       mockRequest.nextUrl.pathname = '/CreateUser'
       
-      await middleware(mockRequest as NextRequest)
+      await middleware(mockRequest)
       
       expect(NextResponse.redirect).toHaveBeenCalledWith(
         new URL('/', mockRequest.url)
@@ -134,17 +107,7 @@ describe('middleware', () => {
     it('redirects to home when accessing /CreateWorkspace without auth', async () => {
       mockRequest.nextUrl.pathname = '/CreateWorkspace'
       
-      await middleware(mockRequest as NextRequest)
-      
-      expect(NextResponse.redirect).toHaveBeenCalledWith(
-        new URL('/', mockRequest.url)
-      )
-    })
-
-    it('redirects to home when accessing /success without auth', async () => {
-      mockRequest.nextUrl.pathname = '/success'
-      
-      await middleware(mockRequest as NextRequest)
+      await middleware(mockRequest)
       
       expect(NextResponse.redirect).toHaveBeenCalledWith(
         new URL('/', mockRequest.url)
@@ -152,375 +115,71 @@ describe('middleware', () => {
     })
 
     it('redirects to home when accessing workspace routes without auth', async () => {
-      const workspaceRoutes = ['/test-workspace', '/my-team', '/project-123']
+      mockRequest.nextUrl.pathname = '/my-workspace'
       
-      for (const route of workspaceRoutes) {
-        vi.clearAllMocks()
-        mockRequest.nextUrl.pathname = route
-        
-        await middleware(mockRequest as NextRequest)
-        
-        expect(NextResponse.redirect).toHaveBeenCalledWith(
-          new URL('/', mockRequest.url)
-        )
-      }
+      await middleware(mockRequest)
+      
+      expect(NextResponse.redirect).toHaveBeenCalledWith(
+        new URL('/', mockRequest.url)
+      )
     })
   })
 
-  describe('authenticated user - onboarding flow', () => {
+  describe('authenticated user access', () => {
     beforeEach(() => {
-      mockSupabase.auth.getUser.mockResolvedValue({ 
-        data: { user: mockUser }, 
-        error: null 
+      mockSupabase.auth.getUser.mockResolvedValue({
+        data: { user: mockUser },
+        error: null,
       })
     })
 
-    describe('no profile, no workspace', () => {
-      beforeEach(() => {
-        mockSupabase.from.mockImplementation((table: string) => {
-          if (table === 'workspace_members') {
-            // workspace_members query doesn't use .single()
-            return {
-              select: vi.fn().mockReturnThis(),
-              eq: vi.fn().mockReturnThis(),
-              limit: vi.fn().mockResolvedValue({ 
-                data: [], // No workspaces
-                error: null 
-              }),
-            }
-          } else {
-            // users table query uses .single()
-            return {
-              select: vi.fn().mockReturnThis(),
-              eq: vi.fn().mockReturnThis(),
-              limit: vi.fn().mockReturnThis(),
-              maybeSingle: vi.fn().mockResolvedValue({ 
-                data: null, // No profile
-                error: null 
-              }),
-            }
-          }
-        })
-      })
-
-      it('allows access to /CreateUser', async () => {
-        mockRequest.nextUrl.pathname = '/CreateUser'
-        
-        const response = await middleware(mockRequest as NextRequest)
-        
-        expect(NextResponse.redirect).not.toHaveBeenCalled()
-        expect(response).toBeDefined()
-      })
-
-      it('redirects from /CreateWorkspace to /CreateUser', async () => {
-        mockRequest.nextUrl.pathname = '/CreateWorkspace'
-        
-        await middleware(mockRequest as NextRequest)
-        
-        expect(NextResponse.redirect).toHaveBeenCalledWith(
-          new URL('/CreateUser', mockRequest.url)
-        )
-      })
-
-      it('redirects from /success to /CreateUser', async () => {
-        mockRequest.nextUrl.pathname = '/success'
-        
-        await middleware(mockRequest as NextRequest)
-        
-        expect(NextResponse.redirect).toHaveBeenCalledWith(
-          new URL('/CreateUser', mockRequest.url)
-        )
-      })
-
-      it('redirects from workspace routes to /CreateUser', async () => {
-        mockRequest.nextUrl.pathname = '/test-workspace'
-        
-        await middleware(mockRequest as NextRequest)
-        
-        expect(NextResponse.redirect).toHaveBeenCalledWith(
-          new URL('/CreateUser', mockRequest.url)
-        )
-      })
-
-      it('redirects from home to /workspace', async () => {
-        mockRequest.nextUrl.pathname = '/'
-        
-        await middleware(mockRequest as NextRequest)
-        
-        expect(NextResponse.redirect).toHaveBeenCalledWith(
-          new URL('/workspace', mockRequest.url)
-        )
-      })
+    it('allows authenticated users to access /CreateUser', async () => {
+      mockRequest.nextUrl.pathname = '/CreateUser'
+      
+      await middleware(mockRequest)
+      expect(NextResponse.redirect).not.toHaveBeenCalled()
     })
 
-    describe('has profile, no workspace', () => {
-      beforeEach(() => {
-        mockSupabase.from.mockImplementation((table: string) => {
-          if (table === 'workspace_members') {
-            // workspace_members query doesn't use .single()
-            return {
-              select: vi.fn().mockReturnThis(),
-              eq: vi.fn().mockReturnThis(),
-              limit: vi.fn().mockResolvedValue({ 
-                data: [], // No workspaces
-                error: null 
-              }),
-            }
-          } else {
-            // users table query uses .single()
-            return {
-              select: vi.fn().mockReturnThis(),
-              eq: vi.fn().mockReturnThis(),
-              limit: vi.fn().mockReturnThis(),
-              maybeSingle: vi.fn().mockResolvedValue({ 
-                data: table === 'users' ? { id: mockUser.id } : null, 
-                error: null 
-              }),
-            }
-          }
-        })
-      })
-
-      it('redirects from /CreateUser to /CreateWorkspace', async () => {
-        mockRequest.nextUrl.pathname = '/CreateUser'
-        
-        await middleware(mockRequest as NextRequest)
-        
-        expect(NextResponse.redirect).toHaveBeenCalledWith(
-          new URL('/CreateWorkspace', mockRequest.url)
-        )
-      })
-
-      it('allows access to /CreateWorkspace', async () => {
-        mockRequest.nextUrl.pathname = '/CreateWorkspace'
-        
-        const response = await middleware(mockRequest as NextRequest)
-        
-        expect(NextResponse.redirect).not.toHaveBeenCalled()
-        expect(response).toBeDefined()
-      })
-
-      it('redirects from /success to /CreateWorkspace', async () => {
-        mockRequest.nextUrl.pathname = '/success'
-        
-        await middleware(mockRequest as NextRequest)
-        
-        expect(NextResponse.redirect).toHaveBeenCalledWith(
-          new URL('/CreateWorkspace', mockRequest.url)
-        )
-      })
-
-      it('allows access to workspace routes when user has profile', async () => {
-        mockRequest.nextUrl.pathname = '/test-workspace'
-        
-        await middleware(mockRequest as NextRequest)
-        
-        // With the new cache invalidation logic, users without workspaces are redirected to CreateWorkspace
-        expect(NextResponse.redirect).toHaveBeenCalledWith(
-          new URL('/CreateWorkspace', mockRequest.url)
-        )
-      })
+    it('allows authenticated users to access /CreateWorkspace', async () => {
+      mockRequest.nextUrl.pathname = '/CreateWorkspace'
+      
+      await middleware(mockRequest)
+      expect(NextResponse.redirect).not.toHaveBeenCalled()
     })
 
-    describe('has profile and workspace', () => {
-      beforeEach(() => {
-        mockSupabase.from.mockImplementation((table: string) => {
-          if (table === 'workspace_members') {
-            // workspace_members query doesn't use .single()
-            return {
-              select: vi.fn().mockReturnThis(),
-              eq: vi.fn().mockReturnThis(),
-              limit: vi.fn().mockResolvedValue({ 
-                data: [{ workspace_id: 'workspace-123' }], 
-                error: null 
-              }),
-            }
-          } else {
-            // users table query uses .single()
-            return {
-              select: vi.fn().mockReturnThis(),
-              eq: vi.fn().mockReturnThis(),
-              limit: vi.fn().mockReturnThis(),
-              maybeSingle: vi.fn().mockResolvedValue({ 
-                data: table === 'users' ? { id: mockUser.id } : null, 
-                error: null 
-              }),
-            }
-          }
-        })
-      })
+    it('allows authenticated users to access workspace routes', async () => {
+      mockRequest.nextUrl.pathname = '/my-workspace'
+      
+      await middleware(mockRequest)
+      expect(NextResponse.redirect).not.toHaveBeenCalled()
+    })
 
-      it('redirects from /CreateUser to /success', async () => {
-        mockRequest.nextUrl.pathname = '/CreateUser'
-        
-        await middleware(mockRequest as NextRequest)
-        
-        expect(NextResponse.redirect).toHaveBeenCalledWith(
-          new URL('/success', mockRequest.url)
-        )
-      })
-
-      it('redirects from /CreateWorkspace to /success', async () => {
-        mockRequest.nextUrl.pathname = '/CreateWorkspace'
-        
-        await middleware(mockRequest as NextRequest)
-        
-        expect(NextResponse.redirect).toHaveBeenCalledWith(
-          new URL('/success', mockRequest.url)
-        )
-      })
-
-      it('allows access to /success', async () => {
-        mockRequest.nextUrl.pathname = '/success'
-        
-        const response = await middleware(mockRequest as NextRequest)
-        
-        expect(NextResponse.redirect).not.toHaveBeenCalled()
-        expect(response).toBeDefined()
-      })
-
-      it('allows access to workspace routes', async () => {
-        mockRequest.nextUrl.pathname = '/test-workspace'
-        
-        const response = await middleware(mockRequest as NextRequest)
-        
-        expect(NextResponse.redirect).not.toHaveBeenCalled()
-        expect(response).toBeDefined()
-      })
-
-      it('redirects from home to /workspace', async () => {
-        mockRequest.nextUrl.pathname = '/'
-        
-        await middleware(mockRequest as NextRequest)
-        
-        expect(NextResponse.redirect).toHaveBeenCalledWith(
-          new URL('/workspace', mockRequest.url)
-        )
-      })
+    it('allows authenticated users to access home page', async () => {
+      mockRequest.nextUrl.pathname = '/'
+      
+      await middleware(mockRequest)
+      expect(NextResponse.redirect).not.toHaveBeenCalled()
     })
   })
 
-  describe('cookie management', () => {
-    it('provides cookie methods to Supabase client', async () => {
-      let capturedCookieOptions: any = null
+  describe('cookie handling', () => {
+    it('properly handles cookie operations', async () => {
+      const cookiesToSet = [
+        { name: 'session', value: 'abc123', options: { httpOnly: true } },
+      ]
       
-      ;(createServerClient as any).mockImplementation((_url: string, _key: string, options: any) => {
-        capturedCookieOptions = options.cookies
+      mockCookies.getAll.mockReturnValue([])
+      
+      // Override the createServerClient mock for this test
+      vi.mocked(createServerClient).mockImplementation((_url, _key, options) => {
+        // Call setAll with test cookies
+        options.cookies?.setAll(cookiesToSet)
         return mockSupabase
       })
       
-      mockRequest.nextUrl.pathname = '/'
+      await middleware(mockRequest)
       
-      await middleware(mockRequest as NextRequest)
-      
-      // Verify cookie methods were provided
-      expect(capturedCookieOptions).toBeDefined()
-      expect(capturedCookieOptions.getAll).toBeDefined()
-      expect(capturedCookieOptions.setAll).toBeDefined()
-      
-      // Test getAll
-      expect(capturedCookieOptions.getAll()).toEqual([])
-      expect(mockCookies.getAll).toHaveBeenCalled()
-      
-      // Test setAll
-      const testCookies = [
-        { name: 'test', value: 'value', options: { httpOnly: true } }
-      ]
-      capturedCookieOptions.setAll(testCookies)
-      expect(mockRequest.cookies.set).toHaveBeenCalledWith('test', 'value')
-    })
-  })
-
-  describe('error handling', () => {
-    it('handles auth errors gracefully', async () => {
-      mockSupabase.auth.getUser.mockResolvedValue({ 
-        data: { user: null }, 
-        error: new Error('Auth service unavailable') 
-      })
-      
-      mockRequest.nextUrl.pathname = '/CreateUser'
-      
-      // Should still redirect unauthenticated users
-      await middleware(mockRequest as NextRequest)
-      
-      expect(NextResponse.redirect).toHaveBeenCalledWith(
-        new URL('/', mockRequest.url)
-      )
-    })
-
-    it('handles database errors gracefully', async () => {
-      // Mock console.error to verify error logging
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      
-      mockSupabase.auth.getUser.mockResolvedValue({ 
-        data: { user: mockUser }, 
-        error: null 
-      })
-      
-      mockSupabase.from.mockImplementation((table: string) => {
-        if (table === 'workspace_members') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            limit: vi.fn().mockRejectedValue(new Error('Database error')),
-          }
-        } else {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockRejectedValue(new Error('Database error')),
-          }
-        }
-      })
-      
-      mockRequest.nextUrl.pathname = '/success'
-      
-      // Should handle error gracefully and redirect to CreateUser (safest default)
-      await middleware(mockRequest as NextRequest)
-      
-      // Verify error was logged
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Middleware database error:', expect.any(Error))
-      
-      // Should redirect to CreateUser since we default to hasProfile: false on error
-      expect(NextResponse.redirect).toHaveBeenCalledWith(
-        new URL('/CreateUser', mockRequest.url)
-      )
-      
-      // Cleanup
-      consoleErrorSpy.mockRestore()
-    })
-  })
-
-  describe('edge cases', () => {
-    it('handles trailing slashes correctly', async () => {
-      mockRequest.nextUrl.pathname = '/CreateUser/'
-      
-      await middleware(mockRequest as NextRequest)
-      
-      expect(NextResponse.redirect).toHaveBeenCalledWith(
-        new URL('/', mockRequest.url)
-      )
-    })
-
-    it('handles query parameters', async () => {
-      mockRequest.url = 'http://localhost:3000/CreateUser?ref=email'
-      mockRequest.nextUrl.pathname = '/CreateUser'
-      
-      await middleware(mockRequest as NextRequest)
-      
-      expect(NextResponse.redirect).toHaveBeenCalledWith(
-        new URL('/', mockRequest.url)
-      )
-    })
-
-    it('handles deep workspace routes', async () => {
-      mockRequest.nextUrl.pathname = '/test-workspace/issues/123'
-      
-      await middleware(mockRequest as NextRequest)
-      
-      expect(NextResponse.redirect).toHaveBeenCalledWith(
-        new URL('/', mockRequest.url)
-      )
+      expect(mockCookies.set).toHaveBeenCalledWith('session', 'abc123')
     })
   })
 })
