@@ -25,6 +25,7 @@ interface Issue {
   created_by: string
   assignee_id: string | null
   workspace_id: string
+  position: number
 }
 
 interface IssueWithCreator extends Issue {

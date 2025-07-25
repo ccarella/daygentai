@@ -121,7 +121,7 @@ async function handlePATCH(
     }
 
     // Build update object from validated data
-    const updateData: Record<string, string | null | undefined> = {
+    const updateData: Record<string, string | number | null | undefined> = {
       ...validatedData,
       updated_at: new Date().toISOString()
     }

@@ -6,6 +6,7 @@ import { useIssueCache } from '@/contexts/issue-cache-context'
 import { formatDistanceToNow } from 'date-fns'
 import { KanbanBoardSkeleton } from './kanban-skeleton'
 import { Tag as TagComponent } from '@/components/ui/tag'
+import { useToast } from '@/components/ui/use-toast'
 // Navigation is now handled by useWorkspaceNavigation in the parent component
 
 interface TagData {
@@ -25,6 +26,7 @@ interface Issue {
   created_by: string
   assignee_id: string | null
   workspace_id: string
+  position: number
   creator?: {
     name: string
     avatar_url?: string | null
@@ -88,11 +90,13 @@ export function KanbanBoard({
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const supabase = createClient()
+  const { toast } = useToast()
   const { preloadIssues, updateIssue: updateCachedIssue } = useIssueCache()
   const loadingMoreRef = useRef(false)
   const kanbanContainerRef = useRef<HTMLDivElement>(null)
   const preloadedIssuesRef = useRef<Set<string>>(new Set())
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [draggedIssue, setDraggedIssue] = useState<Issue | null>(null)
 
   const fetchIssues = useCallback(async (pageNum: number, append = false) => {
     if (loadingMoreRef.current && append) return
@@ -215,11 +219,14 @@ export function KanbanBoard({
         case 'tag':
           // For tag sorting, we'll need to sort client-side after fetching
           // since Supabase doesn't support ordering by joined table data directly
-          query = query.order('created_at', { ascending: false })
+          query = query.order('position', { ascending: true })
           break
         case 'newest':
-        default:
           query = query.order('created_at', { ascending: false })
+          break
+        default:
+          // Default to position-based ordering for custom sort
+          query = query.order('position', { ascending: true })
           break
       }
       
@@ -306,41 +313,131 @@ export function KanbanBoard({
     fetchIssues(nextPage, true)
   }
 
-  const handleDragStart = (e: React.DragEvent, issueId: string) => {
-    e.dataTransfer.setData('issueId', issueId)
+  const handleDragStart = (e: React.DragEvent, issue: Issue) => {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', issue.id)
+    setDraggedIssue(issue)
+    
+    // Add drag image styling
+    if (e.dataTransfer.setDragImage && e.currentTarget instanceof HTMLElement) {
+      const dragImage = e.currentTarget.cloneNode(true) as HTMLElement
+      dragImage.style.opacity = '0.8'
+      dragImage.style.transform = 'rotate(2deg)'
+      document.body.appendChild(dragImage)
+      e.dataTransfer.setDragImage(dragImage, e.clientX - e.currentTarget.getBoundingClientRect().left, e.clientY - e.currentTarget.getBoundingClientRect().top)
+      setTimeout(() => document.body.removeChild(dragImage), 0)
+    }
+  }
+
+  const handleDragEnd = () => {
+    setDraggedIssue(null)
   }
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
   }
 
-  const handleDrop = async (e: React.DragEvent, newStatus: string) => {
+  const handleDrop = async (e: React.DragEvent, targetStatus: string, targetIndex?: number) => {
     e.preventDefault()
-    const issueId = e.dataTransfer.getData('issueId')
+    
+    if (!draggedIssue) return
+    
+    const statusChanged = draggedIssue.status !== targetStatus
+    const columnIssues = getIssuesByStatus(targetStatus)
+    
+    // Calculate new position
+    let newPosition: number
+    if (targetIndex !== undefined && columnIssues.length > 0) {
+      // Dropped on a specific card
+      if (targetIndex === 0) {
+        newPosition = columnIssues[0]?.position ? columnIssues[0].position / 2 : 512
+      } else if (targetIndex >= columnIssues.length) {
+        const lastIssue = columnIssues[columnIssues.length - 1]
+        newPosition = lastIssue?.position ? lastIssue.position + 1024 : columnIssues.length * 1024
+      } else {
+        const prevIssue = columnIssues[targetIndex - 1]
+        const nextIssue = columnIssues[targetIndex]
+        const prevPos = prevIssue?.position || targetIndex * 1024
+        const nextPos = nextIssue?.position || (targetIndex + 1) * 1024
+        newPosition = (prevPos + nextPos) / 2
+      }
+    } else {
+      // Dropped on empty column or at the end
+      if (columnIssues.length > 0) {
+        const lastIssue = columnIssues[columnIssues.length - 1]
+        newPosition = lastIssue?.position ? lastIssue.position + 1024 : columnIssues.length * 1024
+      } else {
+        newPosition = 1024
+      }
+    }
+    
+    // Optimistically update UI
+    const updatedIssue = { ...draggedIssue, status: targetStatus as Issue['status'], position: newPosition }
+    setIssues(prev => {
+      const filtered = prev.filter(issue => issue.id !== draggedIssue.id)
+      return [...filtered, updatedIssue].sort((a, b) => a.position - b.position)
+    })
     
     try {
-      const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${issueId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      })
+      // Update status if changed
+      if (statusChanged) {
+        const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/${draggedIssue.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status: targetStatus, position: newPosition }),
+        })
 
-      if (!response.ok) {
-        console.error('Failed to update issue status')
-        return
+        if (!response.ok) {
+          throw new Error('Failed to update issue')
+        }
+        
+        // Update cache
+        updateCachedIssue(draggedIssue.id, { status: targetStatus as Issue['status'] })
+        
+        toast({
+          title: 'Issue moved',
+          description: `Issue moved to ${columns.find(c => c.id === targetStatus)?.title}`,
+        })
+      } else {
+        // Only position changed
+        const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/update-positions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            updates: [{ id: draggedIssue.id, position: newPosition }] 
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to update position')
+        }
+        
+        toast({
+          title: 'Issue reordered',
+          description: 'The issue order has been updated.',
+        })
       }
-
-      setIssues(prev => prev.map(issue => 
-        issue.id === issueId ? { ...issue, status: newStatus as Issue['status'] } : issue
-      ))
-      
-      // Update cache to maintain consistency across components
-      updateCachedIssue(issueId, { status: newStatus as Issue['status'] })
     } catch (error) {
-      console.error('Error updating issue status:', error)
+      // Revert on error
+      console.error('Error updating issue:', error)
+      setIssues(prev => {
+        const filtered = prev.filter(issue => issue.id !== draggedIssue.id)
+        return [...filtered, draggedIssue].sort((a, b) => a.position - b.position)
+      })
+      
+      toast({
+        title: 'Failed to update',
+        description: 'There was an error updating the issue. Please try again.',
+        variant: 'destructive',
+      })
     }
+    
+    setDraggedIssue(null)
   }
 
   const getIssuesByStatus = (status: string) => {
@@ -460,8 +557,6 @@ export function KanbanBoard({
             <div
               key={column.id}
               className="flex-shrink-0 w-72"
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, column.id)}
             >
               <div className={`${column.color} rounded-t-lg p-3 border border-b-0`}>
                 <h3 className="font-medium text-foreground">
@@ -474,23 +569,33 @@ export function KanbanBoard({
               
               <div 
                 className="bg-muted border border-t-0 rounded-b-lg min-h-[400px] max-h-[calc(100vh-300px)] overflow-y-auto p-2 space-y-2"
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, column.id)}
               >
                 {columnIssues.length === 0 ? (
                   <p className="text-muted-foreground text-sm text-center py-8">
                     No issues
                   </p>
                 ) : (
-                  columnIssues.map(issue => (
+                  columnIssues.map((issue, index) => (
                     <div
                       key={issue.id}
                       data-issue-card
                       data-issue-id={issue.id}
                       draggable
-                      onDragStart={(e) => handleDragStart(e, issue.id)}
+                      onDragStart={(e) => handleDragStart(e, issue)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => {
+                        e.stopPropagation()
+                        handleDrop(e, column.id, index)
+                      }}
                       onClick={() => onIssueClick(issue.id)}
                       onMouseEnter={() => handleMouseEnter(issue.id)}
                       onMouseLeave={handleMouseLeave}
-                      className="bg-card p-3 rounded-lg border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                      className={`bg-card p-3 rounded-lg border shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                        draggedIssue?.id === issue.id ? 'opacity-50' : ''
+                      }`}
                     >
                       <h4 className="font-medium text-foreground mb-2 line-clamp-2">
                         {issue.title}

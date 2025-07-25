@@ -8,6 +8,9 @@ import { useIssueCache, type ListCacheKey } from '@/contexts/issue-cache-context
 import { stripMarkdown } from '@/lib/markdown-utils'
 import { IssueListSkeleton } from './issue-skeleton'
 import { Tag as TagComponent } from '@/components/ui/tag'
+import { useSortableList } from '@/hooks/use-sortable-list'
+import { GripVertical } from 'lucide-react'
+import { useToast } from '@/components/ui/use-toast'
 // Navigation is now handled by useWorkspaceNavigation in the parent component
 
 interface TagData {
@@ -26,6 +29,7 @@ interface Issue {
   created_at: string
   created_by: string
   assignee_id: string | null
+  position: number
   issue_tags?: Array<{ tags: TagData }>
   creator?: {
     name: string
@@ -105,6 +109,7 @@ export function IssuesList({
   onSearchingChange
 }: IssuesListProps) {
   const router = useRouter()
+  const { toast } = useToast()
   const { preloadIssues, getListCache, setListCache } = useIssueCache()
   const [issues, setIssues] = useState<Issue[]>([])
   const [initialLoading, setInitialLoading] = useState(true)
@@ -122,6 +127,55 @@ export function IssuesList({
   const listContainerRef = useRef<HTMLDivElement>(null)
   const preloadTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Handle position updates
+  const handleReorder = useCallback(async (updates: { id: string; position: number }[]) => {
+    try {
+      const response = await fetch(`/api/workspaces/${workspaceSlug}/issues/update-positions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ updates }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update positions')
+      }
+
+      toast({
+        title: 'Issues reordered',
+        description: 'The issue order has been updated.',
+      })
+    } catch (error) {
+      console.error('Failed to reorder issues:', error)
+      toast({
+        title: 'Failed to reorder',
+        description: 'There was an error updating the issue order. Please try again.',
+        variant: 'destructive',
+      })
+      throw error // Re-throw to trigger revert in the hook
+    }
+  }, [workspaceSlug, toast])
+
+  // Initialize sortable list hook
+  const {
+    items: sortableIssues,
+    getDragHandleProps,
+    getDropZoneProps,
+    draggedItemId,
+    dragOverIndex
+  } = useSortableList({
+    items: issues,
+    getItemId: (issue) => issue.id,
+    onReorder: handleReorder,
+    onError: (error) => {
+      console.error('Drag and drop error:', error)
+    }
+  })
+
+  // Check if drag and drop should be enabled
+  const isDragEnabled = sortBy === '' && !searchQuery && !initialLoading
 
   const fetchIssues = useCallback(async (pageNum: number, append = false, skipCache = false) => {
     if (isLoadingRef.current && !skipCache) return { issues: [], hasMore: false, totalCount: 0 }
@@ -332,11 +386,14 @@ export function IssuesList({
       case 'tag':
         // For tag sorting, we'll need to sort client-side after fetching
         // since Supabase doesn't support ordering by joined table data directly
-        query = query.order('created_at', { ascending: false })
+        query = query.order('position', { ascending: true })
         break
       case 'newest':
-      default:
         query = query.order('created_at', { ascending: false })
+        break
+      default:
+        // Default to position-based ordering for custom sort
+        query = query.order('position', { ascending: true })
         break
     }
 
@@ -713,18 +770,26 @@ export function IssuesList({
         
         {/* Header with count */}
         <div className="px-6 py-4 border-b border-border">
-          <h2 className="text-sm font-medium text-muted-foreground">
-            {totalCount > 0 && issues.length < totalCount ? (
-              <>Showing {issues.length} of {totalCount} {totalCount === 1 ? 'issue' : 'issues'}</>
-            ) : (
-              <>{issues.length} {issues.length === 1 ? 'issue' : 'issues'}</>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-muted-foreground">
+              {totalCount > 0 && issues.length < totalCount ? (
+                <>Showing {issues.length} of {totalCount} {totalCount === 1 ? 'issue' : 'issues'}</>
+              ) : (
+                <>{issues.length} {issues.length === 1 ? 'issue' : 'issues'}</>
+              )}
+            </h2>
+            {isDragEnabled && issues.length > 1 && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <GripVertical className="h-3 w-3" />
+                Drag to reorder
+              </p>
             )}
-          </h2>
+          </div>
         </div>
         
         {/* Issues List */}
         <div className="divide-y divide-border">
-          {issues.map((issue) => (
+          {sortableIssues.map((issue, index) => (
             <div
               key={issue.id}
               data-issue-row
@@ -734,11 +799,14 @@ export function IssuesList({
                   observerRef.current.observe(el)
                 }
               }}
-              className="px-6 py-4 hover:bg-accent cursor-pointer transition-colors"
+              {...(isDragEnabled ? getDropZoneProps(index) : {})}
+              className={`px-6 py-4 hover:bg-accent cursor-pointer transition-colors flex items-start gap-3 ${
+                dragOverIndex === index ? 'bg-accent' : ''
+              } ${draggedItemId === issue.id ? 'opacity-50' : ''}`}
               onClick={(e) => {
                 // Prevent event from bubbling if clicking on interactive elements
                 const target = e.target as HTMLElement
-                if (target.tagName === 'A' || target.tagName === 'BUTTON') {
+                if (target.tagName === 'A' || target.tagName === 'BUTTON' || target.getAttribute('data-drag-handle')) {
                   return
                 }
                 
@@ -751,6 +819,16 @@ export function IssuesList({
               onMouseEnter={() => handleMouseEnter(issue.id)}
               onMouseLeave={handleMouseLeave}
             >
+              {/* Drag Handle */}
+              {isDragEnabled && (
+                <div
+                  {...getDragHandleProps(issue, index)}
+                  className="flex-shrink-0 pt-1 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <GripVertical className="h-4 w-4" />
+                </div>
+              )}
+              
               {/* Issue Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3">

@@ -17,6 +17,7 @@ export interface IssueUpdateData {
   title?: string
   description?: string
   generated_prompt?: string
+  position?: number
 }
 
 /**
@@ -108,6 +109,17 @@ export function validateIssueUpdate(
     }
   }
 
+  // Validate position
+  if ('position' in input) {
+    if (typeof input['position'] !== 'number') {
+      errors.push('position must be a number')
+    } else if (!isFinite(input['position'])) {
+      errors.push('position must be a finite number')
+    } else {
+      validated.position = input['position']
+    }
+  }
+
   // Check for any validation errors
   if (errors.length > 0) {
     return {
@@ -115,7 +127,7 @@ export function validateIssueUpdate(
       error: createValidationError('Invalid issue data', {
         errors,
         providedFields: Object.keys(input),
-        validFields: ['status', 'type', 'priority', 'title', 'description', 'generated_prompt']
+        validFields: ['status', 'type', 'priority', 'title', 'description', 'generated_prompt', 'position']
       })
     }
   }
@@ -126,7 +138,7 @@ export function validateIssueUpdate(
       valid: false,
       error: createValidationError('No valid fields to update', {
         message: 'Provide at least one field to update',
-        validFields: ['status', 'type', 'priority', 'title', 'description', 'generated_prompt']
+        validFields: ['status', 'type', 'priority', 'title', 'description', 'generated_prompt', 'position']
       })
     }
   }
