@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { LLMProxyService } from '@/lib/llm/proxy/llm-proxy-service'
+import { withTimeout } from '@/lib/middleware/timeout'
+import { withRateLimit } from '@/lib/middleware/rate-limit'
 
 interface GeneratePromptRequest {
   title: string
@@ -206,6 +208,27 @@ ${workspace.agents_content}` : ''}`
   }
 }
 
-// Export the handler directly for now to debug the issue
-// TODO: Re-enable timeout protection after fixing the API issue
-export const POST = handlePOST
+// Apply rate limiting and timeout protection
+// Rate limits: 10 requests per minute, 100 per hour, 1000 per day
+export const POST = withRateLimit(
+  withTimeout(handlePOST, { timeoutMs: 30000 }),
+  {
+    limits: {
+      minuteLimit: 10,
+      hourLimit: 100,
+      dayLimit: 1000
+    },
+    errorMessage: 'Too many prompt generation requests. Please try again later.',
+    // Custom workspace ID extractor that doesn't consume the request body
+    getWorkspaceId: (req: NextRequest) => {
+      // First try query params
+      const { searchParams } = new URL(req.url)
+      const workspaceId = searchParams.get('workspaceId')
+      
+      // For this endpoint, workspace ID is always in the body
+      // But we can't extract it here without consuming the stream
+      // So we'll let the default behavior handle it
+      return workspaceId
+    }
+  }
+)

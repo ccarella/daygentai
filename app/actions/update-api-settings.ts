@@ -10,6 +10,59 @@ interface UpdateApiSettingsParams {
   agentsContent: string
 }
 
+async function validateApiKey(apiKey: string, provider: string): Promise<{ valid: boolean; error?: string }> {
+  try {
+    if (provider === 'openai') {
+      // Test the OpenAI API key with a minimal request
+      const response = await fetch('https://api.openai.com/v1/models', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`
+        }
+      })
+      
+      if (!response.ok) {
+        const data = await response.json()
+        return { 
+          valid: false, 
+          error: data.error?.message || `Invalid API key (${response.status})`
+        }
+      }
+      
+      return { valid: true }
+    } else if (provider === 'anthropic') {
+      // Test the Anthropic API key
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-haiku-20240307',
+          messages: [{ role: 'user', content: 'Hi' }],
+          max_tokens: 1
+        })
+      })
+      
+      if (response.status === 401) {
+        return { valid: false, error: 'Invalid API key' }
+      }
+      
+      // Other errors (like rate limits) don't mean the key is invalid
+      return { valid: true }
+    }
+    
+    // For unknown providers, skip validation
+    return { valid: true }
+  } catch (error) {
+    console.error('Error validating API key:', error)
+    // Network errors don't mean the key is invalid
+    return { valid: true }
+  }
+}
+
 export async function updateApiSettings({
   workspaceId,
   apiKey,
@@ -40,6 +93,14 @@ export async function updateApiSettings({
     // Only owners and admins can update API settings
     if (member.role !== 'owner' && member.role !== 'admin') {
       return { error: 'Only workspace owners and admins can update API settings' }
+    }
+
+    // Validate the API key if provided
+    if (apiKey && apiProvider) {
+      const validation = await validateApiKey(apiKey, apiProvider)
+      if (!validation.valid) {
+        return { error: validation.error || 'Invalid API key' }
+      }
     }
 
     // Encrypt the API key if provided
