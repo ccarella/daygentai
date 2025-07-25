@@ -22,7 +22,7 @@ export default function LandingPageClient() {
         
         <div className={styles['emailSection']}>
           <div className={styles['emailContent']}>
-            <h2 className={styles['loginTitle']}>LOG IN</h2>
+            <h2 className={styles['loginTitle']}>LOGIN</h2>
             <EmailLogin />
           </div>
         </div>
