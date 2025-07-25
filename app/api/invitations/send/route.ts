@@ -77,19 +77,33 @@ export async function POST(request: Request) {
       </div>
     ` */
 
-    // Log the email for now (in production, send via email service)
-    console.log('Sending invitation email to:', email)
+    // Send invitation email
+    // NOTE: To enable email sending:
+    // 1. Install Resend: npm install resend
+    // 2. Get an API key from https://resend.com
+    // 3. Add RESEND_API_KEY to your .env.local
+    // 4. Uncomment the import and function call below
+    
+    // import { sendInvitationEmail } from '@/lib/email/resend-implementation'
+    
+    // const emailResult = await sendInvitationEmail({
+    //   to: email,
+    //   inviterName: inviter.name || inviter.email || 'A team member',
+    //   workspaceName: workspace.name,
+    //   inviteUrl,
+    //   role,
+    //   personalMessage
+    // })
+    
+    // if (!emailResult.success) {
+    //   console.error('Failed to send invitation email:', emailResult.error)
+    //   // Note: We don't fail the invitation creation if email fails
+    //   // The invitation is still valid and can be shared manually
+    // }
+    
+    // For development, log the invitation URL
+    console.log('Invitation created for:', email)
     console.log('Invitation URL:', inviteUrl)
-
-    // In a real implementation, you would send the email here using a service like:
-    // - Resend
-    // - SendGrid
-    // - AWS SES
-    // - Postmark
-    // etc.
-
-    // For now, we'll just return success
-    // The user can still accept the invitation by navigating to the URL manually
     return NextResponse.json({ 
       success: true, 
       message: 'Invitation created successfully',
