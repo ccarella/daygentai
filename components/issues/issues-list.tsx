@@ -673,21 +673,45 @@ export function IssuesList({
   }
 
   if (issues.length === 0 && !initialLoading && !isSearching) {
+    // Check if filters are at their default values
+    const isDefaultFilters = statusFilter === 'exclude_done' && priorityFilter === 'all' && typeFilter === 'all' && tagFilter === 'all'
+    
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-          <div className="mb-6 flex justify-center">
-            <svg className="w-24 h-24 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+      <div className="flex-1 flex flex-col items-center justify-center p-6">
+        {!isDefaultFilters ? (
+          // Show normal empty state when filters have been changed from defaults
+          <div className="text-center">
+            <div className="mb-6 flex justify-center">
+              <svg className="w-24 h-24 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-2">No issues found</h3>
+            <p className="text-sm text-muted-foreground">
+              Try adjusting your filters
+            </p>
           </div>
-          <h3 className="text-lg font-medium text-foreground mb-2">No issues found</h3>
-          <p className="text-sm text-muted-foreground">
-            {statusFilter !== 'all' || priorityFilter !== 'all' || typeFilter !== 'all' || tagFilter !== 'all'
-              ? 'Try adjusting your filters' 
-              : 'Create your first issue to get started'}
-          </p>
-        </div>
+        ) : (
+          // Show YouTube video when no filters are active and no issues exist
+          <div className="w-full max-w-4xl">
+            <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+              <iframe
+                className="absolute top-0 left-0 w-full h-full rounded-lg shadow-lg"
+                src="https://www.youtube.com/embed/Y71kISHrNLE"
+                title="Getting Started with Daygent"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+            <div className="mt-6 text-center">
+              <h3 className="text-lg font-medium text-foreground mb-2">Welcome to Daygent!</h3>
+              <p className="text-sm text-muted-foreground">
+                Watch this video to learn how to get started, or create your first issue above.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
