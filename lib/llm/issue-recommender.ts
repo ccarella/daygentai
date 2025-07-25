@@ -1,5 +1,6 @@
 import { handleApiError, handleAIError } from '@/lib/error-handler'
 import { LLMProxyService } from '@/lib/llm/proxy/llm-proxy-service'
+export { prioritizeTasks } from './task-prioritizer'
 
 interface Issue {
   id: string
