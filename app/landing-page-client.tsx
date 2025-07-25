@@ -3,7 +3,7 @@
 import { EmailLogin } from '@/components/auth/email-login';
 import styles from './page.module.css';
 
-export default function LandingPageClient() {
+export default function LandingPageClient({ returnUrl }: { returnUrl?: string | undefined }) {
   return (
     <div style={{ backgroundColor: '#FDF9F4', minHeight: '100vh' }}>
       <div className={styles['container']}>
@@ -23,7 +23,7 @@ export default function LandingPageClient() {
         <div className={styles['emailSection']}>
           <div className={styles['emailContent']}>
             <h2 className={styles['loginTitle']}>LOGIN</h2>
-            <EmailLogin />
+            <EmailLogin returnUrl={returnUrl} />
           </div>
         </div>
         

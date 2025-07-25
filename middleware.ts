@@ -53,10 +53,14 @@ export async function middleware(request: NextRequest) {
     !pathname.startsWith('/auth') && 
     !pathname.startsWith('/CreateUser') && 
     !pathname.startsWith('/CreateWorkspace') && 
-    !pathname.startsWith('/checkemail')
+    !pathname.startsWith('/checkemail') &&
+    !pathname.startsWith('/invite')
+
+  // Allow invite routes to be accessed without auth (they handle auth internally)
+  const isInviteRoute = pathname.startsWith('/invite')
 
   // If accessing protected route or workspace without auth, redirect to home
-  if ((isProtectedRoute || isWorkspaceRoute) && !user) {
+  if ((isProtectedRoute || isWorkspaceRoute) && !user && !isInviteRoute) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 

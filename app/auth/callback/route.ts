@@ -5,6 +5,7 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const next = requestUrl.searchParams.get('next')
+  const returnUrl = requestUrl.searchParams.get('returnUrl')
   
   if (code) {
     const supabase = await createClient()
@@ -13,6 +14,11 @@ export async function GET(request: Request) {
     if (error) {
       console.error('Auth error:', error)
       return NextResponse.redirect(`${requestUrl.origin}/?error=auth_failed`)
+    }
+
+    // If returnUrl is provided (for invite flow), use it
+    if (returnUrl) {
+      return NextResponse.redirect(`${requestUrl.origin}${returnUrl}`)
     }
 
     // If next parameter is provided, use it

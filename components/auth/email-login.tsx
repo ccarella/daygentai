@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-export function EmailLogin() {
+export function EmailLogin({ returnUrl }: { returnUrl?: string | undefined }) {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -22,7 +22,10 @@ export function EmailLogin() {
       // Use NEXT_PUBLIC_SITE_URL if set (for specific environments), 
       // otherwise use window.location.origin (for dynamic environments like Vercel previews)
       const baseUrl = process.env['NEXT_PUBLIC_SITE_URL'] || window.location.origin
-      const redirectURL = `${baseUrl}/auth/callback`
+      let redirectURL = `${baseUrl}/auth/callback`
+      if (returnUrl) {
+        redirectURL += `?returnUrl=${encodeURIComponent(returnUrl)}`
+      }
       const { error } = await signInWithMagicLink(email, redirectURL)
 
       if (error) throw error

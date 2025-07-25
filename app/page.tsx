@@ -4,13 +4,15 @@ import { getUserWorkspaces } from '@/lib/supabase/workspaces'
 import LandingPageClient from './landing-page-client'
 
 export default async function Home(props: {
-  searchParams: Promise<{ code?: string }>
+  searchParams: Promise<{ code?: string; returnUrl?: string }>
 }) {
   const searchParams = await props.searchParams
   
   // If there's an auth code in the URL, redirect to the callback route
   if (searchParams.code) {
-    redirect(`/auth/callback?code=${searchParams.code}`)
+    const callbackUrl = `/auth/callback?code=${searchParams.code}`
+    const finalUrl = searchParams.returnUrl ? `${callbackUrl}&returnUrl=${encodeURIComponent(searchParams.returnUrl)}` : callbackUrl
+    redirect(finalUrl)
   }
   
   // Check if user is authenticated
@@ -46,5 +48,5 @@ export default async function Home(props: {
     redirect('/CreateWorkspace')
   }
   
-  return <LandingPageClient />;
+  return <LandingPageClient returnUrl={searchParams.returnUrl} />;
 }
