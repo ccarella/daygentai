@@ -464,7 +464,7 @@ export const WorkspaceContent = forwardRef<WorkspaceContentRef, WorkspaceContent
               
               {/* Search hint when search is hidden */}
               {!isSearchVisible && !debouncedSearchQuery && (
-                <div className="text-sm text-muted-foreground">
+                <div className="hidden sm:block text-sm text-muted-foreground">
                   Press <kbd className="px-1.5 py-0.5 text-xs bg-muted border border-border rounded">/</kbd> to search
                 </div>
               )}
