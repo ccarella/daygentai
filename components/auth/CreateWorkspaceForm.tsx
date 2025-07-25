@@ -35,6 +35,11 @@ export default function CreateWorkspaceForm() {
       return
     }
 
+    // Prevent double submission
+    if (isLoading) {
+      return
+    }
+
     setIsLoading(true)
     setError(null)
 
@@ -75,7 +80,20 @@ export default function CreateWorkspaceForm() {
       router.push(`/${slug}`)
     } catch (err) {
       console.error('Error creating workspace:', err)
-      setError(err instanceof Error ? err.message : 'Failed to create workspace')
+      
+      // Handle specific error cases
+      let errorMessage = 'Failed to create workspace'
+      if (err instanceof Error) {
+        if (err.message.includes('duplicate key value') || err.message.includes('workspace_members_workspace_id_user_id_key')) {
+          errorMessage = 'This workspace is already being created. Please wait a moment and try again.'
+        } else if (err.message.includes('slug already exists')) {
+          errorMessage = 'A workspace with a similar name already exists. Please choose a different name.'
+        } else {
+          errorMessage = err.message
+        }
+      }
+      
+      setError(errorMessage)
       setIsLoading(false)
     }
   }
