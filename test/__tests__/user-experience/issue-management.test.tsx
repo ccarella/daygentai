@@ -290,10 +290,11 @@ describe('Issue Management', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByText('No issues found')).toBeInTheDocument()
+        expect(screen.getByText('Welcome to Daygent!')).toBeInTheDocument()
       })
       
-      expect(screen.getByText('Try adjusting your filters')).toBeInTheDocument()
+      expect(screen.getByText('Watch this video to learn how to get started, or create your first issue above.')).toBeInTheDocument()
+      expect(screen.getByTitle('Getting Started with Daygent')).toBeInTheDocument()
     })
 
     // Note: Navigation test removed due to timing issues with async data loading
