@@ -19,6 +19,10 @@ export interface RateLimitOptions {
    * Whether to use workspace-based rate limiting (default: true)
    */
   useWorkspaceLimit?: boolean
+  /**
+   * Function to extract workspace ID from request
+   */
+  getWorkspaceId?: (req: NextRequest) => string | null
 }
 
 /**
@@ -36,7 +40,8 @@ export function withRateLimit(
     const {
       limits = {},
       errorMessage = 'Too many requests. Please try again later.',
-      useWorkspaceLimit = true
+      useWorkspaceLimit = true,
+      getWorkspaceId
     } = options
 
     try {
@@ -54,17 +59,26 @@ export function withRateLimit(
       let rateLimitKey: string
 
       if (useWorkspaceLimit) {
-        // Get workspace ID from request body or query params
+        // Get workspace ID using custom function or default methods
         let workspaceId: string | null = null
         
-        // Try to get from body first
-        try {
-          const body = await req.clone().json()
-          workspaceId = body.workspaceId
-        } catch {
-          // Body parsing failed, try query params
+        if (getWorkspaceId) {
+          // Use custom workspace ID extractor
+          workspaceId = getWorkspaceId(req)
+        } else {
+          // Default: try query params first (doesn't consume body)
           const { searchParams } = new URL(req.url)
           workspaceId = searchParams.get('workspaceId')
+          
+          // If not in query params, try to extract from body
+          if (!workspaceId) {
+            try {
+              const body = await req.clone().json()
+              workspaceId = body.workspaceId
+            } catch {
+              // Body parsing failed, continue without workspace ID
+            }
+          }
         }
 
         if (!workspaceId) {
@@ -131,11 +145,19 @@ export function withRateLimit(
         )
       }
 
-      // Process the request
-      const response = await handler(req)
-      
-      // Increment rate limit counter after successful request
+      // Increment rate limit counter BEFORE processing request
+      // This prevents abuse through failed requests
       await rateLimiter.incrementCounter(rateLimitKey)
+      
+      // Process the request
+      let response: NextResponse
+      try {
+        response = await handler(req)
+      } catch (handlerError) {
+        // Even if the handler fails, the rate limit was already counted
+        // This prevents retry abuse
+        throw handlerError
+      }
       
       // Add rate limit headers to successful response
       const headers = new Headers(response.headers)

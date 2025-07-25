@@ -218,6 +218,17 @@ export const POST = withRateLimit(
       hourLimit: 100,
       dayLimit: 1000
     },
-    errorMessage: 'Too many prompt generation requests. Please try again later.'
+    errorMessage: 'Too many prompt generation requests. Please try again later.',
+    // Custom workspace ID extractor that doesn't consume the request body
+    getWorkspaceId: (req: NextRequest) => {
+      // First try query params
+      const { searchParams } = new URL(req.url)
+      const workspaceId = searchParams.get('workspaceId')
+      
+      // For this endpoint, workspace ID is always in the body
+      // But we can't extract it here without consuming the stream
+      // So we'll let the default behavior handle it
+      return workspaceId
+    }
   }
 )
