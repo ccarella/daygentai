@@ -121,8 +121,8 @@ const priorityOptions = [
 const sortOptions = [
   { value: 'newest', label: 'Newest' },
   { value: 'oldest', label: 'Oldest' },
-  { value: 'priority_high', label: 'Severity (High)' },
-  { value: 'priority_low', label: 'Severity (Low)' },
+  { value: 'priority_high', label: 'Priority (High)' },
+  { value: 'priority_low', label: 'Priority (Low)' },
   { value: 'type', label: 'Type' },
   { value: 'tag', label: 'Tag' },
 ]
