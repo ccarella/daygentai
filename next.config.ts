@@ -26,6 +26,7 @@ const nextConfig: NextConfig = {
       font-src 'self' https://fonts.gstatic.com;
       img-src 'self' data: blob:;
       connect-src 'self' ${supabaseUrl} https://${supabaseHost};
+      frame-src 'self' https://www.youtube.com https://youtube.com;
       frame-ancestors 'none';
       base-uri 'self';
       form-action 'self';
