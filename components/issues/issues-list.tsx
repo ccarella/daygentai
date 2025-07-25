@@ -9,6 +9,7 @@ import { stripMarkdown } from '@/lib/markdown-utils'
 import { IssueListSkeleton } from './issue-skeleton'
 import { Tag as TagComponent } from '@/components/ui/tag'
 import { useSortableList } from '@/hooks/use-sortable-list'
+import { useTouchSortableList } from '@/hooks/use-touch-sortable-list'
 import { GripVertical } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 // Navigation is now handled by useWorkspaceNavigation in the parent component
@@ -158,7 +159,7 @@ export function IssuesList({
     }
   }, [workspaceSlug, toast])
 
-  // Initialize sortable list hook
+  // Initialize sortable list hook for mouse drag
   const {
     items: sortableIssues,
     getDragHandleProps,
@@ -173,6 +174,28 @@ export function IssuesList({
       console.error('Drag and drop error:', error)
     }
   })
+
+  // Initialize touch sortable list hook for mobile
+  const {
+    items: touchSortableIssues,
+    getTouchHandleProps,
+    getDropZoneProps: getTouchDropZoneProps,
+    draggedItemId: touchDraggedItemId,
+    dragOverIndex: touchDragOverIndex
+  } = useTouchSortableList({
+    items: issues,
+    getItemId: (issue) => issue.id,
+    onReorder: handleReorder,
+    onError: (error) => {
+      console.error('Touch drag error:', error)
+    },
+    scrollContainer: listContainerRef.current
+  })
+
+  // Use touch items if dragging on mobile, otherwise use regular sortable items
+  const displayItems = touchDraggedItemId ? touchSortableIssues : sortableIssues
+  const currentDraggedItemId = touchDraggedItemId || draggedItemId
+  const currentDragOverIndex = touchDragOverIndex ?? dragOverIndex
 
   // Check if drag and drop should be enabled
   const isDragEnabled = sortBy === '' && !searchQuery && !initialLoading
@@ -789,7 +812,7 @@ export function IssuesList({
         
         {/* Issues List */}
         <div className="divide-y divide-border">
-          {sortableIssues.map((issue, index) => (
+          {displayItems.map((issue, index) => (
             <div
               key={issue.id}
               data-issue-row
@@ -799,10 +822,13 @@ export function IssuesList({
                   observerRef.current.observe(el)
                 }
               }}
-              {...(isDragEnabled ? getDropZoneProps(index) : {})}
+              {...(isDragEnabled ? {
+                ...getDropZoneProps(index),
+                ...getTouchDropZoneProps(index)
+              } : {})}
               className={`px-6 py-4 hover:bg-accent cursor-pointer transition-colors flex items-start gap-3 ${
-                dragOverIndex === index ? 'bg-accent' : ''
-              } ${draggedItemId === issue.id ? 'opacity-50' : ''}`}
+                currentDragOverIndex === index ? 'bg-accent' : ''
+              } ${currentDraggedItemId === issue.id ? 'opacity-50' : ''}`}
               onClick={(e) => {
                 // Prevent event from bubbling if clicking on interactive elements
                 const target = e.target as HTMLElement
@@ -823,7 +849,8 @@ export function IssuesList({
               {isDragEnabled && (
                 <div
                   {...getDragHandleProps(issue, index)}
-                  className="flex-shrink-0 pt-1 text-muted-foreground hover:text-foreground transition-colors"
+                  {...getTouchHandleProps(issue, index)}
+                  className="flex-shrink-0 pt-1 text-muted-foreground hover:text-foreground transition-colors touch-none"
                 >
                   <GripVertical className="h-4 w-4" />
                 </div>

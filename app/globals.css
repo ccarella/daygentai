@@ -4,6 +4,44 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Improve touch drag experience on mobile */
+[data-drag-handle] {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Ensure smooth scrolling during drag */
+.dragging {
+  scroll-behavior: auto !important;
+}
+
+/* Improve visual feedback for drag over states */
+[data-drag-over="true"] {
+  position: relative;
+}
+
+[data-drag-over="true"]::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: var(--primary);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
