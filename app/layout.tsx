@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { KeyboardProvider } from "@/lib/keyboard";
 import { ProfileProvider } from "@/contexts/profile-context";
+import { PWAInstallPrompt } from "@/components/ui/pwa-install-prompt";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,12 +25,42 @@ const orbitron = Orbitron({
 export const metadata: Metadata = {
   title: "Daygent",
   description: "A Product Management Tool to work with your software developer agents",
+  manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Daygent",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Daygent",
+    title: "Daygent",
+    description: "A Product Management Tool to work with your software developer agents",
+  },
+  twitter: {
+    card: "summary",
+    title: "Daygent",
+    description: "A Product Management Tool to work with your software developer agents",
+  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  themeColor: '#000000',
 };
 
 export default function RootLayout({
@@ -46,6 +77,7 @@ export default function RootLayout({
           <KeyboardProvider>
             {children}
             <Toaster />
+            <PWAInstallPrompt />
           </KeyboardProvider>
         </ProfileProvider>
       </body>
